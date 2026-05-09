@@ -1,5 +1,4 @@
-import { GoogleSignInButton } from "@/components/GoogleSignInButton";
-import { EmailSignInForm } from "@/components/EmailSignInForm";
+import { AuthForm } from "@/components/AuthForm";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 
 type Props = {
@@ -10,49 +9,45 @@ export default async function LoginPage({ searchParams }: Props) {
   const q = await searchParams;
   const configError = q.error === "config";
   const authError = q.error === "auth";
-
   const supabaseReady = isSupabaseConfigured();
 
-  const showConfigBanner = !supabaseReady || configError;
-
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-[#f7f7f8] px-6 pt-[max(3rem,env(safe-area-inset-top))] text-neutral-900 antialiased">
-      <div className="mx-auto w-full max-w-sm flex-1">
-        <h1 className="text-[1.75rem] font-semibold tracking-[-0.02em]">ZTIPS Pilot</h1>
-        <p className="mt-3 text-[1.05rem] leading-relaxed text-neutral-600">
-          Your AI Copilot for ShopeeFood Drivers
-        </p>
+    <div className="flex min-h-[100dvh] flex-col bg-[#f7f7f8] px-6 text-neutral-900 antialiased">
+      <div className="mx-auto w-full max-w-sm flex-1 flex flex-col justify-center py-12">
 
-        {showConfigBanner ? (
-          <div className="mt-6 space-y-2 rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-950">
-            <p>Konfigurasi Supabase belum lengkap.</p>
-            <ol className="list-decimal space-y-1 pl-4 text-[0.85rem] font-normal leading-relaxed">
-              <li>
-                Salin <code className="rounded bg-amber-100/80 px-1">.env.example</code> ke{" "}
-                <code className="rounded bg-amber-100/80 px-1">.env.local</code> di folder proyek.
-              </li>
-              <li>
-                Isi <code className="rounded bg-amber-100/80 px-1">NEXT_PUBLIC_SUPABASE_URL</code> dan{" "}
-                <code className="rounded bg-amber-100/80 px-1">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> dari
-                Supabase → Project Settings → API.
-              </li>
-              <li>Hentikan lalu jalankan lagi <code className="rounded bg-amber-100/80 px-1">npm run dev</code>.</li>
-            </ol>
+        {/* Logo / Brand */}
+        <div className="mb-10 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-[1.25rem] bg-neutral-900 shadow-lg mb-4">
+            <span className="text-white text-2xl font-black tracking-tighter">Z</span>
           </div>
-        ) : null}
-        {authError ? (
-          <p className="mt-6 rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
-            Masuk gagal. Silakan coba lagi.
+          <h1 className="text-[1.75rem] font-bold tracking-[-0.02em] text-neutral-900">
+            ZTIPS Pilot
+          </h1>
+          <p className="mt-2 text-[0.95rem] text-neutral-500">
+            Asisten cerdas driver ShopeeFood Jogja
           </p>
-        ) : null}
-
-        <div className="mt-16">
-          <EmailSignInForm disabled={!supabaseReady} />
-          {/* <GoogleSignInButton disabled={!supabaseReady} /> */}
         </div>
 
-        <p className="mt-8 text-center text-[0.85rem] text-neutral-400">
-          Dengan masuk, Anda menyetujui penggunaan akun untuk layanan ZTIPS Pilot.
+        {/* Config Banner */}
+        {(!supabaseReady || configError) && (
+          <div className="mb-6 rounded-2xl bg-amber-50 border border-amber-100 px-4 py-3 text-[0.85rem] text-amber-800">
+            <p className="font-semibold mb-1">⚠️ Konfigurasi belum lengkap</p>
+            <p>Isi <code className="bg-amber-100 px-1 rounded">NEXT_PUBLIC_SUPABASE_URL</code> dan <code className="bg-amber-100 px-1 rounded">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> di file <code className="bg-amber-100 px-1 rounded">.env.local</code>, lalu restart server.</p>
+          </div>
+        )}
+
+        {/* Auth Error Banner */}
+        {authError && (
+          <div className="mb-6 rounded-2xl bg-red-50 border border-red-100 px-4 py-3 text-[0.85rem] font-medium text-red-700">
+            Sesi habis atau akses ditolak. Silakan masuk kembali.
+          </div>
+        )}
+
+        {/* Auth Form Component */}
+        <AuthForm disabled={!supabaseReady} />
+
+        <p className="mt-8 text-center text-[0.78rem] text-neutral-400 leading-relaxed">
+          Dengan membuat akun, kamu menyetujui syarat penggunaan layanan ZTIPS Pilot.
         </p>
       </div>
     </div>
