@@ -1,9 +1,21 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient as createServerClient } from "@supabase/supabase-js";
+import { getSupabaseUrl } from "@/lib/supabase/env";
 
 export async function createUserProfile(userId: string, nama: string) {
-  const supabase = await createClient();
+  const supabaseUrl = getSupabaseUrl();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.error("Missing Supabase URL or Service Role Key");
+    return { error: "Konfigurasi server tidak lengkap." };
+  }
+
+  // Use service role client — bypasses RLS and FK restrictions
+  const supabase = createServerClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
 
   const { error } = await supabase.from("users").upsert(
     {
@@ -17,7 +29,7 @@ export async function createUserProfile(userId: string, nama: string) {
   );
 
   if (error) {
-    console.error("createUserProfile error:", error.message, error.details, error.hint);
+    console.error("createUserProfile error:", error.message, error.details);
     return { error: error.message };
   }
 
