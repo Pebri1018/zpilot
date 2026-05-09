@@ -54,48 +54,54 @@ export async function getLatestActiveBroadcast(): Promise<Broadcast | null> {
 
 export async function createBroadcast(formData: FormData) {
   const isAdmin = await verifyAdmin();
-  if (!isAdmin) return { error: "Akses ditolak." };
+  if (!isAdmin) return;
 
   const title = String(formData.get("title") ?? "").trim();
   const message = String(formData.get("message") ?? "").trim();
   const type = String(formData.get("type") ?? "") as BroadcastType;
 
-  if (!title || !message || !type) return { error: "Semua field wajib diisi." };
+  if (!title || !message || !type) return;
 
   const supabase = getServiceClient();
   const { error } = await supabase.from("broadcasts").insert({ title, message, type, active: true });
 
-  if (error) return { error: error.message };
+  if (error) {
+    console.error(error);
+    return;
+  }
 
   revalidatePath("/admin");
   revalidatePath("/");
-  return { success: true };
 }
 
 export async function toggleBroadcast(id: string, active: boolean) {
   const isAdmin = await verifyAdmin();
-  if (!isAdmin) return { error: "Akses ditolak." };
+  if (!isAdmin) return;
 
   const supabase = getServiceClient();
   const { error } = await supabase.from("broadcasts").update({ active }).eq("id", id);
 
-  if (error) return { error: error.message };
+  if (error) {
+    console.error(error);
+    return;
+  }
 
   revalidatePath("/admin");
   revalidatePath("/");
-  return { success: true };
 }
 
 export async function deleteBroadcast(id: string) {
   const isAdmin = await verifyAdmin();
-  if (!isAdmin) return { error: "Akses ditolak." };
+  if (!isAdmin) return;
 
   const supabase = getServiceClient();
   const { error } = await supabase.from("broadcasts").delete().eq("id", id);
 
-  if (error) return { error: error.message };
+  if (error) {
+    console.error(error);
+    return;
+  }
 
   revalidatePath("/admin");
   revalidatePath("/");
-  return { success: true };
 }
