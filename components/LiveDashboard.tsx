@@ -7,9 +7,9 @@ import { getRecommendation } from "@/lib/recommendation";
 
 const getMockRestaurants = (area: string | null) => {
   const baseRestos = [
-    { name: "McDonald's", promo: "Diskon 50%", time: "10 min", icon: "🍟" },
-    { name: "KFC", promo: "Flash Sale", time: "5 min", icon: "🍗" },
-    { name: "Mie Gacoan", promo: "Paling Laris", time: "15 min", icon: "🍜" },
+    { name: "McDonald's", promo: "Diskon 50%", time: "10 min", color: "#FFC107" },
+    { name: "KFC", promo: "Flash Sale", time: "5 min", color: "#EF4444" },
+    { name: "Mie Gacoan", promo: "Paling Laris", time: "15 min", color: "#F97316" },
   ];
 
   if (!area) return baseRestos;
@@ -17,17 +17,17 @@ const getMockRestaurants = (area: string | null) => {
 
   if (lowerArea.includes("seturan") || lowerArea.includes("babarsari") || lowerArea.includes("condongcatur")) {
     return [
-      { name: "Mie Gacoan Seturan", promo: "Paling Laris", time: "15 min", icon: "🍜" },
-      { name: "Preksu Seturan", promo: "Diskon 20%", time: "8 min", icon: "🍱" },
-      { name: "Burjo Andeska", promo: "Rekomendasi", time: "5 min", icon: "🍳" },
-      { name: "Olive Fried Chicken", promo: "Promo Ongkir", time: "12 min", icon: "🍗" },
+      { name: "Mie Gacoan Seturan", promo: "Paling Laris", time: "15 min", color: "#F97316" },
+      { name: "Preksu Seturan", promo: "Diskon 20%", time: "8 min", color: "#8B5CF6" },
+      { name: "Burjo Andeska", promo: "Rekomendasi", time: "5 min", color: "#10B981" },
+      { name: "Olive Fried Chicken", promo: "Promo Ongkir", time: "12 min", color: "#EF4444" },
     ];
   }
   if (lowerArea.includes("ugm") || lowerArea.includes("uny") || lowerArea.includes("gejayan")) {
     return [
-      { name: "Nasi Padang Murah", promo: "Paling Laris", time: "5 min", icon: "🍛" },
-      { name: "Olive Jakal", promo: "Diskon 30%", time: "10 min", icon: "🍗" },
-      { name: "Warteg Kharisma", promo: "Rekomendasi", time: "7 min", icon: "🍱" },
+      { name: "Nasi Padang Murah", promo: "Paling Laris", time: "5 min", color: "#F59E0B" },
+      { name: "Olive Jakal", promo: "Diskon 30%", time: "10 min", color: "#EF4444" },
+      { name: "Warteg Kharisma", promo: "Rekomendasi", time: "7 min", color: "#3B82F6" },
     ];
   }
   return baseRestos;
@@ -59,7 +59,12 @@ export function LiveDashboard() {
             disabled={loading}
             className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[0.75rem] font-bold text-[#00A651] shadow-sm border border-neutral-100 transition-all active:scale-90 disabled:opacity-50 hover:shadow-md"
           >
-            <span className={loading ? "animate-spin" : ""}>🔄</span> Perbarui
+          <svg
+              className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`}
+              fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg> Perbarui
           </button>
         </div>
 
@@ -135,8 +140,8 @@ export function LiveDashboard() {
           
           {getMockRestaurants(areaName).map((resto, i) => (
             <div key={i} className="shrink-0 w-[130px] bg-white rounded-3xl p-3 shadow-[0_8px_24px_rgb(0,0,0,0.04)] border border-neutral-100 active:scale-95 transition-all cursor-pointer">
-              <div className="h-[4.5rem] bg-gradient-to-br from-neutral-50 to-neutral-100 rounded-[1.1rem] mb-3 flex items-center justify-center text-3xl shadow-inner">
-                 {resto.icon}
+              <div className="h-[4.5rem] rounded-[1.1rem] mb-3 flex items-center justify-center shadow-inner" style={{ backgroundColor: resto.color + '18' }}>
+                 <span className="text-[1.5rem] font-extrabold" style={{ color: resto.color }}>{resto.name.charAt(0)}</span>
               </div>
               <h3 className="text-[0.85rem] font-bold text-neutral-800 line-clamp-1 mb-1.5 tracking-tight">{resto.name}</h3>
               <div className="flex flex-col gap-1.5">
