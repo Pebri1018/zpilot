@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { createUserProfile } from "@/app/login/actions";
 
 type Props = {
   disabled?: boolean;
@@ -86,28 +87,37 @@ export function AuthForm({ disabled = false }: Props) {
         password,
         options: {
           data: { nama },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
       if (error) {
         setMessage({ type: "error", text: translateError(error.message) });
-      } else if (data.session) {
-        // Auto-confirmed — insert row to users table immediately
-        const supabase2 = createClient();
-        await supabase2.from("users").upsert({
-          id: data.session.user.id,
-          nama: nama || data.session.user.email?.split("@")[0] || "Driver",
-          kota: "Yogyakarta",
-          platform: "ShopeeFood",
-          onboarding_completed: true,
-        }, { onConflict: "id" });
+        return;
+      }
+
+      // data.user always exists if signup succeeded (even if session is null)
+      const userId = data.user?.id;
+      if (!userId) {
+        setMessage({ type: "error", text: "Gagal membuat akun. Coba lagi." });
+        return;
+      }
+
+      // Insert to users table via server action (bypasses RLS)
+      const result = await createUserProfile(userId, nama);
+      if (result.error) {
+        setMessage({ type: "error", text: `Akun dibuat tapi profil gagal disimpan: ${result.error}` });
+        return;
+      }
+
+      if (data.session) {
+        // Session auto-created (email confirm disabled) — langsung masuk
         router.push("/");
         router.refresh();
       } else {
+        // Perlu konfirmasi email — suruh masuk manual
         setMessage({
           type: "success",
-          text: "Akun berhasil dibuat! Silakan masuk sekarang.",
+          text: "Akun berhasil dibuat! Silakan masuk menggunakan email dan password kamu.",
         });
         switchTab("masuk");
       }
@@ -117,6 +127,7 @@ export function AuthForm({ disabled = false }: Props) {
       setLoading(false);
     }
   }
+
 
   return (
     <div className="w-full">
