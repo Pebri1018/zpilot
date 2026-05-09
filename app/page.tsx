@@ -1,6 +1,8 @@
 import { DriverBottomNav } from "@/components/DriverBottomNav";
 import { LiveDashboard } from "@/components/LiveDashboard";
+import { BroadcastCard } from "@/components/BroadcastCard";
 import { createClient } from "@/lib/supabase/server";
+import { getLatestActiveBroadcast } from "@/app/admin/actions";
 import { redirect } from "next/navigation";
 
 export default async function Home() {
@@ -19,6 +21,7 @@ export default async function Home() {
 
   const nama = profile?.nama || "Driver";
   const kota = profile?.kota || "Yogyakarta";
+  const broadcast = await getLatestActiveBroadcast();
 
   return (
     <div className="min-h-[100dvh] bg-[#f7f7f8] pb-24 text-neutral-900 antialiased">
@@ -26,9 +29,10 @@ export default async function Home() {
         <h1 className="text-[1.8rem] font-bold tracking-[-0.02em] mb-1">Halo {nama}</h1>
         <p className="text-[1.05rem] text-neutral-500 mb-6">Kota {kota}</p>
 
+        {/* Live broadcast from admin — shown above dashboard when active */}
+        {broadcast && <BroadcastCard broadcast={broadcast} />}
+
         <LiveDashboard />
-
-
       </div>
 
       <DriverBottomNav />
