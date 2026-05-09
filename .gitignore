@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+
+# next
+.next/
+out/
+
+# env (keep .env.example in repo)
+.env
+.env.local
+.env.*.local
+
+# debug
+npm-debug.log*
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
