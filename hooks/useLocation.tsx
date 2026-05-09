@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { recordSessionOpen, recordZoneChange, recordActiveMinute } from "@/app/actions/analytics";
 
 export type LocationState = {
   latitude: number | null;
@@ -26,9 +27,20 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   });
 
   const stateRef = useRef(state);
+  const prevAreaRef = useRef<string | null>(null);
+  const sessionOpenedRef = useRef(false);
+
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  // Record open session on mount
+  useEffect(() => {
+    if (!sessionOpenedRef.current) {
+      sessionOpenedRef.current = true;
+      recordSessionOpen().catch(console.error);
+    }
+  }, []);
 
   const fetchLocation = useCallback((force: boolean = false) => {
     const currentState = stateRef.current;
@@ -68,6 +80,14 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
         } catch (err) {
           console.error("Reverse geocoding error:", err);
           if (!area) area = "Koordinat didapat";
+        }
+
+        // Track Zone Change
+        if (area && area !== prevAreaRef.current) {
+          if (prevAreaRef.current !== null) { // Not the first load
+            recordZoneChange(area).catch(console.error);
+          }
+          prevAreaRef.current = area;
         }
 
         // Sync to Supabase for crowdsourcing
@@ -119,6 +139,10 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     // Background refresh check every 1 minute
     const intervalId = setInterval(() => {
       fetchLocation(false);
+      // Track active minute if we have location
+      if (stateRef.current.latitude) {
+        recordActiveMinute().catch(console.error);
+      }
     }, 60 * 1000);
     
     return () => clearInterval(intervalId);

@@ -32,3 +32,46 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+// Push Notifications
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+  
+  try {
+    const data = event.data.json();
+    const options = {
+      body: data.message,
+      icon: '/icon512_maskable.png',
+      badge: '/icon512_maskable.png',
+      vibrate: [100, 50, 100],
+      data: {
+        url: data.url || '/',
+      },
+    };
+
+    event.waitUntil(
+      self.registration.showNotification(data.title, options)
+    );
+  } catch (err) {
+    console.error('Error handling push event', err);
+  }
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window' }).then((clientList) => {
+      const url = event.notification.data.url;
+      // If window is already open, focus it
+      for (const client of clientList) {
+        if (client.url.includes(url) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // Otherwise open a new window
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(url);
+      }
+    })
+  );
+});
+

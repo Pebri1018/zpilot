@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { LocationProvider } from "@/hooks/useLocation";
+import { PushSubscriptionManager } from "@/components/PushSubscriptionManager";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 
@@ -34,6 +35,7 @@ export default function RootLayout({
     <html lang="id">
       <body className={inter.className}>
         <LocationProvider>
+          <PushSubscriptionManager />
           {children}
         </LocationProvider>
         <script

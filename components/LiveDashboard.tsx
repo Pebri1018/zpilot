@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useLocation } from "@/hooks/useLocation";
-import { getRecommendation } from "@/lib/recommendation";
+import { getRecommendationV2, type RecommendationResult } from "@/app/actions/recommendation";
 
 const getMockRestaurants = (area: string | null) => {
   const baseRestos = [
@@ -36,15 +36,31 @@ const getMockRestaurants = (area: string | null) => {
 export function LiveDashboard() {
   const { areaName, loading, error, timestamp, refreshLocation } = useLocation();
   const [time, setTime] = useState(new Date());
+  const [recommendation, setRecommendation] = useState<RecommendationResult>({
+    action: "STAY",
+    title: "Menganalisis Data...",
+    reason: "Menunggu sensor AI Pilot...",
+    color: "#9CA3AF"
+  });
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 60000); // update every minute
     return () => clearInterval(timer);
   }, []);
 
-  const hour = time.getHours();
+  useEffect(() => {
+    async function fetchRec() {
+      try {
+        const result = await getRecommendationV2(areaName);
+        setRecommendation(result);
+      } catch (e) {
+        console.error("Failed to fetch recommendation", e);
+      }
+    }
+    fetchRec();
+  }, [areaName, time.getHours()]); // re-fetch when area changes or hour changes
+
   const formattedTime = time.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' });
-  const recommendation = getRecommendation(areaName, hour);
   const minutesAgo = timestamp ? Math.floor((time.getTime() - timestamp) / 60000) : null;
 
   return (

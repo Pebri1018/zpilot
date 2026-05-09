@@ -4,6 +4,16 @@ import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseUrl } from "@/lib/supabase/env";
 import { revalidatePath } from "next/cache";
+import webpush from "web-push";
+
+// Configure web-push with VAPID keys
+if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.PRIVATE_VAPID_KEY) {
+  webpush.setVapidDetails(
+    "mailto:hello@ztips.com",
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+    process.env.PRIVATE_VAPID_KEY
+  );
+}
 
 export type BroadcastType = "spot_ramai" | "hindari_area" | "promo_seller" | "paket_spx" | "cuaca_event";
 
@@ -68,6 +78,37 @@ export async function createBroadcast(formData: FormData) {
   if (error) {
     console.error(error);
     return;
+  }
+
+  // Send push notifications
+  if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.PRIVATE_VAPID_KEY) {
+    const { data: subs } = await supabase.from("push_subscriptions").select("*");
+    if (subs && subs.length > 0) {
+      const payload = JSON.stringify({
+        title: title,
+        message: message,
+        url: "/"
+      });
+
+      await Promise.allSettled(
+        subs.map(async (sub) => {
+          try {
+            const pushSub = {
+              endpoint: sub.endpoint,
+              keys: { auth: sub.auth, p256dh: sub.p256dh }
+            };
+            await webpush.sendNotification(pushSub, payload);
+          } catch (e: any) {
+            if (e.statusCode === 410 || e.statusCode === 404) {
+              // Cleanup expired subscriptions
+              await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+            } else {
+              console.error("Error sending push to", sub.endpoint, e);
+            }
+          }
+        })
+      );
+    }
   }
 
   revalidatePath("/admin");
