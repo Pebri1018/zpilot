@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { updateProfile, changePassword, sendFeedback, deleteAccount } from "@/app/akun/actions";
 
 type Props = {
   email: string;
@@ -19,6 +20,47 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
   const [lang, setLang] = useState<"ID" | "EN">("ID");
   const [loggingOut, setLoggingOut] = useState(false);
 
+  // Modal states
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showSendFeedback, setShowSendFeedback] = useState(false);
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+
+  // Form states
+  const [editForm, setEditForm] = useState({
+    nama: nama || "",
+    kota: kota || "",
+    driver_id: driverId || "",
+    platform,
+  });
+  const [passwordForm, setPasswordForm] = useState({
+    current_password: "",
+    new_password: "",
+    confirm_password: "",
+  });
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+
+  // Loading states
+  const [updatingProfile, setUpdatingProfile] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [sendingFeedback, setSendingFeedback] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
+  // Error states
+  const [profileError, setProfileError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [feedbackError, setFeedbackError] = useState("");
+
+  useEffect(() => {
+    const savedLang = localStorage.getItem("ztips_lang") as "ID" | "EN";
+    if (savedLang) setLang(savedLang);
+  }, []);
+
+  const handleLangChange = (newLang: "ID" | "EN") => {
+    setLang(newLang);
+    localStorage.setItem("ztips_lang", newLang);
+  };
+
   async function handleLogout() {
     setLoggingOut(true);
     const supabase = createClient();
@@ -27,7 +69,80 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
     router.refresh();
   }
 
-  const WHATSAPP_NUMBER = "6285811757552"; // Ganti dengan nomor WhatsApp founder
+  async function handleUpdateProfile(e: React.FormEvent) {
+    e.preventDefault();
+    setUpdatingProfile(true);
+    setProfileError("");
+
+    const formData = new FormData();
+    formData.append("nama", editForm.nama);
+    formData.append("kota", editForm.kota);
+    formData.append("driver_id", editForm.driver_id);
+    formData.append("platform", editForm.platform);
+
+    const result = await updateProfile(formData);
+
+    if (result.error) {
+      setProfileError(result.error);
+    } else {
+      setShowEditProfile(false);
+      router.refresh();
+    }
+
+    setUpdatingProfile(false);
+  }
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setChangingPassword(true);
+    setPasswordError("");
+
+    const formData = new FormData();
+    formData.append("current_password", passwordForm.current_password);
+    formData.append("new_password", passwordForm.new_password);
+    formData.append("confirm_password", passwordForm.confirm_password);
+
+    const result = await changePassword(formData);
+
+    if (result.error) {
+      setPasswordError(result.error);
+    } else {
+      setShowChangePassword(false);
+      setPasswordForm({ current_password: "", new_password: "", confirm_password: "" });
+      alert("Password berhasil diubah");
+    }
+
+    setChangingPassword(false);
+  }
+
+  async function handleSendFeedback(e: React.FormEvent) {
+    e.preventDefault();
+    setSendingFeedback(true);
+    setFeedbackError("");
+
+    const formData = new FormData();
+    formData.append("message", feedbackMessage);
+
+    const result = await sendFeedback(formData);
+
+    if (result.error) {
+      setFeedbackError(result.error);
+    } else {
+      setShowSendFeedback(false);
+      setFeedbackMessage("");
+      alert("Feedback berhasil dikirim");
+    }
+
+    setSendingFeedback(false);
+  }
+
+  async function handleDeleteAccount() {
+    setDeletingAccount(true);
+    await deleteAccount();
+    setDeletingAccount(false);
+  }
+
+  const WHATSAPP_NUMBER = "6285811757552";
 
   const profileItems = [
     { label: "Email", value: email },
@@ -80,7 +195,7 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
               {(["ID", "EN"] as const).map((l) => (
                 <button
                   key={l}
-                  onClick={() => setLang(l)}
+                  onClick={() => handleLangChange(l)}
                   className={`px-3 py-1.5 rounded-lg text-[0.8rem] font-bold transition-all ${lang === l ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500"}`}
                 >
                   {l}
@@ -133,7 +248,10 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
       {/* Edit & Password */}
       <div className="bg-white rounded-3xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-neutral-100">
         <div className="divide-y divide-neutral-100">
-          <button className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
+          <button
+            onClick={() => setShowEditProfile(true)}
+            className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition"
+          >
             <div className="w-8 h-8 rounded-xl bg-neutral-100 text-neutral-600 flex items-center justify-center">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -144,7 +262,10 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
-          <button className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
+          <button
+            onClick={() => setShowChangePassword(true)}
+            className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition"
+          >
             <div className="w-8 h-8 rounded-xl bg-neutral-100 text-neutral-600 flex items-center justify-center">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -180,7 +301,10 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </a>
-          <button className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
+          <button
+            onClick={() => setShowSendFeedback(true)}
+            className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition"
+          >
             <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -206,10 +330,206 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
           </svg>
           {loggingOut ? "Keluar..." : "Keluar Akun"}
         </button>
-        <button className="w-full text-[0.85rem] font-medium text-red-500 py-2 hover:text-red-700 transition">
+        <button
+          onClick={() => setShowDeleteAccount(true)}
+          className="w-full text-[0.85rem] font-medium text-red-500 py-2 hover:text-red-700 transition"
+        >
           Hapus Akun
         </button>
       </div>
+
+      {/* Edit Profile Modal */}
+      {showEditProfile && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl w-full max-w-md p-6">
+            <h3 className="text-[1.1rem] font-bold mb-4">Edit Profil</h3>
+            <form onSubmit={handleUpdateProfile} className="space-y-4">
+              <div>
+                <label className="block text-[0.8rem] font-medium text-neutral-600 mb-1">Nama</label>
+                <input
+                  type="text"
+                  value={editForm.nama}
+                  onChange={(e) => setEditForm({ ...editForm, nama: e.target.value })}
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[0.8rem] font-medium text-neutral-600 mb-1">Kota / Area</label>
+                <input
+                  type="text"
+                  value={editForm.kota}
+                  onChange={(e) => setEditForm({ ...editForm, kota: e.target.value })}
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[0.8rem] font-medium text-neutral-600 mb-1">ID Driver</label>
+                <input
+                  type="text"
+                  value={editForm.driver_id}
+                  onChange={(e) => setEditForm({ ...editForm, driver_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                />
+              </div>
+              <div>
+                <label className="block text-[0.8rem] font-medium text-neutral-600 mb-1">Platform</label>
+                <select
+                  value={editForm.platform}
+                  onChange={(e) => setEditForm({ ...editForm, platform: e.target.value })}
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                >
+                  <option value="ShopeeFood">ShopeeFood</option>
+                  <option value="GoFood">GoFood</option>
+                  <option value="GrabFood">GrabFood</option>
+                  <option value="Maxim">Maxim</option>
+                </select>
+              </div>
+              {profileError && <p className="text-red-500 text-[0.8rem]">{profileError}</p>}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditProfile(false)}
+                  className="flex-1 py-2.5 text-neutral-600 font-medium rounded-xl border border-neutral-200 hover:bg-neutral-50"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={updatingProfile}
+                  className="flex-1 py-2.5 bg-neutral-900 text-white font-medium rounded-xl hover:bg-neutral-800 disabled:opacity-50"
+                >
+                  {updatingProfile ? "Menyimpan..." : "Simpan"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {showChangePassword && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl w-full max-w-md p-6">
+            <h3 className="text-[1.1rem] font-bold mb-4">Ubah Password</h3>
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div>
+                <label className="block text-[0.8rem] font-medium text-neutral-600 mb-1">Password Saat Ini</label>
+                <input
+                  type="password"
+                  value={passwordForm.current_password}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, current_password: e.target.value })}
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[0.8rem] font-medium text-neutral-600 mb-1">Password Baru</label>
+                <input
+                  type="password"
+                  value={passwordForm.new_password}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, new_password: e.target.value })}
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[0.8rem] font-medium text-neutral-600 mb-1">Konfirmasi Password Baru</label>
+                <input
+                  type="password"
+                  value={passwordForm.confirm_password}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, confirm_password: e.target.value })}
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                  required
+                />
+              </div>
+              {passwordError && <p className="text-red-500 text-[0.8rem]">{passwordError}</p>}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowChangePassword(false)}
+                  className="flex-1 py-2.5 text-neutral-600 font-medium rounded-xl border border-neutral-200 hover:bg-neutral-50"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={changingPassword}
+                  className="flex-1 py-2.5 bg-neutral-900 text-white font-medium rounded-xl hover:bg-neutral-800 disabled:opacity-50"
+                >
+                  {changingPassword ? "Mengubah..." : "Ubah Password"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Send Feedback Modal */}
+      {showSendFeedback && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl w-full max-w-md p-6">
+            <h3 className="text-[1.1rem] font-bold mb-4">Kirim Masukan</h3>
+            <form onSubmit={handleSendFeedback} className="space-y-4">
+              <div>
+                <label className="block text-[0.8rem] font-medium text-neutral-600 mb-1">Pesan</label>
+                <textarea
+                  value={feedbackMessage}
+                  onChange={(e) => setFeedbackMessage(e.target.value)}
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-neutral-900 h-32 resize-none"
+                  placeholder="Berikan masukan atau laporan masalah..."
+                  required
+                />
+              </div>
+              {feedbackError && <p className="text-red-500 text-[0.8rem]">{feedbackError}</p>}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSendFeedback(false)}
+                  className="flex-1 py-2.5 text-neutral-600 font-medium rounded-xl border border-neutral-200 hover:bg-neutral-50"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={sendingFeedback}
+                  className="flex-1 py-2.5 bg-neutral-900 text-white font-medium rounded-xl hover:bg-neutral-800 disabled:opacity-50"
+                >
+                  {sendingFeedback ? "Mengirim..." : "Kirim"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Modal */}
+      {showDeleteAccount && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl w-full max-w-md p-6">
+            <h3 className="text-[1.1rem] font-bold mb-2 text-red-600">Hapus Akun</h3>
+            <p className="text-[0.9rem] text-neutral-600 mb-4">
+              Apakah Anda yakin ingin menghapus akun? Semua profil dan data akan dihapus secara permanen.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteAccount(false)}
+                className="flex-1 py-2.5 text-neutral-600 font-medium rounded-xl border border-neutral-200 hover:bg-neutral-50"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deletingAccount}
+                className="flex-1 py-2.5 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 disabled:opacity-50"
+              >
+                {deletingAccount ? "Menghapus..." : "Hapus Akun"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

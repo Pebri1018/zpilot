@@ -5,11 +5,14 @@ import "leaflet/dist/leaflet.css";
 import { MapContainer, TileLayer, Marker, Popup, useMap, CircleMarker } from "react-leaflet";
 import L from "leaflet";
 import { ActiveDriver } from "@/app/radar/page";
+import { MerchantSignal } from "@/app/admin/actions/signals";
 
 type RadarMapProps = {
   latitude: number | null;
   longitude: number | null;
   activeDrivers?: ActiveDriver[];
+  merchants?: MerchantSignal[];
+  ngetemSpots?: any[];
 };
 
 // Component to dynamically center map when coords change
@@ -21,7 +24,7 @@ function RecenterAutomatically({ lat, lng }: { lat: number; lng: number }) {
   return null;
 }
 
-export default function RadarMap({ latitude, longitude, activeDrivers = [] }: RadarMapProps) {
+export default function RadarMap({ latitude, longitude, activeDrivers = [], merchants = [], ngetemSpots = [] }: RadarMapProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -64,15 +67,67 @@ export default function RadarMap({ latitude, longitude, activeDrivers = [] }: Ra
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
         
-        {/* Render Other Active Drivers as small orange dots */}
-        {activeDrivers.map((driver) => (
-          <CircleMarker
-            key={driver.user_id}
-            center={[driver.latitude, driver.longitude]}
-            radius={5}
-            pathOptions={{ color: "#ea580c", fillColor: "#f97316", fillOpacity: 0.85, weight: 2 }}
-          />
-        ))}
+        {/* Render Other Active Drivers */}
+        {activeDrivers
+          .filter(driver => driver.status !== "offline")
+          .map((driver) => {
+            const color = driver.status === "ngetem" ? "#2563eb" : "#6b7280";
+            return (
+              <CircleMarker
+                key={driver.user_id}
+                center={[driver.latitude, driver.longitude]}
+                radius={6}
+                pathOptions={{ color, fillColor: color, fillOpacity: 0.85, weight: 2 }}
+              />
+            );
+          })}
+
+        {/* Render Merchants */}
+        {merchants.map((merchant) => {
+          if (!merchant.lat || !merchant.lng) return null;
+          let color = "#10b981"; // green for low
+          if (merchant.busy_score >= 4) color = "#ef4444"; // red for busy
+          else if (merchant.busy_score >= 2) color = "#f59e0b"; // yellow for medium
+          
+          return (
+            <CircleMarker
+              key={merchant.id}
+              center={[merchant.lat, merchant.lng]}
+              radius={8}
+              pathOptions={{ color, fillColor: color, fillOpacity: 0.9, weight: 2 }}
+            >
+              <Popup>
+                <div className="text-sm">
+                  <div className="font-bold">{merchant.name}</div>
+                  <div className="text-gray-600">{merchant.category}</div>
+                  {merchant.rating && <div>⭐ {merchant.rating}</div>}
+                  <div>Busy: {merchant.busy_level}</div>
+                </div>
+              </Popup>
+            </CircleMarker>
+          );
+        })}
+
+        {/* Render Ngetem Spots */}
+        {ngetemSpots.map((spot) => {
+          if (!spot.lat || !spot.lng) return null;
+          return (
+            <CircleMarker
+              key={spot.id}
+              center={[spot.lat, spot.lng]}
+              radius={7}
+              pathOptions={{ color: "#8b5cf6", fillColor: "#8b5cf6", fillOpacity: 0.9, weight: 2 }}
+            >
+              <Popup>
+                <div className="text-sm">
+                  <div className="font-bold">{spot.name}</div>
+                  <div className="text-gray-600">Spot Ngetem</div>
+                  <div>Kualitas: {spot.quality}</div>
+                </div>
+              </Popup>
+            </CircleMarker>
+          );
+        })}
 
         {/* Render Self Location */}
         {latitude && longitude && (

@@ -66,7 +66,7 @@ const TYPE_META: Record<BroadcastType, { label: string; color: string; bg: strin
 };
 
 export function AdminClient({ broadcasts, initialMerchants = [] }: Props) {
-  const [activeTab, setActiveTab] = useState<"broadcast" | "density" | "merchant" | "notes" | "spots">("merchant");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "merchants" | "radar_spots" | "users" | "feedback" | "broadcast">("dashboard");
   const [advancedMode, setAdvancedMode] = useState(false);
   const notesFormRef = useRef<HTMLFormElement>(null);
   const spotsFormRef = useRef<HTMLFormElement>(null);
@@ -105,11 +105,43 @@ export function AdminClient({ broadcasts, initialMerchants = [] }: Props) {
       {/* Tab Switcher */}
       <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-2 -mx-5 px-5">
         <style dangerouslySetInnerHTML={{__html: `::-webkit-scrollbar { display: none; }`}} />
-        <button onClick={() => setActiveTab("merchant")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "merchant" ? "bg-orange-500 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>🏪 Resto</button>
-        <button onClick={() => setActiveTab("broadcast")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "broadcast" ? "bg-neutral-900 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>📡 Broadcast</button>
-        <button onClick={() => setActiveTab("density")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "density" ? "bg-blue-600 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>👥 Driver</button>
-        <button onClick={() => setActiveTab("spots")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "spots" ? "bg-emerald-600 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>📍 Spot</button>
-        <button onClick={() => setActiveTab("notes")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "notes" ? "bg-purple-600 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>📝 Catatan</button>
+        <button onClick={() => setActiveTab("dashboard")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all flex items-center gap-2 ${ activeTab === "dashboard" ? "bg-neutral-900 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          Dashboard
+        </button>
+        <button onClick={() => setActiveTab("merchants")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all flex items-center gap-2 ${ activeTab === "merchants" ? "bg-orange-500 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+          Merchants
+        </button>
+        <button onClick={() => setActiveTab("radar_spots")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all flex items-center gap-2 ${ activeTab === "radar_spots" ? "bg-emerald-600 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Radar Spots
+        </button>
+        <button onClick={() => setActiveTab("users")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all flex items-center gap-2 ${ activeTab === "users" ? "bg-blue-600 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+          </svg>
+          Users
+        </button>
+        <button onClick={() => setActiveTab("feedback")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all flex items-center gap-2 ${ activeTab === "feedback" ? "bg-purple-600 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+          Feedback
+        </button>
+        <button onClick={() => setActiveTab("broadcast")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all flex items-center gap-2 ${ activeTab === "broadcast" ? "bg-red-600 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+          </svg>
+          Broadcast
+        </button>
       </div>
 
       {/* GPS Bar — always visible */}
@@ -191,41 +223,94 @@ export function AdminClient({ broadcasts, initialMerchants = [] }: Props) {
       )}
 
       {/* 2. DENSITY TAB */}
-      {activeTab === "density" && (
-        <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-neutral-100 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <h2 className="text-[0.8rem] font-bold uppercase tracking-widest text-neutral-400 mb-4">Manual Density Input</h2>
-          <form action={async (formData) => {
-            formData.append("lat", String(lat));
-            formData.append("lng", String(lng));
-            formData.append("area", area);
-            await reportManualDensity(formData);
-            alert("Laporan kepadatan disimpan!");
-          }} className="space-y-4">
-            <div>
-              <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Jumlah Driver Terlihat</label>
-              <input name="driver_count" type="number" required placeholder="0" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[1.1rem] font-bold text-neutral-900 focus:outline-none focus:border-blue-400 transition" />
-            </div>
-            <div>
-              <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Radius (Meter)</label>
-              <select name="radius" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:outline-none focus:border-blue-400 transition">
-                <option value="25">25m</option>
-                <option value="50" selected>50m</option>
-                <option value="100">100m</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Catatan (Opsional)</label>
-              <input name="notes" placeholder="cth: Ngetem di depan Mixue" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:outline-none focus:border-blue-400 transition" />
-            </div>
-            <button type="submit" className="w-full rounded-2xl bg-blue-600 py-3.5 text-[0.95rem] font-bold text-white transition active:scale-[0.98] hover:bg-blue-700">
-              Kirim Sinyal Area (20 Menit)
-            </button>
-          </form>
+      {activeTab === "radar_spots" && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          {/* Manual Density Input */}
+          <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-neutral-100">
+            <h2 className="text-[0.8rem] font-bold uppercase tracking-widest text-blue-600 mb-4">Manual Density Input</h2>
+            <form action={async (formData) => {
+              formData.append("lat", String(lat));
+              formData.append("lng", String(lng));
+              formData.append("area", area);
+              await reportManualDensity(formData);
+              alert("Laporan kepadatan disimpan!");
+            }} className="space-y-4">
+              <div>
+                <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Jumlah Driver Terlihat</label>
+                <input name="driver_count" type="number" required placeholder="0" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[1.1rem] font-bold text-neutral-900 focus:outline-none focus:border-blue-400 transition" />
+              </div>
+              <div>
+                <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Radius (Meter)</label>
+                <select name="radius" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:outline-none focus:border-blue-400 transition">
+                  <option value="25">25m</option>
+                  <option value="50" selected>50m</option>
+                  <option value="100">100m</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Catatan (Opsional)</label>
+                <input name="notes" placeholder="cth: Ngetem di depan Mixue" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:outline-none focus:border-blue-400 transition" />
+              </div>
+              <button type="submit" className="w-full rounded-2xl bg-blue-600 py-3.5 text-[0.95rem] font-bold text-white transition active:scale-[0.98] hover:bg-blue-700">
+                Kirim Sinyal Area (20 Menit)
+              </button>
+            </form>
+          </div>
+
+          {/* Add Ngetem Spot */}
+          <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-neutral-100">
+            <h2 className="text-[0.8rem] font-bold uppercase tracking-widest text-emerald-600 mb-4">Tambah Spot Ngetem</h2>
+            <form
+              ref={spotsFormRef}
+              action={async (formData) => {
+                formData.append("lat", String(lat));
+                formData.append("lng", String(lng));
+                const result = await saveNgetemSpot(formData);
+                if (result?.success) {
+                  alert("Spot ngetem disimpan!");
+                  spotsFormRef.current?.reset();
+                } else {
+                  alert(result?.error || "Gagal menyimpan.");
+                }
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Nama Spot</label>
+                <input name="name" required placeholder="cth: Depan Mixue Seturan" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:outline-none focus:border-emerald-400 transition" />
+              </div>
+              <div>
+                <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Area / Zona</label>
+                <input name="area" required placeholder={area} defaultValue={area !== "Mengambil lokasi..." ? area : ""} className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:outline-none focus:border-emerald-400 transition" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Kualitas Spot</label>
+                  <select name="quality" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:outline-none focus:border-emerald-400 transition">
+                    <option value="Bagus">✅ Bagus</option>
+                    <option value="Lumayan">🟡 Lumayan</option>
+                    <option value="Jebakan">❌ Jebakan</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Jam Terbaik</label>
+                  <input name="best_hours" placeholder="cth: 11:00-13:00" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:outline-none focus:border-emerald-400 transition" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Catatan Tambahan</label>
+                <textarea name="notes" rows={2} placeholder="cth: Parkir luas, banyak pesanan Gacoan..." className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:border-emerald-400 focus:outline-none transition resize-none"></textarea>
+              </div>
+              <button type="submit" className="w-full rounded-2xl bg-emerald-600 py-3.5 text-[0.95rem] font-bold text-white transition active:scale-[0.98] hover:bg-emerald-700">
+                Simpan Spot Ngetem
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
-      {/* 3. MERCHANT TAB — OPERATIONAL */}
-      {activeTab === "merchant" && (
+      {/* MERCHANTS TAB */}
+      {activeTab === "merchants" && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
           {/* Add / Update Form */}
           <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-neutral-100">
@@ -260,12 +345,28 @@ export function AdminClient({ broadcasts, initialMerchants = [] }: Props) {
                 <div>
                   <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1">Kategori</label>
                   <select name="category" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:outline-none focus:border-orange-400 transition">
-                    <option value="Makanan">🍱 Makanan</option>
-                    <option value="Minuman">🧋 Minuman</option>
-                    <option value="Snack">🍟 Snack</option>
-                    <option value="Paket">📦 Paket</option>
+                    <option value="Makanan">Makanan</option>
+                    <option value="Minuman">Minuman</option>
+                    <option value="Snack">Snack</option>
+                    <option value="Paket">Paket</option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1">Rating</label>
+                  <input name="rating" type="number" step="0.1" min="0" max="5" placeholder="4.5" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:outline-none focus:border-orange-400 transition" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1">Jumlah Review</label>
+                  <input name="review_count" type="number" placeholder="1000" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:outline-none focus:border-orange-400 transition" />
+                </div>
+                <div>
+                  <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1">Busy Score (1-5)</label>
+                  <input name="busy_score" type="number" min="1" max="5" defaultValue="3" required className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:outline-none focus:border-orange-400 transition" />
+                </div>
+              </div>
                 <div>
                   <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1">Busy Score (1-5)</label>
                   <select name="busy_score" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:outline-none focus:border-orange-400 transition">
@@ -344,54 +445,47 @@ export function AdminClient({ broadcasts, initialMerchants = [] }: Props) {
       )}
 
       {/* 4. SPOT NGETEM TAB */}
-      {activeTab === "spots" && (
-        <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-neutral-100 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <h2 className="text-[0.8rem] font-bold uppercase tracking-widest text-emerald-600 mb-4">Tambah Spot Ngetem</h2>
-          <form
-            ref={spotsFormRef}
-            action={async (formData) => {
-              formData.append("lat", String(lat));
-              formData.append("lng", String(lng));
-              const result = await saveNgetemSpot(formData);
-              if (result?.success) {
-                alert("Spot ngetem disimpan!");
-                spotsFormRef.current?.reset();
-              } else {
-                alert(result?.error || "Gagal menyimpan.");
-              }
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Nama Spot</label>
-              <input name="name" required placeholder="cth: Depan Mixue Seturan" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:outline-none focus:border-emerald-400 transition" />
-            </div>
-            <div>
-              <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Area / Zona</label>
-              <input name="area" required placeholder={area} defaultValue={area !== "Mengambil lokasi..." ? area : ""} className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:outline-none focus:border-emerald-400 transition" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Kualitas Spot</label>
-                <select name="quality" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:outline-none focus:border-emerald-400 transition">
-                  <option value="Bagus">✅ Bagus</option>
-                  <option value="Lumayan">🟡 Lumayan</option>
-                  <option value="Jebakan">❌ Jebakan</option>
-                </select>
+
+
+      {/* DASHBOARD TAB */}
+      {activeTab === "dashboard" && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-neutral-100">
+            <h2 className="text-[0.8rem] font-bold uppercase tracking-widest text-neutral-900 mb-4">System Overview</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-neutral-50 rounded-2xl p-4 text-center">
+                <div className="text-2xl font-bold text-neutral-900">{merchants.length}</div>
+                <div className="text-[0.8rem] text-neutral-600">Active Merchants</div>
               </div>
-              <div>
-                <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Jam Terbaik</label>
-                <input name="best_hours" placeholder="cth: 11:00-13:00" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:outline-none focus:border-emerald-400 transition" />
+              <div className="bg-neutral-50 rounded-2xl p-4 text-center">
+                <div className="text-2xl font-bold text-neutral-900">{broadcasts.length}</div>
+                <div className="text-[0.8rem] text-neutral-600">Active Broadcasts</div>
               </div>
             </div>
-            <div>
-              <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Catatan Tambahan</label>
-              <textarea name="notes" rows={2} placeholder="cth: Parkir luas, banyak pesanan Gacoan..." className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:border-emerald-400 focus:outline-none transition resize-none"></textarea>
+            <div className="mt-4 text-center">
+              <p className="text-[0.9rem] text-neutral-600">Real-time operational data for ZTIPS drivers</p>
             </div>
-            <button type="submit" className="w-full rounded-2xl bg-emerald-600 py-3.5 text-[0.95rem] font-bold text-white transition active:scale-[0.98] hover:bg-emerald-700">
-              Simpan Spot Ngetem
-            </button>
-          </form>
+          </div>
+        </div>
+      )}
+
+      {/* USERS TAB */}
+      {activeTab === "users" && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-neutral-100">
+            <h2 className="text-[0.8rem] font-bold uppercase tracking-widest text-blue-600 mb-4">User Management</h2>
+            <p className="text-[0.9rem] text-neutral-600">User management features coming soon...</p>
+          </div>
+        </div>
+      )}
+
+      {/* FEEDBACK TAB */}
+      {activeTab === "feedback" && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-neutral-100">
+            <h2 className="text-[0.8rem] font-bold uppercase tracking-widest text-purple-600 mb-4">User Feedback</h2>
+            <p className="text-[0.9rem] text-neutral-600">Feedback management features coming soon...</p>
+          </div>
         </div>
       )}
 
