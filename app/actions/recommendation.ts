@@ -24,13 +24,30 @@ export async function getRecommendationV2(areaName: string | null): Promise<Reco
     // 1. Check Driver Density in the same area
     if (areaName) {
       const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-      const { count } = await supabase
-        .from("driver_locations")
-        .select("*", { count: 'exact', head: true })
-        .eq("area_name", areaName)
-        .gte("updated_at", fifteenMinsAgo);
-      
-      driverCountInArea = count || 0;
+      const now = new Date().toISOString();
+
+      // Check for manual overrides first (Founder Intelligence)
+      const { data: manualReport } = await supabase
+        .from("manual_density_reports")
+        .select("driver_count")
+        .eq("area", areaName)
+        .gt("expires_at", now)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (manualReport) {
+        driverCountInArea = manualReport.driver_count;
+      } else {
+        // Fallback to passive crowdsourced data
+        const { count } = await supabase
+          .from("driver_locations")
+          .select("*", { count: 'exact', head: true })
+          .eq("area_name", areaName)
+          .gte("updated_at", fifteenMinsAgo);
+        
+        driverCountInArea = count || 0;
+      }
     }
 
     // 2. Check recent movement (active minutes today)

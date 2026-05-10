@@ -5,33 +5,7 @@ import Link from "next/link";
 import { useLocation } from "@/hooks/useLocation";
 import { getRecommendationV2, type RecommendationResult } from "@/app/actions/recommendation";
 
-const getMockRestaurants = (area: string | null) => {
-  const baseRestos = [
-    { name: "McDonald's", promo: "Diskon 50%", time: "10 min", color: "#FFC107" },
-    { name: "KFC", promo: "Flash Sale", time: "5 min", color: "#EF4444" },
-    { name: "Mie Gacoan", promo: "Paling Laris", time: "15 min", color: "#F97316" },
-  ];
-
-  if (!area) return baseRestos;
-  const lowerArea = area.toLowerCase();
-
-  if (lowerArea.includes("seturan") || lowerArea.includes("babarsari") || lowerArea.includes("condongcatur")) {
-    return [
-      { name: "Mie Gacoan Seturan", promo: "Paling Laris", time: "15 min", color: "#F97316" },
-      { name: "Preksu Seturan", promo: "Diskon 20%", time: "8 min", color: "#8B5CF6" },
-      { name: "Burjo Andeska", promo: "Rekomendasi", time: "5 min", color: "#10B981" },
-      { name: "Olive Fried Chicken", promo: "Promo Ongkir", time: "12 min", color: "#EF4444" },
-    ];
-  }
-  if (lowerArea.includes("ugm") || lowerArea.includes("uny") || lowerArea.includes("gejayan")) {
-    return [
-      { name: "Nasi Padang Murah", promo: "Paling Laris", time: "5 min", color: "#F59E0B" },
-      { name: "Olive Jakal", promo: "Diskon 30%", time: "10 min", color: "#EF4444" },
-      { name: "Warteg Kharisma", promo: "Rekomendasi", time: "7 min", color: "#3B82F6" },
-    ];
-  }
-  return baseRestos;
-};
+import { getActiveMerchants, type MerchantSignal } from "@/app/admin/actions/signals";
 
 export function LiveDashboard() {
   const { areaName, loading, error, timestamp, refreshLocation } = useLocation();
@@ -42,6 +16,7 @@ export function LiveDashboard() {
     reason: "Menunggu sensor AI Pilot...",
     color: "#9CA3AF"
   });
+  const [merchants, setMerchants] = useState<MerchantSignal[]>([]);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 60000); // update every minute
@@ -49,15 +24,19 @@ export function LiveDashboard() {
   }, []);
 
   useEffect(() => {
-    async function fetchRec() {
+    async function fetchData() {
       try {
-        const result = await getRecommendationV2(areaName);
-        setRecommendation(result);
+        const [recResult, merchantsResult] = await Promise.all([
+          getRecommendationV2(areaName),
+          getActiveMerchants(areaName)
+        ]);
+        setRecommendation(recResult);
+        setMerchants(merchantsResult);
       } catch (e) {
-        console.error("Failed to fetch recommendation", e);
+        console.error("Failed to fetch dashboard data", e);
       }
     }
-    fetchRec();
+    fetchData();
   }, [areaName, time.getHours()]); // re-fetch when area changes or hour changes
 
   const formattedTime = time.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' });
@@ -154,23 +133,48 @@ export function LiveDashboard() {
         <div className="flex overflow-x-auto pb-4 -mx-5 px-5 gap-3" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           <style dangerouslySetInnerHTML={{__html: `::-webkit-scrollbar { display: none; }`}} />
           
-          {getMockRestaurants(areaName).map((resto, i) => (
-            <div key={i} className="shrink-0 w-[130px] bg-white rounded-3xl p-3 shadow-[0_8px_24px_rgb(0,0,0,0.04)] border border-neutral-100 active:scale-95 transition-all cursor-pointer">
-              <div className="h-[4.5rem] rounded-[1.1rem] mb-3 flex items-center justify-center shadow-inner" style={{ backgroundColor: resto.color + '18' }}>
-                 <span className="text-[1.5rem] font-extrabold" style={{ color: resto.color }}>{resto.name.charAt(0)}</span>
-              </div>
-              <h3 className="text-[0.85rem] font-bold text-neutral-800 line-clamp-1 mb-1.5 tracking-tight">{resto.name}</h3>
-              <div className="flex flex-col gap-1.5">
-                <span className="inline-block text-[0.6rem] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-md w-max border border-red-100">
-                  {resto.promo}
-                </span>
-                <span className="text-[0.65rem] font-semibold text-neutral-500 flex items-center gap-1">
-                  <svg className="w-3 h-3 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  {resto.time}
-                </span>
-              </div>
+          {merchants.length === 0 ? (
+            <div className="w-full text-center py-6 bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
+              <p className="text-[0.85rem] text-neutral-400 font-medium">Belum ada sinyal resto di area ini.</p>
             </div>
-          ))}
+          ) : (
+            merchants.map((resto) => {
+              // Map Category to colors
+              let baseColor = "#3B82F6"; // Blue Default
+              if (resto.category === "Makanan") baseColor = "#F97316"; // Orange
+              if (resto.category === "Minuman") baseColor = "#06B6D4"; // Cyan
+              if (resto.category === "Snack") baseColor = "#8B5CF6";   // Purple
+
+              return (
+                <div key={resto.id} className="shrink-0 w-[140px] bg-white rounded-3xl p-3 shadow-[0_8px_24px_rgb(0,0,0,0.04)] border border-neutral-100 active:scale-95 transition-all cursor-pointer">
+                  <div className="h-[4.5rem] rounded-[1.1rem] mb-3 flex items-center justify-center shadow-inner relative overflow-hidden" style={{ backgroundColor: baseColor + '18' }}>
+                    {resto.busy_level === 'High' && (
+                       <span className="absolute top-0 right-0 bg-red-500 text-white text-[0.55rem] font-bold px-1.5 py-0.5 rounded-bl-lg">RAMAI</span>
+                    )}
+                    <span className="text-[1.5rem] font-extrabold" style={{ color: baseColor }}>{resto.name.charAt(0)}</span>
+                  </div>
+                  <h3 className="text-[0.85rem] font-bold text-neutral-800 line-clamp-1 mb-1.5 tracking-tight">{resto.name}</h3>
+                  <div className="flex flex-col gap-1.5">
+                    {resto.promo_active && (
+                      <span className="inline-block text-[0.6rem] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-md w-max border border-red-100">
+                        Promo Aktif
+                      </span>
+                    )}
+                    {resto.fast_pickup && (
+                      <span className="inline-block text-[0.6rem] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-md w-max border border-green-100">
+                        Pickup Cepat
+                      </span>
+                    )}
+                    {(!resto.promo_active && !resto.fast_pickup) && (
+                      <span className="inline-block text-[0.6rem] font-bold text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded-md w-max border border-neutral-200">
+                        Level: {resto.busy_level}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </section>
 
