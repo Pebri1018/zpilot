@@ -7,6 +7,9 @@ ALTER TABLE public.merchant_signals
   ADD COLUMN IF NOT EXISTS busy_score integer CHECK (busy_score >= 1 AND busy_score <= 5),
   ADD COLUMN IF NOT EXISTS is_active boolean DEFAULT true,
   ADD COLUMN IF NOT EXISTS pickup_fast boolean DEFAULT false,
+  ADD COLUMN IF NOT EXISTS rating double precision,
+  ADD COLUMN IF NOT EXISTS reviews integer,
+  ADD COLUMN IF NOT EXISTS popularity_score double precision,
   ADD COLUMN IF NOT EXISTS updated_at timestamp with time zone DEFAULT now(),
   ADD COLUMN IF NOT EXISTS created_by text;
 

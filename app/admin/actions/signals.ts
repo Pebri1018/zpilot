@@ -62,6 +62,13 @@ export async function upsertMerchant(formData: FormData) {
   const area_gps = String(formData.get("area") || "").trim();
   const area = area_override || area_gps;
 
+  const rating = formData.get("rating") ? Number(formData.get("rating")) : null;
+  const reviews = formData.get("reviews") ? Number(formData.get("reviews")) : null;
+
+  // Auto calculate popularity score (0-10)
+  // Logic: (rating * 1.5) + (log10(reviews + 1))
+  const popularity_score = rating ? (rating * 1.5) + (reviews ? Math.log10(reviews + 1) : 0) : null;
+
   if (!name || !area) return { error: "Nama restoran dan area wajib diisi" };
 
   // Map busy_score to busy_level for backward compat
@@ -77,12 +84,14 @@ export async function upsertMerchant(formData: FormData) {
       promo_active,
       fast_pickup: pickup_fast,
       pickup_fast,
+      rating,
+      reviews,
+      popularity_score,
       is_active: true,
       lat: lat && !isNaN(lat) ? lat : null,
       lng: lng && !isNaN(lng) ? lng : null,
       area,
       updated_at: new Date().toISOString(),
-      // Set expires far in the future so persistent merchants always appear
       expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
       created_at: new Date().toISOString(),
     },

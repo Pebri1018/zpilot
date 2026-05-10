@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { updateProfile, changePassword, sendFeedback, deleteAccount } from "@/app/akun/actions";
 
 type Props = {
   email: string;
@@ -18,6 +19,9 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
   const [batterySaver, setBatterySaver] = useState(false);
   const [lang, setLang] = useState<"ID" | "EN">("ID");
   const [loggingOut, setLoggingOut] = useState(false);
+  const [modal, setModal] = useState<"profile" | "password" | "feedback" | "delete" | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -27,7 +31,7 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
     router.refresh();
   }
 
-  const WHATSAPP_NUMBER = "6285811757552"; // Ganti dengan nomor WhatsApp founder
+  const WHATSAPP_NUMBER = "6285811757552";
 
   const profileItems = [
     { label: "Email", value: email },
@@ -39,6 +43,13 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
 
   return (
     <div className="space-y-5">
+      {msg && (
+        <div className={`p-4 rounded-2xl text-[0.85rem] font-bold animate-in fade-in slide-in-from-top-2 ${msg.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
+          {msg.text}
+          <button onClick={() => setMsg(null)} className="ml-2 underline opacity-50">Tutup</button>
+        </div>
+      )}
+
       {/* Profile Card */}
       <div className="bg-white rounded-3xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-neutral-100">
         <div className="bg-neutral-900 px-5 py-5 flex items-center gap-4">
@@ -130,10 +141,10 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
         </div>
       </div>
 
-      {/* Edit & Password */}
+      {/* Actions */}
       <div className="bg-white rounded-3xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-neutral-100">
         <div className="divide-y divide-neutral-100">
-          <button className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
+          <button onClick={() => setModal("profile")} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
             <div className="w-8 h-8 rounded-xl bg-neutral-100 text-neutral-600 flex items-center justify-center">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -144,7 +155,7 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
-          <button className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
+          <button onClick={() => setModal("password")} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
             <div className="w-8 h-8 rounded-xl bg-neutral-100 text-neutral-600 flex items-center justify-center">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -180,7 +191,7 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </a>
-          <button className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
+          <button onClick={() => setModal("feedback")} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
             <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -206,10 +217,96 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
           </svg>
           {loggingOut ? "Keluar..." : "Keluar Akun"}
         </button>
-        <button className="w-full text-[0.85rem] font-medium text-red-500 py-2 hover:text-red-700 transition">
+        <button onClick={() => setModal("delete")} className="w-full text-[0.85rem] font-medium text-red-500 py-2 hover:text-red-700 transition">
           Hapus Akun
         </button>
       </div>
+
+      {/* MODALS */}
+      {modal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-5 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            {modal === "profile" && (
+              <form action={async (fd) => {
+                setLoading(true);
+                const res = await updateProfile(fd);
+                setLoading(false);
+                if (res.success) { setModal(null); setMsg({ type: "success", text: "Profil diperbarui!" }); }
+                else setMsg({ type: "error", text: res.error || "Gagal update" });
+              }} className="space-y-4">
+                <h3 className="text-[1.1rem] font-bold">Edit Profil</h3>
+                <div className="space-y-3">
+                  <input name="nama" defaultValue={nama || ""} placeholder="Nama Lengkap" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] focus:outline-none focus:border-neutral-400" required />
+                  <input name="kota" defaultValue={kota || ""} placeholder="Kota" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] focus:outline-none focus:border-neutral-400" required />
+                  <input name="driver_id" defaultValue={driverId || ""} placeholder="ID Driver" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] focus:outline-none focus:border-neutral-400" required />
+                  <select name="platform" defaultValue={platform} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] focus:outline-none focus:border-neutral-400">
+                    <option value="ShopeeFood">ShopeeFood</option>
+                    <option value="GoFood">GoFood</option>
+                    <option value="GrabFood">GrabFood</option>
+                    <option value="Lalamove">Lalamove</option>
+                  </select>
+                </div>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setModal(null)} className="flex-1 py-3 rounded-2xl bg-neutral-100 font-bold text-neutral-600">Batal</button>
+                  <button type="submit" disabled={loading} className="flex-1 py-3 rounded-2xl bg-neutral-900 font-bold text-white disabled:opacity-50">{loading ? "..." : "Simpan"}</button>
+                </div>
+              </form>
+            )}
+
+            {modal === "password" && (
+              <form action={async (fd) => {
+                setLoading(true);
+                const res = await changePassword(fd);
+                setLoading(false);
+                if (res.success) { setModal(null); setMsg({ type: "success", text: "Password diubah!" }); }
+                else setMsg({ type: "error", text: res.error || "Gagal ubah password" });
+              }} className="space-y-4">
+                <h3 className="text-[1.1rem] font-bold">Ubah Password</h3>
+                <input name="password" type="password" placeholder="Password Baru (min 6 karakter)" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] focus:outline-none focus:border-neutral-400" required minLength={6} />
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setModal(null)} className="flex-1 py-3 rounded-2xl bg-neutral-100 font-bold text-neutral-600">Batal</button>
+                  <button type="submit" disabled={loading} className="flex-1 py-3 rounded-2xl bg-neutral-900 font-bold text-white disabled:opacity-50">{loading ? "..." : "Update"}</button>
+                </div>
+              </form>
+            )}
+
+            {modal === "feedback" && (
+              <form action={async (fd) => {
+                setLoading(true);
+                const res = await sendFeedback(fd);
+                setLoading(false);
+                if (res.success) { setModal(null); setMsg({ type: "success", text: "Terima kasih atas masukannya!" }); }
+                else setMsg({ type: "error", text: res.error || "Gagal kirim" });
+              }} className="space-y-4">
+                <h3 className="text-[1.1rem] font-bold">Kirim Masukan</h3>
+                <textarea name="message" placeholder="Tulis masukan atau kendala kamu di sini..." rows={4} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] focus:outline-none focus:border-neutral-400 resize-none" required />
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setModal(null)} className="flex-1 py-3 rounded-2xl bg-neutral-100 font-bold text-neutral-600">Batal</button>
+                  <button type="submit" disabled={loading} className="flex-1 py-3 rounded-2xl bg-blue-600 font-bold text-white disabled:opacity-50">{loading ? "..." : "Kirim"}</button>
+                </div>
+              </form>
+            )}
+
+            {modal === "delete" && (
+              <div className="space-y-4 text-center">
+                <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                </div>
+                <h3 className="text-[1.1rem] font-bold">Hapus Akun?</h3>
+                <p className="text-[0.85rem] text-neutral-500 leading-relaxed">Semua profil dan data kamu akan dihapus secara permanen. Tindakan ini tidak bisa dibatalkan.</p>
+                <div className="flex flex-col gap-2 pt-2">
+                  <button onClick={async () => {
+                    setLoading(true);
+                    await deleteAccount();
+                    router.push("/login");
+                  }} disabled={loading} className="w-full py-3 rounded-2xl bg-red-600 font-bold text-white disabled:opacity-50">Ya, Hapus Permanen</button>
+                  <button onClick={() => setModal(null)} className="w-full py-3 rounded-2xl bg-neutral-100 font-bold text-neutral-600">Batal</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

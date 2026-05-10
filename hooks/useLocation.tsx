@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { recordSessionOpen, recordZoneChange, recordActiveMinute } from "@/app/actions/analytics";
+import { updateDriverStatus } from "@/app/akun/actions";
 
 export type LocationState = {
   latitude: number | null;
@@ -26,7 +27,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     error: null,
     loading: true,
     timestamp: null,
-    status: "Cari Spot",
+    status: "Offline", // Default is Offline
   });
 
   const stateRef = useRef(state);
@@ -37,7 +38,6 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     stateRef.current = state;
   }, [state]);
 
-  // Record open session on mount
   useEffect(() => {
     if (!sessionOpenedRef.current) {
       sessionOpenedRef.current = true;
@@ -45,26 +45,20 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const fetchLocation = useCallback((force: boolean = false) => {
+  const fetchLocation = useCallback(async (force: boolean = false) => {
     const currentState = stateRef.current;
     const now = Date.now();
     
-    // If not forcing, and we have a timestamp < 5 mins old, do nothing
     if (!force && currentState.timestamp && (now - currentState.timestamp < 5 * 60 * 1000)) {
       return;
     }
 
-    // If forcing or no data, set loading state
     if (!currentState.latitude || force) {
       setState((s) => ({ ...s, loading: true, error: null }));
     }
 
     if (!navigator.geolocation) {
-      setState((s) => ({
-        ...s,
-        error: "Geolocation tidak didukung browser ini",
-        loading: false,
-      }));
+      setState((s) => ({ ...s, error: "GPS tidak didukung", loading: false }));
       return;
     }
 
@@ -79,37 +73,21 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
             { headers: { "Accept-Language": "id" } }
           );
           const data = await response.json();
-          area = data.address?.neighbourhood || data.address?.suburb || data.address?.village || data.address?.city_district || "Area tidak diketahui";
+          area = data.address?.neighbourhood || data.address?.suburb || data.address?.village || "Area tidak diketahui";
         } catch (err) {
-          console.error("Reverse geocoding error:", err);
           if (!area) area = "Koordinat didapat";
         }
 
-        // Track Zone Change
         if (area && area !== prevAreaRef.current) {
-          if (prevAreaRef.current !== null) { // Not the first load
-            recordZoneChange(area).catch(console.error);
-          }
+          if (prevAreaRef.current !== null) recordZoneChange(area).catch(console.error);
           prevAreaRef.current = area;
         }
 
-        // Sync to Supabase for crowdsourcing
+        // Operational Status Update to DB
         try {
-          const supabase = createClient();
-          const { data: { user } } = await supabase.auth.getUser();
-          
-          if (user) {
-            await supabase.from("driver_locations").upsert({
-              user_id: user.id,
-              latitude,
-              longitude,
-              area_name: area,
-              status: currentState.status,
-              updated_at: new Date().toISOString(),
-            });
-          }
+          await updateDriverStatus(currentState.status, latitude, longitude);
         } catch (syncErr) {
-          console.error("Failed to sync location to Supabase", syncErr);
+          console.error("Failed to sync status/location", syncErr);
         }
 
         setState((s) => ({
@@ -123,41 +101,28 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
         }));
       },
       (error) => {
-        setState((s) => ({
-          ...s,
-          error: "Gagal membaca GPS (Pastikan izin lokasi aktif)",
-          loading: false,
-        }));
+        setState((s) => ({ ...s, error: "Gagal membaca GPS", loading: false }));
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      }
+      { enableHighAccuracy: true, timeout: 10000 }
     );
   }, []);
 
   useEffect(() => {
-    // Initial fetch
     fetchLocation();
-    
-    // Background refresh check every 1 minute
     const intervalId = setInterval(() => {
       fetchLocation(false);
-      // Track active minute if we have location
-      if (stateRef.current.latitude) {
-        recordActiveMinute().catch(console.error);
-      }
+      if (stateRef.current.latitude) recordActiveMinute().catch(console.error);
     }, 60 * 1000);
-    
     return () => clearInterval(intervalId);
   }, [fetchLocation]);
 
   const value: LocationState = {
     ...state,
-    setStatus: (newStatus: string) => {
+    setStatus: async (newStatus: string) => {
       setState(s => ({ ...s, status: newStatus }));
-      // Immediately force a sync to update the DB with new status
+      // Immediate sync
+      const current = stateRef.current;
+      await updateDriverStatus(newStatus, current.latitude || undefined, current.longitude || undefined);
       fetchLocation(true);
     },
     refreshLocation: () => fetchLocation(true),
@@ -168,8 +133,6 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
 
 export function useLocation() {
   const context = useContext(LocationContext);
-  if (context === undefined) {
-    throw new Error("useLocation must be used within a LocationProvider");
-  }
+  if (context === undefined) throw new Error("useLocation must be used within a LocationProvider");
   return context;
 }

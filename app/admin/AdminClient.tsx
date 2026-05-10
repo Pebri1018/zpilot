@@ -9,448 +9,215 @@ import { saveFounderNote, saveNgetemSpot } from "./actions/notes";
 type Props = {
   broadcasts: Broadcast[];
   initialMerchants?: MerchantSignal[];
+  initialUsers?: any[];
+  initialFeedback?: any[];
+  stats: { users: number; feedback: number; signals: number };
 };
 
-const TYPE_META: Record<BroadcastType, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
-  spot_ramai: {
-    label: "Spot Ramai",
-    color: "#00A651",
-    bg: "#00A65112",
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
-  },
-  hindari_area: {
-    label: "Hindari Area",
-    color: "#EF4444",
-    bg: "#EF444412",
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-      </svg>
-    ),
-  },
-  promo_seller: {
-    label: "Promo Seller",
-    color: "#F97316",
-    bg: "#F9731612",
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-      </svg>
-    ),
-  },
-  paket_spx: {
-    label: "Paket SPX",
-    color: "#3B82F6",
-    bg: "#3B82F612",
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-      </svg>
-    ),
-  },
-  cuaca_event: {
-    label: "Cuaca / Event",
-    color: "#8B5CF6",
-    bg: "#8B5CF612",
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-    ),
-  },
-};
+const NAV = [
+  { id: "dashboard", label: "Dashboard", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg> },
+  { id: "merchants", label: "Merchants", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg> },
+  { id: "radar", label: "Radar Spots", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
+  { id: "users", label: "Users", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg> },
+  { id: "feedback", label: "Feedback", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg> },
+  { id: "broadcast", label: "Broadcast", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg> },
+];
 
-export function AdminClient({ broadcasts, initialMerchants = [] }: Props) {
-  const [activeTab, setActiveTab] = useState<"broadcast" | "density" | "merchant" | "notes" | "spots">("merchant");
-  const [advancedMode, setAdvancedMode] = useState(false);
-  const notesFormRef = useRef<HTMLFormElement>(null);
-  const spotsFormRef = useRef<HTMLFormElement>(null);
-  const merchantFormRef = useRef<HTMLFormElement>(null);
-  const [merchants, setMerchants] = useState<MerchantSignal[]>(initialMerchants);
-  const [savingMerchant, setSavingMerchant] = useState(false);
+export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = [], initialFeedback = [], stats }: Props) {
+  const [activeTab, setActiveTab] = useState(NAV[0].id);
+  const [merchants, setMerchants] = useState(initialMerchants);
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
-  const [area, setArea] = useState<string>("Mengambil lokasi...");
+  const [area, setArea] = useState<string>("Locating...");
+  const merchantFormRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        setLat(pos.coords.latitude);
-        setLng(pos.coords.longitude);
-        try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&zoom=14`,
-            { headers: { "Accept-Language": "id" } }
-          );
-          const data = await response.json();
-          const areaName = data.address?.neighbourhood || data.address?.suburb || data.address?.village || data.address?.city_district || "Area tidak diketahui";
+    navigator.geolocation.getCurrentPosition((pos) => {
+      setLat(pos.coords.latitude);
+      setLng(pos.coords.longitude);
+      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&zoom=14`)
+        .then(r => r.json())
+        .then(data => {
+          const areaName = data.address?.neighbourhood || data.address?.suburb || data.address?.city_district || "Unknown Area";
           setArea(areaName);
-        } catch {
-          setArea("Area tidak diketahui");
-        }
-      },
-      () => setArea("Gagal mengambil GPS"),
-      { enableHighAccuracy: true }
-    );
+        });
+    });
   }, []);
 
   return (
-    <>
-      {/* Tab Switcher */}
-      <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-2 -mx-5 px-5">
-        <style dangerouslySetInnerHTML={{__html: `::-webkit-scrollbar { display: none; }`}} />
-        <button onClick={() => setActiveTab("merchant")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "merchant" ? "bg-orange-500 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>🏪 Resto</button>
-        <button onClick={() => setActiveTab("broadcast")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "broadcast" ? "bg-neutral-900 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>📡 Broadcast</button>
-        <button onClick={() => setActiveTab("density")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "density" ? "bg-blue-600 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>👥 Driver</button>
-        <button onClick={() => setActiveTab("spots")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "spots" ? "bg-emerald-600 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>📍 Spot</button>
-        <button onClick={() => setActiveTab("notes")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "notes" ? "bg-purple-600 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>📝 Catatan</button>
+    <div className="flex flex-col gap-6">
+      {/* Minimalist Nav */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-5 px-5 no-scrollbar">
+        {NAV.map(item => (
+          <button
+            key={item.id}
+            onClick={() => setActiveTab(item.id)}
+            className={`flex items-center gap-2 shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${activeTab === item.id ? "bg-neutral-900 text-white shadow-lg" : "bg-white text-neutral-500 border border-neutral-100"}`}
+          >
+            {item.icon}
+            {item.label}
+          </button>
+        ))}
       </div>
 
-      {/* GPS Bar — always visible */}
-      <div className="mb-4 flex items-center justify-between bg-neutral-100 rounded-2xl p-3 border border-neutral-200">
-        <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${lat ? 'bg-green-500 animate-pulse' : 'bg-neutral-400'}`} />
-          <span className="text-[0.75rem] font-bold text-neutral-600">GPS</span>
+      {/* 1. DASHBOARD */}
+      {activeTab === "dashboard" && (
+        <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-2">
+          <div className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm">
+            <p className="text-[0.7rem] font-bold uppercase text-neutral-400 mb-1">Users</p>
+            <p className="text-[1.8rem] font-black">{stats.users}</p>
+          </div>
+          <div className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm">
+            <p className="text-[0.7rem] font-bold uppercase text-neutral-400 mb-1">Pending Feedback</p>
+            <p className="text-[1.8rem] font-black">{stats.feedback}</p>
+          </div>
+          <div className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm col-span-2">
+            <p className="text-[0.7rem] font-bold uppercase text-neutral-400 mb-1">Active Signals</p>
+            <p className="text-[1.8rem] font-black">{stats.signals}</p>
+          </div>
         </div>
-        <span className="text-[0.75rem] font-semibold text-neutral-900 truncate max-w-[200px]">{area}</span>
-      </div>
+      )}
 
-      {/* 1. BROADCAST TAB */}
-      {activeTab === "broadcast" && (
-        <div>
-          <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-neutral-100 mb-8">
-            <h2 className="text-[0.8rem] font-bold uppercase tracking-widest text-neutral-400 mb-4">Buat Broadcast Baru</h2>
-            <form action={createBroadcast} className="space-y-4">
-              <div>
-                <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Judul</label>
-                <input
-                  name="title" required placeholder="cth: Area Malioboro Sedang Padat"
-                  className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-400 transition"
-                />
-              </div>
-              <div>
-                <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Pesan</label>
-                <textarea
-                  name="message" required rows={3} placeholder="Pesan singkat..."
-                  className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 placeholder-neutral-400 focus:outline-none focus:border-neutral-400 transition resize-none"
-                />
-              </div>
-              <div>
-                <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Tipe</label>
-                <select name="type" required className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:outline-none focus:border-neutral-400 transition">
-                  <option value="">-- Pilih tipe --</option>
-                  <option value="spot_ramai">Spot Ramai</option>
-                  <option value="hindari_area">Hindari Area</option>
-                  <option value="promo_seller">Promo Seller</option>
-                  <option value="paket_spx">Paket SPX</option>
-                  <option value="cuaca_event">Cuaca / Event</option>
+      {/* 2. MERCHANTS */}
+      {activeTab === "merchants" && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
+          <div className="bg-white p-6 rounded-[2rem] border border-neutral-100 shadow-sm">
+            <h3 className="text-[0.9rem] font-bold mb-4">Manage Merchant</h3>
+            <form ref={merchantFormRef} action={async (fd) => {
+              fd.append("lat", String(lat)); fd.append("lng", String(lng)); fd.append("area", area);
+              const res = await upsertMerchant(fd);
+              if (res.success) { merchantFormRef.current?.reset(); const updated = await getAllMerchants(); setMerchants(updated); }
+            }} className="space-y-3">
+              <input name="name" required placeholder="Name" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+              <div className="grid grid-cols-2 gap-3">
+                <select name="category" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]">
+                  <option value="Makanan">Food</option>
+                  <option value="Minuman">Drink</option>
+                  <option value="Snack">Snack</option>
+                  <option value="Paket">Parcel</option>
+                </select>
+                <select name="busy_score" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]">
+                  <option value="5">Score 5 (Very Busy)</option>
+                  <option value="4">Score 4 (Busy)</option>
+                  <option value="3" selected>Score 3 (Normal)</option>
+                  <option value="2">Score 2 (Quiet)</option>
+                  <option value="1">Score 1 (Very Quiet)</option>
                 </select>
               </div>
-              <button type="submit" className="w-full rounded-2xl bg-neutral-900 py-3.5 text-[0.95rem] font-bold text-white transition active:scale-[0.98] hover:bg-neutral-800">
-                Kirim ke Semua Driver
-              </button>
-            </form>
-          </div>
 
-          <h2 className="text-[0.8rem] font-bold uppercase tracking-widest text-neutral-400 mb-4">Riwayat ({broadcasts.length})</h2>
-          <div className="space-y-3">
-            {broadcasts.length === 0 && <p className="text-center text-neutral-400 text-[0.9rem] py-8">Belum ada broadcast.</p>}
-            {broadcasts.map((b) => {
-              const meta = TYPE_META[b.type];
-              return (
-                <div key={b.id} className={`bg-white rounded-2xl p-4 border shadow-sm transition-all ${b.active ? "border-neutral-100" : "opacity-50 border-neutral-100"}`}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span style={{ color: meta.color }}>{meta.icon}</span>
-                      <span className="text-[0.7rem] font-bold uppercase tracking-wider" style={{ color: meta.color }}>{meta.label}</span>
-                      {b.active && <span className="text-[0.65rem] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Live</span>}
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <form action={async () => { await toggleBroadcast(b.id, !b.active); }}>
-                        <button type="submit" className={`text-[0.7rem] font-bold px-2.5 py-1 rounded-full transition active:scale-95 ${b.active ? "bg-neutral-100 text-neutral-600" : "bg-green-100 text-green-700"}`}>
-                          {b.active ? "Off" : "On"}
-                        </button>
-                      </form>
-                      <form action={async () => { await deleteBroadcast(b.id); }}>
-                        <button type="submit" className="text-[0.7rem] font-bold px-2.5 py-1 rounded-full bg-red-50 text-red-500 transition active:scale-95">Hapus</button>
-                      </form>
-                    </div>
-                  </div>
-                  <p className="font-bold text-neutral-900 text-[0.95rem] mt-1">{b.title}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* 2. DENSITY TAB */}
-      {activeTab === "density" && (
-        <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-neutral-100 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <h2 className="text-[0.8rem] font-bold uppercase tracking-widest text-neutral-400 mb-4">Manual Density Input</h2>
-          <form action={async (formData) => {
-            formData.append("lat", String(lat));
-            formData.append("lng", String(lng));
-            formData.append("area", area);
-            await reportManualDensity(formData);
-            alert("Laporan kepadatan disimpan!");
-          }} className="space-y-4">
-            <div>
-              <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Jumlah Driver Terlihat</label>
-              <input name="driver_count" type="number" required placeholder="0" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[1.1rem] font-bold text-neutral-900 focus:outline-none focus:border-blue-400 transition" />
-            </div>
-            <div>
-              <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Radius (Meter)</label>
-              <select name="radius" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:outline-none focus:border-blue-400 transition">
-                <option value="25">25m</option>
-                <option value="50" selected>50m</option>
-                <option value="100">100m</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Catatan (Opsional)</label>
-              <input name="notes" placeholder="cth: Ngetem di depan Mixue" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:outline-none focus:border-blue-400 transition" />
-            </div>
-            <button type="submit" className="w-full rounded-2xl bg-blue-600 py-3.5 text-[0.95rem] font-bold text-white transition active:scale-[0.98] hover:bg-blue-700">
-              Kirim Sinyal Area (20 Menit)
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* 3. MERCHANT TAB — OPERATIONAL */}
-      {activeTab === "merchant" && (
-        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          {/* Add / Update Form */}
-          <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-neutral-100">
-            <h2 className="text-[0.8rem] font-bold uppercase tracking-widest text-orange-500 mb-4">Tambah / Update Restoran</h2>
-            <form
-              ref={merchantFormRef}
-              action={async (formData) => {
-                setSavingMerchant(true);
-                formData.append("lat", String(lat));
-                formData.append("lng", String(lng));
-                formData.append("area", area);
-                const result = await upsertMerchant(formData);
-                setSavingMerchant(false);
-                if (result?.success) {
-                  merchantFormRef.current?.reset();
-                  // Refresh list
-                  const updated = await getAllMerchants();
-                  setMerchants(updated);
-                  alert("✅ Restoran disimpan dan langsung muncul di Home!");
-                } else {
-                  alert(result?.error || "Gagal menyimpan");
-                }
-              }}
-              className="space-y-3"
-            >
-              <div>
-                <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1">Nama Restoran *</label>
-                <input name="name" required placeholder="cth: Gacoan Seturan" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:outline-none focus:border-orange-400 transition" />
+              <div className="grid grid-cols-2 gap-3">
+                <input name="rating" type="number" step="0.1" placeholder="Rating (0-5)" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+                <input name="reviews" type="number" placeholder="Review Count" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1">Kategori</label>
-                  <select name="category" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:outline-none focus:border-orange-400 transition">
-                    <option value="Makanan">🍱 Makanan</option>
-                    <option value="Minuman">🧋 Minuman</option>
-                    <option value="Snack">🍟 Snack</option>
-                    <option value="Paket">📦 Paket</option>
-                  </select>
+                  <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1">Latitude</label>
+                  <input name="lat" defaultValue={lat || ""} placeholder="Manual Lat" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
                 </div>
                 <div>
-                  <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1">Busy Score (1-5)</label>
-                  <select name="busy_score" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:outline-none focus:border-orange-400 transition">
-                    <option value="5">🔥 5 — Sangat Ramai</option>
-                    <option value="4">⚡ 4 — Ramai</option>
-                    <option value="3" selected>🟡 3 — Normal</option>
-                    <option value="2">🔵 2 — Sepi</option>
-                    <option value="1">⬜ 1 — Sangat Sepi</option>
-                  </select>
+                  <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1">Longitude</label>
+                  <input name="lng" defaultValue={lng || ""} placeholder="Manual Lng" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
                 </div>
-              </div>
-
-              {/* Area field — auto-filled from GPS */}
-              <div>
-                <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1">Area (auto-GPS)</label>
-                <input
-                  name="area_override"
-                  placeholder={area}
-                  defaultValue={area !== "Mengambil lokasi..." ? area : ""}
-                  onChange={(e) => { /* area is appended via formData.append separately */ }}
-                  className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:outline-none focus:border-orange-400 transition"
-                />
-                <p className="text-[0.7rem] text-neutral-400 mt-1 ml-1">Kosongkan untuk pakai GPS otomatis</p>
               </div>
 
               <div className="flex gap-5 pt-1">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" name="promo_active" className="w-4 h-4 accent-orange-500" />
-                  <span className="text-[0.88rem] font-semibold text-neutral-700">🏷️ Promo Aktif</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" name="pickup_fast" className="w-4 h-4 accent-orange-500" />
-                  <span className="text-[0.88rem] font-semibold text-neutral-700">⚡ Pickup Cepat</span>
-                </label>
+                <label className="flex items-center gap-2"><input type="checkbox" name="promo_active" /> <span className="text-sm font-semibold">Promo</span></label>
+                <label className="flex items-center gap-2"><input type="checkbox" name="pickup_fast" /> <span className="text-sm font-semibold">Fast Pickup</span></label>
               </div>
-
-              <button
-                type="submit"
-                disabled={savingMerchant}
-                className="w-full rounded-2xl bg-orange-500 py-3.5 text-[0.95rem] font-bold text-white transition active:scale-[0.98] hover:bg-orange-600 disabled:opacity-60"
-              >
-                {savingMerchant ? "Menyimpan..." : "Simpan Restoran (Permanen)"}
-              </button>
+              <button className="w-full py-3.5 bg-neutral-900 text-white font-bold rounded-2xl">Save Merchant</button>
             </form>
           </div>
-
-          {/* Merchant List */}
-          {merchants.length > 0 && (
-            <div>
-              <p className="text-[0.7rem] font-bold uppercase tracking-widest text-neutral-400 mb-2 ml-1">Semua Restoran ({merchants.length})</p>
-              <div className="space-y-2">
-                {merchants.map(m => (
-                  <div key={m.id} className={`bg-white rounded-2xl p-3.5 border shadow-sm flex items-center gap-3 transition ${m.is_active ? 'border-neutral-100' : 'opacity-50 border-neutral-200'}`}>
-                    <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-extrabold text-[1rem] shrink-0">
-                      {m.name.charAt(0)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-[0.88rem] text-neutral-900 truncate">{m.name}</p>
-                      <p className="text-[0.72rem] text-neutral-500">{m.area} · {m.category} · Score {m.busy_score ?? '—'}</p>
-                    </div>
-                    <button
-                      onClick={async () => {
-                        await toggleMerchantActive(m.id, !m.is_active);
-                        setMerchants(prev => prev.map(x => x.id === m.id ? {...x, is_active: !m.is_active} : x));
-                      }}
-                      className={`shrink-0 text-[0.7rem] font-bold px-2.5 py-1 rounded-full transition active:scale-95 ${m.is_active ? 'bg-green-100 text-green-700' : 'bg-neutral-100 text-neutral-500'}`}
-                    >
-                      {m.is_active ? 'Aktif' : 'Nonaktif'}
-                    </button>
-                  </div>
-                ))}
+          <div className="space-y-2">
+            {merchants.map(m => (
+              <div key={m.id} className="bg-white p-4 rounded-2xl border border-neutral-100 shadow-sm flex justify-between items-center">
+                <div><p className="font-bold text-sm">{m.name}</p><p className="text-[0.7rem] text-neutral-400">{m.area} · Score {m.busy_score}</p></div>
+                <button onClick={() => toggleMerchantActive(m.id, !m.is_active)} className={`text-[0.65rem] font-bold px-3 py-1.5 rounded-full ${m.is_active ? "bg-emerald-50 text-emerald-600" : "bg-neutral-50 text-neutral-400"}`}>{m.is_active ? "Active" : "Inactive"}</button>
               </div>
-            </div>
-          )}
+            ))}
+          </div>
         </div>
       )}
 
-      {/* 4. SPOT NGETEM TAB */}
-      {activeTab === "spots" && (
-        <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-neutral-100 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <h2 className="text-[0.8rem] font-bold uppercase tracking-widest text-emerald-600 mb-4">Tambah Spot Ngetem</h2>
-          <form
-            ref={spotsFormRef}
-            action={async (formData) => {
-              formData.append("lat", String(lat));
-              formData.append("lng", String(lng));
-              const result = await saveNgetemSpot(formData);
-              if (result?.success) {
-                alert("Spot ngetem disimpan!");
-                spotsFormRef.current?.reset();
-              } else {
-                alert(result?.error || "Gagal menyimpan.");
-              }
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Nama Spot</label>
-              <input name="name" required placeholder="cth: Depan Mixue Seturan" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:outline-none focus:border-emerald-400 transition" />
-            </div>
-            <div>
-              <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Area / Zona</label>
-              <input name="area" required placeholder={area} defaultValue={area !== "Mengambil lokasi..." ? area : ""} className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:outline-none focus:border-emerald-400 transition" />
-            </div>
+      {activeTab === "radar" && (
+        <div className="bg-white p-6 rounded-[2rem] border border-neutral-100 shadow-sm animate-in fade-in slide-in-from-bottom-2">
+          <h3 className="text-[0.9rem] font-bold mb-4">Add Spot Mangkal</h3>
+          <form action={async (fd) => {
+            fd.append("lat", String(lat)); fd.append("lng", String(lng)); fd.append("area", area);
+            const res = await saveNgetemSpot(fd);
+            if (res.success) alert("Spot saved!");
+          }} className="space-y-3">
+            <input name="name" required placeholder="Spot Name" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Kualitas Spot</label>
-                <select name="quality" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:outline-none focus:border-emerald-400 transition">
-                  <option value="Bagus">✅ Bagus</option>
-                  <option value="Lumayan">🟡 Lumayan</option>
-                  <option value="Jebakan">❌ Jebakan</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Jam Terbaik</label>
-                <input name="best_hours" placeholder="cth: 11:00-13:00" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:outline-none focus:border-emerald-400 transition" />
-              </div>
+              <select name="quality" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]">
+                <option value="Bagus">Good Quality</option>
+                <option value="Lumayan">Medium Quality</option>
+                <option value="Jebakan">Trap (Avoid)</option>
+              </select>
+              <input name="best_hours" placeholder="Best Hours (e.g. 11-13)" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
             </div>
-            <div>
-              <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Catatan Tambahan</label>
-              <textarea name="notes" rows={2} placeholder="cth: Parkir luas, banyak pesanan Gacoan..." className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:border-emerald-400 focus:outline-none transition resize-none"></textarea>
-            </div>
-            <button type="submit" className="w-full rounded-2xl bg-emerald-600 py-3.5 text-[0.95rem] font-bold text-white transition active:scale-[0.98] hover:bg-emerald-700">
-              Simpan Spot Ngetem
-            </button>
+            <textarea name="notes" placeholder="Additional Notes" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] resize-none" rows={2} />
+            <button className="w-full py-3.5 bg-neutral-900 text-white font-bold rounded-2xl">Save Radar Spot</button>
           </form>
         </div>
       )}
 
-      {/* 5. CATATAN FOUNDER TAB */}
-      {activeTab === "notes" && (
-        <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-neutral-100 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <h2 className="text-[0.8rem] font-bold uppercase tracking-widest text-purple-600 mb-4">Catatan Lapangan</h2>
-          <form
-            ref={notesFormRef}
-            action={async (formData) => {
-              formData.append("lat", String(lat));
-              formData.append("lng", String(lng));
-              formData.append("area", area);
-              const result = await saveFounderNote(formData);
-              if (result?.success) {
-                alert("Catatan disimpan!");
-                notesFormRef.current?.reset();
-              } else {
-                alert(result?.error || "Gagal menyimpan.");
-              }
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Tipe Catatan</label>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { value: "spot_bagus", label: "✅ Spot Bagus", color: "emerald" },
-                  { value: "jebakan", label: "❌ Jebakan", color: "red" },
-                  { value: "merchant_ramai", label: "🔥 Merchant Ramai", color: "orange" },
-                  { value: "lainnya", label: "📝 Lainnya", color: "neutral" },
-                ].map(opt => (
-                  <label key={opt.value} className="flex items-center gap-2 p-2.5 border border-neutral-200 rounded-xl cursor-pointer hover:bg-neutral-50 transition">
-                    <input type="radio" name="type" value={opt.value} defaultChecked={opt.value === "spot_bagus"} className="w-4 h-4" />
-                    <span className="text-[0.82rem] font-semibold text-neutral-700">{opt.label}</span>
-                  </label>
-                ))}
+      {/* 4. USERS */}
+      {activeTab === "users" && (
+        <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2">
+          {initialUsers.map(u => (
+            <div key={u.id} className="bg-white p-4 rounded-2xl border border-neutral-100 shadow-sm flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center font-bold text-neutral-500">{u.nama?.[0] || "?"}</div>
+              <div>
+                <p className="font-bold text-sm">{u.nama || "Unknown"}</p>
+                <p className="text-[0.7rem] text-neutral-400">{u.platform} · {u.kota} · {u.status}</p>
+              </div>
+              <div className="ml-auto flex items-center gap-1.5">
+                <div className={`w-2 h-2 rounded-full ${new Date().getTime() - new Date(u.last_active).getTime() < 300000 ? "bg-emerald-500" : "bg-neutral-300"}`} />
               </div>
             </div>
-            <div>
-              <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Catatan</label>
-              <textarea
-                name="notes"
-                required
-                rows={3}
-                placeholder="cth: Depan Mixue Seturan pagi ini sangat ramai, 10+ driver ngetem..."
-                className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:border-purple-400 focus:outline-none transition resize-none"
-              ></textarea>
-            </div>
-            <div className="flex items-center gap-2 bg-purple-50 text-purple-700 rounded-xl px-3 py-2 text-[0.75rem] font-medium">
-              <div className={`w-2 h-2 rounded-full ${lat ? 'bg-purple-500' : 'bg-neutral-400'}`} />
-              {lat ? `GPS terkunci: ${area}` : "GPS belum aktif, lokasi tidak akan disimpan"}
-            </div>
-            <button type="submit" className="w-full rounded-2xl bg-purple-600 py-3.5 text-[0.95rem] font-bold text-white transition active:scale-[0.98] hover:bg-purple-700">
-              Simpan Catatan
-            </button>
-          </form>
+          ))}
         </div>
       )}
-    </>
+
+      {/* 5. FEEDBACK */}
+      {activeTab === "feedback" && (
+        <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2">
+          {initialFeedback.length === 0 && <p className="text-center text-neutral-400 py-10">No feedback yet.</p>}
+          {initialFeedback.map(f => (
+            <div key={f.id} className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm">
+              <div className="flex justify-between items-start mb-2">
+                <p className="font-bold text-sm">{f.users?.nama || "User"}</p>
+                <span className="text-[0.65rem] text-neutral-400">{new Date(f.created_at).toLocaleDateString()}</span>
+              </div>
+              <p className="text-[0.85rem] text-neutral-600 leading-relaxed">{f.message}</p>
+              <div className="mt-3 pt-3 border-t border-neutral-50 flex gap-2">
+                <button className="text-[0.7rem] font-bold text-blue-600">Mark Reviewed</button>
+                <button className="text-[0.7rem] font-bold text-red-600">Delete</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 6. BROADCAST */}
+      {activeTab === "broadcast" && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
+          <div className="bg-white p-6 rounded-[2rem] border border-neutral-100 shadow-sm">
+            <h3 className="text-[0.9rem] font-bold mb-4">New Broadcast</h3>
+            <form action={createBroadcast} className="space-y-3">
+              <input name="title" required placeholder="Title" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+              <textarea name="message" required placeholder="Message" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] resize-none" rows={3} />
+              <select name="type" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]">
+                <option value="spot_ramai">Spot Ramai</option>
+                <option value="hindari_area">Hindari Area</option>
+              </select>
+              <button className="w-full py-3.5 bg-neutral-900 text-white font-bold rounded-2xl">Broadcast to All</button>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

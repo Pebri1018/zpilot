@@ -7,108 +7,148 @@ import { DriverBottomNav } from "@/components/DriverBottomNav";
 import { useLocation } from "@/hooks/useLocation";
 import { createClient } from "@/lib/supabase/client";
 
-// Dynamically import map so it doesn't break during Server-Side Rendering
 const RadarMap = dynamic(() => import("@/components/RadarMap"), {
   ssr: false,
   loading: () => (
-    <div className="h-full w-full bg-[#e2e8f0] animate-pulse rounded-[1.25rem] flex items-center justify-center">
-      <span className="text-neutral-500 text-[0.95rem] font-medium tracking-wide">Memuat Peta...</span>
+    <div className="h-full w-full bg-[#f0f0f0] animate-pulse rounded-[1.25rem] flex items-center justify-center">
+      <span className="text-neutral-500 text-[0.8rem] font-bold uppercase tracking-widest">Memuat Radar...</span>
     </div>
   ),
 });
 
-export type ActiveDriver = {
-  user_id: string;
-  latitude: number;
-  longitude: number;
+export type RadarMarker = {
+  id: string;
+  lat: number;
+  lng: number;
+  type: "driver_ngetem" | "driver_antar" | "merchant_high" | "merchant_med" | "merchant_low" | "spot";
+  label: string;
 };
 
 export default function RadarPage() {
   const { latitude, longitude, areaName, loading, error } = useLocation();
-  const [activeDrivers, setActiveDrivers] = useState<ActiveDriver[]>([]);
-  const [fetchingDrivers, setFetchingDrivers] = useState(true);
+  const [markers, setMarkers] = useState<RadarMarker[]>([]);
+  const [fetching, setFetching] = useState(true);
 
   useEffect(() => {
-    async function fetchDrivers() {
+    async function fetchData() {
       try {
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        // Active = updated within the last 15 minutes
-        const fifteenMinsAgo = new Date(Date.now() - 15 * 60000).toISOString();
+        const now = new Date();
+        const activeLimit = new Date(now.getTime() - 15 * 60000).toISOString();
 
-        let query = supabase
-          .from("driver_locations")
-          .select("user_id, latitude, longitude")
-          .gte("updated_at", fifteenMinsAgo);
+        // 1. Fetch Drivers from users table
+        const { data: drivers } = await supabase
+          .from("users")
+          .select("id, last_lat, last_lng, status, nama")
+          .not("last_lat", "is", null)
+          .gte("last_active", activeLimit);
 
-        if (user) {
-          // Exclude self
-          query = query.neq("user_id", user.id);
-        }
+        // 2. Fetch Active Merchants
+        const { data: merchants } = await supabase
+          .from("merchant_signals")
+          .select("id, lat, lng, name, busy_score")
+          .eq("is_active", true);
 
-        const { data } = await query;
-        if (data) {
-          setActiveDrivers(data);
-        }
+        // 3. Fetch Hangout Spots
+        const { data: spots } = await supabase
+          .from("ngetem_spots")
+          .select("id, lat, lng, name");
+
+        const newMarkers: RadarMarker[] = [];
+
+        drivers?.forEach(d => {
+          if (d.status === "Offline") return;
+          newMarkers.push({
+            id: d.id,
+            lat: d.last_lat,
+            lng: d.last_lng,
+            type: d.status === "Ngetem" ? "driver_ngetem" : "driver_antar",
+            label: d.nama || "Driver"
+          });
+        });
+
+        merchants?.forEach(m => {
+          if (m.lat && m.lng) {
+            let type: RadarMarker["type"] = "merchant_low";
+            if (m.busy_score >= 4) type = "merchant_high";
+            else if (m.busy_score >= 2) type = "merchant_med";
+            
+            newMarkers.push({
+              id: m.id,
+              lat: m.lat,
+              lng: m.lng,
+              type,
+              label: m.name
+            });
+          }
+        });
+
+        spots?.forEach(s => {
+          if (s.lat && s.lng) {
+            newMarkers.push({
+              id: s.id,
+              lat: s.lat,
+              lng: s.lng,
+              type: "spot",
+              label: s.name
+            });
+          }
+        });
+
+        setMarkers(newMarkers);
       } catch (err) {
-        console.error("Failed to fetch active drivers", err);
+        console.error("Radar fetch error", err);
       } finally {
-        setFetchingDrivers(false);
+        setFetching(false);
       }
     }
 
-    fetchDrivers();
-    
-    // Refresh driver positions every minute
-    const interval = setInterval(fetchDrivers, 60000);
+    fetchData();
+    const interval = setInterval(fetchData, 60000);
     return () => clearInterval(interval);
   }, []);
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-[#f7f7f8] text-neutral-900 antialiased">
-      <header className="shrink-0 px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-[1.35rem] font-semibold tracking-[-0.02em]">Radar</h1>
-            <p className="mt-1 text-[0.95rem] text-neutral-600">
-              {loading ? "Mencari lokasi GPS..." : error ? "Gagal membaca GPS" : areaName ? `Zona: ${areaName}` : "Peta lapangan"}
-            </p>
-          </div>
-          <div className="text-right">
-            <span className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50 px-2.5 py-1 text-[0.75rem] font-semibold text-blue-700">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-              </span>
-              {fetchingDrivers ? "..." : activeDrivers.length} Aktif
-            </span>
-          </div>
+      <header className="px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-4 flex justify-between items-end">
+        <div>
+          <h1 className="text-[1.35rem] font-bold tracking-tight">Radar Intel</h1>
+          <p className="text-[0.85rem] text-neutral-500">{areaName || "Scanning area..."}</p>
+        </div>
+        <div className="bg-white px-3 py-1.5 rounded-xl border border-neutral-100 shadow-sm flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-[0.7rem] font-bold uppercase tracking-wider">{fetching ? "..." : markers.length} Sinyal</span>
         </div>
       </header>
 
-      <div className="relative mx-4 mb-4 min-h-0 flex-1 shadow-[0_2px_8px_rgba(0,0,0,0.08)] rounded-[1.25rem]">
-        {/* Render the interactive Leaflet map */}
-        <RadarMap latitude={latitude} longitude={longitude} activeDrivers={activeDrivers} />
+      <div className="relative flex-1 mx-4 mb-4 overflow-hidden rounded-[2.5rem] shadow-2xl border-4 border-white">
+        <RadarMap latitude={latitude} longitude={longitude} markers={markers} />
         
-        {/* Overlay error message if GPS fails */}
-        {error && (
-          <div className="pointer-events-none absolute inset-x-4 top-4 z-10 rounded-xl bg-red-500/90 px-4 py-2.5 text-center text-[0.85rem] font-medium text-white shadow-md backdrop-blur-md">
-            Pastikan fitur Lokasi (GPS) aktif di perangkat Anda.
+        {/* Legend */}
+        <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md p-4 rounded-[1.5rem] shadow-lg z-[1000] border border-white/50">
+          <p className="text-[0.65rem] font-bold uppercase tracking-widest text-neutral-400 mb-2">Keterangan Radar</p>
+          <div className="grid grid-cols-2 gap-y-2 gap-x-4">
+            <LegendItem color="bg-blue-500" label="Ngetem" />
+            <LegendItem color="bg-neutral-400" label="Antar" />
+            <LegendItem color="bg-red-500" label="Resto Ramai" />
+            <LegendItem color="bg-orange-400" label="Resto Sedang" />
+            <LegendItem color="bg-emerald-500" label="Resto Sepi" />
+            <LegendItem color="bg-purple-500" label="Spot Mangkal" />
           </div>
-        )}
+        </div>
       </div>
 
-      <div className="mx-auto w-full max-w-md px-5 pb-[max(1.5rem,calc(4.75rem+env(safe-area-inset-bottom)))]">
-        <Link
-          href="/"
-          className="block text-center text-[0.95rem] font-medium text-neutral-600 underline decoration-neutral-300 underline-offset-4 active:text-neutral-900"
-        >
-          Kembali ke ringkasan
-        </Link>
-      </div>
-
+      <div className="pb-[calc(5rem+env(safe-area-inset-bottom))]" />
       <DriverBottomNav />
+    </div>
+  );
+}
+
+function LegendItem({ color, label }: { color: string; label: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className={`w-2.5 h-2.5 rounded-full ${color}`} />
+      <span className="text-[0.75rem] font-semibold text-neutral-700">{label}</span>
     </div>
   );
 }
