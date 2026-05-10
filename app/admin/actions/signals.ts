@@ -107,6 +107,13 @@ export type MerchantSignal = {
   promo_active: boolean;
   fast_pickup: boolean;
   area: string;
+  rating?: number | null;
+  reviews?: number | null;
+  eta_minutes?: number | null;
+  distance_km?: number | null;
+  discount_text?: string | null;
+  free_shipping?: boolean | null;
+  notes?: string | null;
   created_at: string;
 };
 
