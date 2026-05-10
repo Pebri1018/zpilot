@@ -21,8 +21,8 @@ export function LiveDashboard() {
   });
   const [merchants, setMerchants] = useState<MerchantSignal[]>([]);
   const [zoneStats, setZoneStats] = useState<ZoneStatsResult>({
-    orderan: "...",
-    pesaing: "..." as any,
+    orderan: "Data Minim",
+    pesaing: "Longgar" as any,
     driverCount: 0
   });
 
