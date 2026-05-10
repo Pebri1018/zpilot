@@ -19,7 +19,7 @@ export type LocationState = {
 const LocationContext = createContext<LocationState | undefined>(undefined);
 
 export function LocationProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<Omit<LocationState, "refreshLocation">>({
+  const [state, setState] = useState<Omit<LocationState, "refreshLocation" | "setStatus">>({
     latitude: null,
     longitude: null,
     areaName: null,
@@ -112,14 +112,15 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
           console.error("Failed to sync location to Supabase", syncErr);
         }
 
-        setState({
+        setState((s) => ({
+          ...s,
           latitude,
           longitude,
           areaName: area,
           error: null,
           loading: false,
           timestamp: Date.now(),
-        });
+        }));
       },
       (error) => {
         setState((s) => ({
