@@ -15,9 +15,14 @@ export default async function Home() {
 
   const { data: profile } = await supabase
     .from("users")
-    .select("nama, kota")
+    .select("nama, kota, is_disabled")
     .eq("id", user.id)
     .single();
+
+  if (profile?.is_disabled) {
+    await supabase.auth.signOut();
+    redirect("/login?error=blocked");
+  }
 
   const nama = profile?.nama || "Driver";
   const kota = profile?.kota || "Yogyakarta";
@@ -27,9 +32,8 @@ export default async function Home() {
     <div className="min-h-[100dvh] bg-[#f7f7f8] pb-24 text-neutral-900 antialiased">
       <div className="mx-auto max-w-md px-5 pt-[max(1.25rem,env(safe-area-inset-top))]">
         <h1 className="text-[1.8rem] font-bold tracking-[-0.02em] mb-1">Halo {nama}</h1>
-        <p className="text-[1.05rem] text-neutral-500 mb-6">Kota {kota}</p>
+        <p className="text-[1.05rem] text-neutral-500 mb-6">{kota}</p>
 
-        {/* Live broadcast from admin — shown above dashboard when active */}
         {broadcast && <BroadcastCard broadcast={broadcast} />}
 
         <LiveDashboard />

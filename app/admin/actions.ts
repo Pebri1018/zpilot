@@ -6,7 +6,6 @@ import { getSupabaseUrl } from "@/lib/supabase/env";
 import { revalidatePath } from "next/cache";
 import webpush from "web-push";
 
-// Configure web-push with VAPID keys
 if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.PRIVATE_VAPID_KEY) {
   webpush.setVapidDetails(
     "mailto:hello@ztips.com",
@@ -24,6 +23,7 @@ export type Broadcast = {
   type: BroadcastType;
   active: boolean;
   created_at: string;
+  expires_at?: string;
 };
 
 function getServiceClient() {
@@ -52,13 +52,17 @@ export async function getBroadcasts(): Promise<Broadcast[]> {
 
 export async function getLatestActiveBroadcast(): Promise<Broadcast | null> {
   const supabase = getServiceClient();
+  const now = new Date().toISOString();
+  
   const { data } = await supabase
     .from("broadcasts")
     .select("*")
     .eq("active", true)
+    .gt("expires_at", now) // Only if not expired
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+    
   return data ?? null;
 }
 
@@ -72,38 +76,34 @@ export async function createBroadcast(formData: FormData) {
 
   if (!title || !message || !type) return;
 
+  const expires_at = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 mins from now
+
   const supabase = getServiceClient();
-  const { error } = await supabase.from("broadcasts").insert({ title, message, type, active: true });
+  const { error } = await supabase.from("broadcasts").insert({ 
+    title, 
+    message, 
+    type, 
+    active: true,
+    expires_at 
+  });
 
   if (error) {
     console.error(error);
     return;
   }
 
-  // Send push notifications
   if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.PRIVATE_VAPID_KEY) {
     const { data: subs } = await supabase.from("push_subscriptions").select("*");
     if (subs && subs.length > 0) {
-      const payload = JSON.stringify({
-        title: title,
-        message: message,
-        url: "/"
-      });
-
+      const payload = JSON.stringify({ title, message, url: "/" });
       await Promise.allSettled(
         subs.map(async (sub) => {
           try {
-            const pushSub = {
-              endpoint: sub.endpoint,
-              keys: { auth: sub.auth, p256dh: sub.p256dh }
-            };
+            const pushSub = { endpoint: sub.endpoint, keys: { auth: sub.auth, p256dh: sub.p256dh } };
             await webpush.sendNotification(pushSub, payload);
           } catch (e: any) {
             if (e.statusCode === 410 || e.statusCode === 404) {
-              // Cleanup expired subscriptions
               await supabase.from("push_subscriptions").delete().eq("id", sub.id);
-            } else {
-              console.error("Error sending push to", sub.endpoint, e);
             }
           }
         })

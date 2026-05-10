@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { updateProfile, changePassword, sendFeedback, deleteAccount } from "@/app/akun/actions";
+import { useLanguage } from "@/context/LanguageContext";
 
 type Props = {
   email: string;
@@ -14,10 +15,10 @@ type Props = {
 };
 
 export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
+  const { lang, setLang, t } = useLanguage();
   const router = useRouter();
   const [notif, setNotif] = useState(true);
   const [batterySaver, setBatterySaver] = useState(false);
-  const [lang, setLang] = useState<"ID" | "EN">("ID");
   const [loggingOut, setLoggingOut] = useState(false);
   const [modal, setModal] = useState<"profile" | "password" | "feedback" | "delete" | null>(null);
   const [loading, setLoading] = useState(false);
@@ -35,8 +36,8 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
 
   const profileItems = [
     { label: "Email", value: email },
-    { label: "Nama", value: nama || "—" },
-    { label: "Kota / Area", value: kota || "—" },
+    { label: t("edit_profile").split(" ")[1] || "Name", value: nama || "—" },
+    { label: "Area", value: kota || "—" },
     { label: "Platform", value: platform },
     { label: "ID Driver", value: driverId?.trim() || "—" },
   ];
@@ -46,11 +47,10 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
       {msg && (
         <div className={`p-4 rounded-2xl text-[0.85rem] font-bold animate-in fade-in slide-in-from-top-2 ${msg.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
           {msg.text}
-          <button onClick={() => setMsg(null)} className="ml-2 underline opacity-50">Tutup</button>
+          <button onClick={() => setMsg(null)} className="ml-2 underline opacity-50">{t("cancel")}</button>
         </div>
       )}
 
-      {/* Profile Card */}
       <div className="bg-white rounded-3xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-neutral-100">
         <div className="bg-neutral-900 px-5 py-5 flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-white text-2xl font-black">
@@ -71,21 +71,17 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
         </div>
       </div>
 
-      {/* Settings */}
       <div className="bg-white rounded-3xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-neutral-100">
         <div className="px-5 pt-4 pb-1">
-          <p className="text-[0.7rem] font-bold uppercase tracking-widest text-neutral-400">Pengaturan</p>
+          <p className="text-[0.7rem] font-bold uppercase tracking-widest text-neutral-400">{t("settings")}</p>
         </div>
         <div className="divide-y divide-neutral-100">
-          {/* Language Toggle */}
           <div className="flex justify-between items-center px-5 py-4">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-                </svg>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" /></svg>
               </div>
-              <span className="text-[0.9rem] font-semibold">Bahasa</span>
+              <span className="text-[0.9rem] font-semibold">{t("language")}</span>
             </div>
             <div className="flex rounded-xl bg-neutral-100 p-0.5">
               {(["ID", "EN"] as const).map((l) => (
@@ -100,15 +96,12 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
             </div>
           </div>
 
-          {/* Notification Toggle */}
           <div className="flex justify-between items-center px-5 py-4">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
               </div>
-              <span className="text-[0.9rem] font-semibold">Notifikasi</span>
+              <span className="text-[0.9rem] font-semibold">{t("notifications")}</span>
             </div>
             <button
               onClick={() => setNotif(!notif)}
@@ -118,17 +111,14 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
             </button>
           </div>
 
-          {/* Battery Saver */}
           <div className="flex justify-between items-center px-5 py-4">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl bg-green-100 text-green-600 flex items-center justify-center">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
               </div>
               <div>
-                <span className="text-[0.9rem] font-semibold block">Hemat Baterai</span>
-                <span className="text-[0.72rem] text-neutral-500">GPS refresh lebih jarang</span>
+                <span className="text-[0.9rem] font-semibold block">{t("battery_saver")}</span>
+                <span className="text-[0.72rem] text-neutral-500">{lang === "ID" ? "GPS refresh lebih jarang" : "Slower GPS refresh"}</span>
               </div>
             </div>
             <button
@@ -141,35 +131,25 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
         </div>
       </div>
 
-      {/* Actions */}
       <div className="bg-white rounded-3xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-neutral-100">
         <div className="divide-y divide-neutral-100">
           <button onClick={() => setModal("profile")} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
             <div className="w-8 h-8 rounded-xl bg-neutral-100 text-neutral-600 flex items-center justify-center">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
             </div>
-            <span className="text-[0.9rem] font-semibold">Edit Profil</span>
-            <svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            <span className="text-[0.9rem] font-semibold">{t("edit_profile")}</span>
+            <svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
           </button>
           <button onClick={() => setModal("password")} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
             <div className="w-8 h-8 rounded-xl bg-neutral-100 text-neutral-600 flex items-center justify-center">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
             </div>
-            <span className="text-[0.9rem] font-semibold">Ubah Password</span>
-            <svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            <span className="text-[0.9rem] font-semibold">{t("change_password")}</span>
+            <svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
           </button>
         </div>
       </div>
 
-      {/* Support */}
       <div className="bg-white rounded-3xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-neutral-100">
         <div className="px-5 pt-4 pb-1">
           <p className="text-[0.7rem] font-bold uppercase tracking-widest text-neutral-400">Bantuan</p>
@@ -182,47 +162,35 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
             className="flex items-center gap-3 px-5 py-4 hover:bg-neutral-50 active:bg-neutral-100 transition"
           >
             <div className="w-8 h-8 rounded-xl bg-green-100 text-green-600 flex items-center justify-center">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-              </svg>
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
             </div>
-            <span className="text-[0.9rem] font-semibold">Hubungi Admin</span>
-            <svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            <span className="text-[0.9rem] font-semibold">{t("hubungi_admin")}</span>
+            <svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
           </a>
           <button onClick={() => setModal("feedback")} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
             <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
             </div>
-            <span className="text-[0.9rem] font-semibold">Kirim Masukan</span>
-            <svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            <span className="text-[0.9rem] font-semibold">{t("kirim_masukan")}</span>
+            <svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
           </button>
         </div>
       </div>
 
-      {/* Danger Zone */}
       <div className="space-y-2">
         <button
           onClick={handleLogout}
           disabled={loggingOut}
           className="w-full flex items-center justify-center gap-2 bg-white border border-neutral-200 text-neutral-700 font-bold py-4 rounded-2xl shadow-sm hover:bg-neutral-50 active:scale-[0.98] transition disabled:opacity-50"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
-          {loggingOut ? "Keluar..." : "Keluar Akun"}
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+          {loggingOut ? "..." : t("logout")}
         </button>
         <button onClick={() => setModal("delete")} className="w-full text-[0.85rem] font-medium text-red-500 py-2 hover:text-red-700 transition">
-          Hapus Akun
+          {t("delete_account")}
         </button>
       </div>
 
-      {/* MODALS */}
       {modal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-5 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-6 shadow-2xl animate-in zoom-in-95 duration-200">
@@ -231,24 +199,18 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
                 setLoading(true);
                 const res = await updateProfile(fd);
                 setLoading(false);
-                if (res.success) { setModal(null); setMsg({ type: "success", text: "Profil diperbarui!" }); }
-                else setMsg({ type: "error", text: res.error || "Gagal update" });
+                if (res.success) { setModal(null); setMsg({ type: "success", text: t("update") + " OK" }); }
+                else setMsg({ type: "error", text: res.error || "Error" });
               }} className="space-y-4">
-                <h3 className="text-[1.1rem] font-bold">Edit Profil</h3>
+                <h3 className="text-[1.1rem] font-bold">{t("edit_profile")}</h3>
                 <div className="space-y-3">
-                  <input name="nama" defaultValue={nama || ""} placeholder="Nama Lengkap" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] focus:outline-none focus:border-neutral-400" required />
+                  <input name="nama" defaultValue={nama || ""} placeholder="Nama" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] focus:outline-none focus:border-neutral-400" required />
                   <input name="kota" defaultValue={kota || ""} placeholder="Kota" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] focus:outline-none focus:border-neutral-400" required />
                   <input name="driver_id" defaultValue={driverId || ""} placeholder="ID Driver" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] focus:outline-none focus:border-neutral-400" required />
-                  <select name="platform" defaultValue={platform} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] focus:outline-none focus:border-neutral-400">
-                    <option value="ShopeeFood">ShopeeFood</option>
-                    <option value="GoFood">GoFood</option>
-                    <option value="GrabFood">GrabFood</option>
-                    <option value="Lalamove">Lalamove</option>
-                  </select>
                 </div>
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => setModal(null)} className="flex-1 py-3 rounded-2xl bg-neutral-100 font-bold text-neutral-600">Batal</button>
-                  <button type="submit" disabled={loading} className="flex-1 py-3 rounded-2xl bg-neutral-900 font-bold text-white disabled:opacity-50">{loading ? "..." : "Simpan"}</button>
+                  <button type="button" onClick={() => setModal(null)} className="flex-1 py-3 rounded-2xl bg-neutral-100 font-bold text-neutral-600">{t("cancel")}</button>
+                  <button type="submit" disabled={loading} className="flex-1 py-3 rounded-2xl bg-neutral-900 font-bold text-white disabled:opacity-50">{t("save")}</button>
                 </div>
               </form>
             )}
@@ -258,14 +220,14 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
                 setLoading(true);
                 const res = await changePassword(fd);
                 setLoading(false);
-                if (res.success) { setModal(null); setMsg({ type: "success", text: "Password diubah!" }); }
-                else setMsg({ type: "error", text: res.error || "Gagal ubah password" });
+                if (res.success) { setModal(null); setMsg({ type: "success", text: t("update") + " OK" }); }
+                else setMsg({ type: "error", text: res.error || "Error" });
               }} className="space-y-4">
-                <h3 className="text-[1.1rem] font-bold">Ubah Password</h3>
-                <input name="password" type="password" placeholder="Password Baru (min 6 karakter)" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] focus:outline-none focus:border-neutral-400" required minLength={6} />
+                <h3 className="text-[1.1rem] font-bold">{t("change_password")}</h3>
+                <input name="password" type="password" placeholder="Password Baru" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] focus:outline-none focus:border-neutral-400" required minLength={6} />
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => setModal(null)} className="flex-1 py-3 rounded-2xl bg-neutral-100 font-bold text-neutral-600">Batal</button>
-                  <button type="submit" disabled={loading} className="flex-1 py-3 rounded-2xl bg-neutral-900 font-bold text-white disabled:opacity-50">{loading ? "..." : "Update"}</button>
+                  <button type="button" onClick={() => setModal(null)} className="flex-1 py-3 rounded-2xl bg-neutral-100 font-bold text-neutral-600">{t("cancel")}</button>
+                  <button type="submit" disabled={loading} className="flex-1 py-3 rounded-2xl bg-neutral-900 font-bold text-white disabled:opacity-50">{t("update")}</button>
                 </div>
               </form>
             )}
@@ -275,32 +237,29 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
                 setLoading(true);
                 const res = await sendFeedback(fd);
                 setLoading(false);
-                if (res.success) { setModal(null); setMsg({ type: "success", text: "Terima kasih atas masukannya!" }); }
-                else setMsg({ type: "error", text: res.error || "Gagal kirim" });
+                if (res.success) { setModal(null); setMsg({ type: "success", text: "OK" }); }
+                else setMsg({ type: "error", text: res.error || "Error" });
               }} className="space-y-4">
-                <h3 className="text-[1.1rem] font-bold">Kirim Masukan</h3>
-                <textarea name="message" placeholder="Tulis masukan atau kendala kamu di sini..." rows={4} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] focus:outline-none focus:border-neutral-400 resize-none" required />
+                <h3 className="text-[1.1rem] font-bold">{t("kirim_masukan")}</h3>
+                <textarea name="message" placeholder="..." rows={4} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] resize-none" required />
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => setModal(null)} className="flex-1 py-3 rounded-2xl bg-neutral-100 font-bold text-neutral-600">Batal</button>
-                  <button type="submit" disabled={loading} className="flex-1 py-3 rounded-2xl bg-blue-600 font-bold text-white disabled:opacity-50">{loading ? "..." : "Kirim"}</button>
+                  <button type="button" onClick={() => setModal(null)} className="flex-1 py-3 rounded-2xl bg-neutral-100 font-bold text-neutral-600">{t("cancel")}</button>
+                  <button type="submit" disabled={loading} className="flex-1 py-3 rounded-2xl bg-blue-600 font-bold text-white disabled:opacity-50">{t("update")}</button>
                 </div>
               </form>
             )}
 
             {modal === "delete" && (
               <div className="space-y-4 text-center">
-                <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                </div>
-                <h3 className="text-[1.1rem] font-bold">Hapus Akun?</h3>
-                <p className="text-[0.85rem] text-neutral-500 leading-relaxed">Semua profil dan data kamu akan dihapus secara permanen. Tindakan ini tidak bisa dibatalkan.</p>
+                <h3 className="text-[1.1rem] font-bold">{t("delete_account")}?</h3>
+                <p className="text-[0.85rem] text-neutral-500">{lang === "ID" ? "Tindakan ini permanen." : "This is permanent."}</p>
                 <div className="flex flex-col gap-2 pt-2">
                   <button onClick={async () => {
                     setLoading(true);
                     await deleteAccount();
                     router.push("/login");
-                  }} disabled={loading} className="w-full py-3 rounded-2xl bg-red-600 font-bold text-white disabled:opacity-50">Ya, Hapus Permanen</button>
-                  <button onClick={() => setModal(null)} className="w-full py-3 rounded-2xl bg-neutral-100 font-bold text-neutral-600">Batal</button>
+                  }} disabled={loading} className="w-full py-3 rounded-2xl bg-red-600 font-bold text-white disabled:opacity-50">{lang === "ID" ? "Ya, Hapus" : "Yes, Delete"}</button>
+                  <button onClick={() => setModal(null)} className="w-full py-3 rounded-2xl bg-neutral-100 font-bold text-neutral-600">{t("cancel")}</button>
                 </div>
               </div>
             )}

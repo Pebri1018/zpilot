@@ -1,7 +1,18 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
+import { getSupabaseUrl } from "@/lib/supabase/env";
 import { verifyAdmin } from "../actions";
+import { revalidatePath } from "next/cache";
+
+function getServiceClient() {
+  const url = getSupabaseUrl()!;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  return createServiceClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
 
 export async function getFeedbackList() {
   const isAdmin = await verifyAdmin();
@@ -45,4 +56,42 @@ export async function getAdminStats() {
     feedback: f.count || 0,
     signals: s.count || 0
   };
+}
+
+export async function toggleUserDisabled(userId: string, is_disabled: boolean) {
+  const isAdmin = await verifyAdmin();
+  if (!isAdmin) return { error: "Unauthorized" };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("users")
+    .update({ is_disabled })
+    .eq("id", userId);
+
+  if (error) return { error: error.message };
+  revalidatePath("/admin");
+  return { success: true };
+}
+
+export async function deleteUserAccount(userId: string) {
+  const isAdmin = await verifyAdmin();
+  if (!isAdmin) return { error: "Unauthorized" };
+
+  const supabase = getServiceClient();
+  
+  // 1. Delete from public.users (cascade might handle others)
+  const { error: profileError } = await supabase
+    .from("users")
+    .delete()
+    .eq("id", userId);
+
+  if (profileError) return { error: profileError.message };
+
+  // 2. Delete from auth.users (requires service role)
+  const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+  
+  if (authError) return { error: authError.message };
+
+  revalidatePath("/admin");
+  return { success: true };
 }
