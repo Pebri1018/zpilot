@@ -5,13 +5,14 @@ import Link from "next/link";
 import { useLocation } from "@/hooks/useLocation";
 import { getRecommendationV2, getZoneStats, type RecommendationResult, type ZoneStatsResult } from "@/app/actions/recommendation";
 import { getActiveMerchants, type MerchantSignal } from "@/app/admin/actions/signals";
+import { getHotspots, type HotspotZone } from "@/app/actions/hotspot";
 import { DriverStatusSelector } from "./DriverStatusSelector";
 import { NgetemTimer } from "./NgetemTimer";
 import { useLanguage } from "@/context/LanguageContext";
 
 export function LiveDashboard() {
   const { lang, t } = useLanguage();
-  const { status, areaName, loading, error, timestamp, refreshLocation } = useLocation();
+  const { status, areaName, loading, error, timestamp, refreshLocation, latitude, longitude } = useLocation();
   const [time, setTime] = useState(new Date());
   const [ngetemStartTime, setNgetemStartTime] = useState<number | null>(null);
   const [recommendation, setRecommendation] = useState<RecommendationResult>({
@@ -21,6 +22,7 @@ export function LiveDashboard() {
     color: "#9CA3AF"
   });
   const [merchants, setMerchants] = useState<MerchantSignal[]>([]);
+  const [nearestHotspot, setNearestHotspot] = useState<(HotspotZone & { dist: number }) | null>(null);
   const [zoneStats, setZoneStats] = useState<ZoneStatsResult>({
     orderan: "Data Minim",
     pesaing: "Longgar" as any,
@@ -47,17 +49,42 @@ export function LiveDashboard() {
         
         const merchantsResult = await getActiveMerchants(areaName);
         const statsResult = await getZoneStats(areaName);
-        const recResult = await getRecommendationV2(areaName, status, idleMinutes, statsResult.driverCount, merchantsResult.length);
+        const recResult = await getRecommendationV2(areaName, status, idleMinutes, statsResult.driverCount, merchantsResult.length, lang);
         
         setMerchants(merchantsResult);
         setZoneStats(statsResult);
         setRecommendation(recResult);
+
+        // Fetch hotspots
+        const hotspotResult = await getHotspots();
+        if (hotspotResult.length > 0 && latitude && longitude) {
+          // Haversine
+          const getDist = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+            const R = 6371; 
+            const dLat = (lat2 - lat1) * Math.PI / 180;  
+            const dLon = (lon2 - lon1) * Math.PI / 180; 
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2); 
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+          };
+          
+          let closest = hotspotResult[0];
+          let minDist = getDist(latitude, longitude, closest.lat, closest.lng);
+          
+          for(let i=1; i<hotspotResult.length; i++) {
+            const d = getDist(latitude, longitude, hotspotResult[i].lat, hotspotResult[i].lng);
+            if (d < minDist) {
+              minDist = d;
+              closest = hotspotResult[i];
+            }
+          }
+          setNearestHotspot({ ...closest, dist: minDist });
+        }
       } catch (e) {
         console.error("Failed to fetch dashboard data", e);
       }
     }
     fetchData();
-  }, [areaName, time.getHours(), status, ngetemStartTime]);
+  }, [areaName, time.getHours(), status, ngetemStartTime, latitude, longitude]);
 
   const formattedTime = time.toLocaleTimeString(lang === "ID" ? "id-ID" : "en-US", { hour: '2-digit', minute: '2-digit' });
   const minutesAgo = timestamp ? Math.floor((time.getTime() - timestamp) / 60000) : null;
@@ -180,6 +207,19 @@ export function LiveDashboard() {
             </div>
             <p className="text-[1.4rem] font-extrabold leading-tight text-neutral-900">{recommendation.title}</p>
             <p className="mt-2 text-[1.05rem] text-neutral-600 font-medium">{recommendation.reason}</p>
+            
+            {nearestHotspot && recommendation.action !== "OFFLINE" && (
+              <div className="mt-5 bg-neutral-50 rounded-[1.25rem] p-4 border border-neutral-100 flex items-center justify-between">
+                <div>
+                  <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1">{lang === "ID" ? "Hotspot Terdekat" : "Nearest Hotspot"}</p>
+                  <p className="text-[1rem] font-black text-neutral-800">{nearestHotspot.name} <span className="text-neutral-500 font-bold text-[0.85rem]">({nearestHotspot.dist.toFixed(1)} km)</span></p>
+                </div>
+                <span className={`text-[0.7rem] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg ${nearestHotspot.label === 'RAMAI' ? 'bg-red-100 text-red-600' : nearestHotspot.label === 'MENARIK' ? 'bg-orange-100 text-orange-600' : 'bg-neutral-200 text-neutral-600'}`}>
+                  {nearestHotspot.label}
+                </span>
+              </div>
+            )}
+
             {recommendation.action !== "OFFLINE" && recommendation.action !== "BUSY" && (
               <Link href="/radar" className="mt-6 flex w-full items-center justify-center rounded-[1.25rem] py-4 text-[1.05rem] font-bold text-white shadow-lg active:scale-95 transition-all" style={{ backgroundColor: recommendation.color }}>
                 {t("open_radar")}

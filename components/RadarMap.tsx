@@ -2,15 +2,18 @@
 
 import { useEffect, useState } from "react";
 import "leaflet/dist/leaflet.css";
-import { MapContainer, TileLayer, Marker, Popup, useMap, CircleMarker } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap, CircleMarker, Circle } from "react-leaflet";
 import L from "leaflet";
 import { RadarMarker } from "@/app/radar/page";
 import { useLanguage } from "@/context/LanguageContext";
+
+import { HotspotZone } from "@/app/actions/hotspot";
 
 type RadarMapProps = {
   latitude: number | null;
   longitude: number | null;
   markers?: RadarMarker[];
+  hotspots?: HotspotZone[];
 };
 
 function RecenterAutomatically({ lat, lng }: { lat: number; lng: number }) {
@@ -21,7 +24,7 @@ function RecenterAutomatically({ lat, lng }: { lat: number; lng: number }) {
   return null;
 }
 
-export default function RadarMap({ latitude, longitude, markers = [] }: RadarMapProps) {
+export default function RadarMap({ latitude, longitude, markers = [], hotspots = [] }: RadarMapProps) {
   const { t } = useLanguage();
   const [mounted, setMounted] = useState(false);
 
@@ -66,6 +69,27 @@ export default function RadarMap({ latitude, longitude, markers = [] }: RadarMap
           attribution='&copy; CARTO'
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
+
+        {/* Render Hotspot Zones behind markers */}
+        {hotspots.map((h) => {
+          let color = "#9CA3AF"; // Gray (Sepi)
+          if (h.label === "RAMAI") color = "#EF4444"; // Red
+          else if (h.label === "MENARIK") color = "#F97316"; // Orange
+
+          return (
+            <Circle
+              key={`hs-${h.id}`}
+              center={[h.lat, h.lng]}
+              radius={800} // 800 meters
+              pathOptions={{
+                color: color,
+                fillColor: color,
+                fillOpacity: 0.15,
+                weight: 1
+              }}
+            />
+          );
+        })}
         
         {markers.map((m) => {
           const colors = getMarkerColor(m.type);

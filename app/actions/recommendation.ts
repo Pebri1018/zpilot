@@ -16,17 +16,19 @@ export async function getRecommendationV2(
   status: string,
   idleMinutes: number,
   driverCount: number,
-  merchantCount: number
+  merchantCount: number,
+  lang: string = "ID"
 ): Promise<RecommendationResult> {
   const hour = new Date().getHours();
   const currentArea = areaName?.toLowerCase() || "";
+  const isID = lang === "ID";
 
   // 1. Status Rules
   if (status === "Offline") {
     return {
       action: "OFFLINE",
-      title: "Pilot Standby",
-      reason: "You're offline. Go online to start scanning hotspot.",
+      title: isID ? "Pilot Siaga" : "Pilot Standby",
+      reason: isID ? "Kamu sedang offline. Aktifkan status untuk mulai memindai hotspot." : "You're offline. Go online to start scanning hotspot.",
       color: "#9CA3AF", // Gray
       badge: "High"
     };
@@ -35,8 +37,8 @@ export async function getRecommendationV2(
   if (status === "Antar") {
     return {
       action: "BUSY",
-      title: "Delivery in Progress",
-      reason: "Complete delivery first. Next hotspot will be suggested after finish.",
+      title: isID ? "Sedang Mengantar" : "Delivery in Progress",
+      reason: isID ? "Selesaikan pengantaran dulu. Hotspot berikutnya akan disarankan setelah selesai." : "Complete delivery first. Next hotspot will be suggested after finish.",
       color: "#F59E0B", // Orange
       badge: "High"
     };
@@ -46,8 +48,8 @@ export async function getRecommendationV2(
   if (driverCount >= 5) {
     return {
       action: "MOVE",
-      title: "High Competition",
-      reason: "Competition high. Shift 500m away to avoid crowd.",
+      title: isID ? "Pesaing Padat" : "High Competition",
+      reason: isID ? "Persaingan padat. Geser 500m menjauh untuk menghindari rebutan." : "Competition high. Shift 500m away to avoid crowd.",
       color: "#F59E0B",
       badge: "High"
     };
@@ -61,8 +63,8 @@ export async function getRecommendationV2(
     if (!currentArea.includes("kampus") && !currentArea.includes("seturan") && !currentArea.includes("babarsari")) {
       return {
         action: "MOVE",
-        title: "Lunch Peak Active",
-        reason: "Prioritize food zones like campus area or Seturan.",
+        title: isID ? "Puncak Makan Siang" : "Lunch Peak Active",
+        reason: isID ? "Prioritaskan area makanan seperti kampus atau Seturan." : "Prioritize food zones like campus area or Seturan.",
         color: "#10B981", // Green
         badge: "Medium"
       };
@@ -75,8 +77,8 @@ export async function getRecommendationV2(
   if (idleMinutes < 8 && hasMerchants) {
     return {
       action: "STAY",
-      title: "Good Potential",
-      reason: "Stay 5 more minutes. Area still has active merchants.",
+      title: isID ? "Potensi Bagus" : "Good Potential",
+      reason: isID ? "Tahan 5 menit lagi. Area ini masih ada resto aktif." : "Stay 5 more minutes. Area still has active merchants.",
       color: "#3B82F6", // Blue
       badge: "High"
     };
@@ -85,8 +87,8 @@ export async function getRecommendationV2(
   if (idleMinutes > 15 && !hasMerchants) {
     return {
       action: "MOVE",
-      title: "Dead Zone",
-      reason: "No signal here. Move to Seturan / Babarsari or nearby hotspots.",
+      title: isID ? "Zona Mati" : "Dead Zone",
+      reason: isID ? "Tidak ada sinyal di sini. Geser ke Seturan / Babarsari atau hotspot terdekat." : "No signal here. Move to Seturan / Babarsari or nearby hotspots.",
       color: "#EF4444", // Red
       badge: "High"
     };
@@ -95,8 +97,8 @@ export async function getRecommendationV2(
   if (idleMinutes > 30) {
     return {
       action: "MOVE",
-      title: "Stuck Too Long",
-      reason: "You've been waiting too long. Shift area to reset algorithm.",
+      title: isID ? "Terlalu Lama Ngetem" : "Stuck Too Long",
+      reason: isID ? "Kamu sudah ngetem terlalu lama. Pindah area untuk reset algoritma." : "You've been waiting too long. Shift area to reset algorithm.",
       color: "#EF4444",
       badge: "Medium"
     };
@@ -106,8 +108,8 @@ export async function getRecommendationV2(
   if (hour >= 15 && hour < 17) {
     return {
       action: "STAY",
-      title: "Evening Prep",
-      reason: "Demand may rise soon for dinner. Position yourself near restos.",
+      title: isID ? "Persiapan Sore" : "Evening Prep",
+      reason: isID ? "Permintaan akan segera naik untuk makan malam. Posisi di dekat resto." : "Demand may rise soon for dinner. Position yourself near restos.",
       color: "#10B981",
       badge: "Low"
     };
@@ -116,8 +118,8 @@ export async function getRecommendationV2(
   // Default Fallback
   return {
     action: "STAY",
-    title: "Scanning Radar",
-    reason: "Monitoring local signals. Stay alert for sudden orders.",
+    title: isID ? "Memindai Radar" : "Scanning Radar",
+    reason: isID ? "Memantau sinyal lokal. Tetap waspada untuk orderan mendadak." : "Monitoring local signals. Stay alert for sudden orders.",
     color: "#10B981",
     badge: "Low"
   };

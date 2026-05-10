@@ -7,6 +7,7 @@ import { DriverBottomNav } from "@/components/DriverBottomNav";
 import { useLocation } from "@/hooks/useLocation";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/context/LanguageContext";
+import { getHotspots, type HotspotZone } from "@/app/actions/hotspot";
 
 const RadarMap = dynamic(() => import("@/components/RadarMap"), {
   ssr: false,
@@ -29,6 +30,7 @@ export default function RadarPage() {
   const { lang, t } = useLanguage();
   const { latitude, longitude, areaName, loading, error } = useLocation();
   const [markers, setMarkers] = useState<RadarMarker[]>([]);
+  const [hotspots, setHotspots] = useState<HotspotZone[]>([]);
   const [fetching, setFetching] = useState(true);
 
   useEffect(() => {
@@ -97,7 +99,10 @@ export default function RadarPage() {
           }
         });
 
+        const hotspotData = await getHotspots();
+
         setMarkers(newMarkers);
+        setHotspots(hotspotData);
       } catch (err) {
         console.error("Radar fetch error", err);
       } finally {
@@ -124,18 +129,22 @@ export default function RadarPage() {
       </header>
 
       <div className="relative flex-1 mx-4 mb-4 overflow-hidden rounded-[2.5rem] shadow-2xl border-4 border-white">
-        <RadarMap latitude={latitude} longitude={longitude} markers={markers} />
+        <RadarMap latitude={latitude} longitude={longitude} markers={markers} hotspots={hotspots} />
         
         {/* Legend */}
-        <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md p-4 rounded-[1.5rem] shadow-lg z-[1000] border border-white/50">
+        <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md p-4 rounded-[1.5rem] shadow-lg z-[1000] border border-white/50 max-h-[30vh] overflow-y-auto">
           <p className="text-[0.65rem] font-bold uppercase tracking-widest text-neutral-400 mb-2">{t("legend")}</p>
-          <div className="grid grid-cols-2 gap-y-2 gap-x-4">
+          <div className="grid grid-cols-2 gap-y-2 gap-x-4 mb-3 pb-3 border-b border-neutral-100">
             <LegendItem color="bg-blue-500" label={t("ngetem")} />
             <LegendItem color="bg-neutral-400" label={t("antar")} />
             <LegendItem color="bg-red-500" label={lang === "ID" ? "Resto Ramai" : "Busy Merch"} />
             <LegendItem color="bg-orange-400" label={lang === "ID" ? "Resto Sedang" : "Med Merch"} />
-            <LegendItem color="bg-emerald-500" label={lang === "ID" ? "Resto Sepi" : "Low Merch"} />
-            <LegendItem color="bg-purple-500" label="Spot Mangkal" />
+          </div>
+          <p className="text-[0.65rem] font-bold uppercase tracking-widest text-neutral-400 mb-2">Zona Hotspot</p>
+          <div className="grid grid-cols-3 gap-y-2 gap-x-2">
+            <LegendItem color="bg-red-500/30 border-2 border-red-500" label="Ramai" />
+            <LegendItem color="bg-orange-500/30 border-2 border-orange-500" label="Menarik" />
+            <LegendItem color="bg-neutral-500/20 border-2 border-neutral-400" label="Sepi" />
           </div>
         </div>
       </div>
