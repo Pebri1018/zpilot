@@ -16,12 +16,12 @@ export function LiveDashboard() {
   const { status, areaName, loading, error, timestamp, refreshLocation, latitude, longitude } = useLocation();
   const [time, setTime] = useState(new Date());
   const [ngetemStartTime, setNgetemStartTime] = useState<number | null>(null);
-  const [recommendation, setRecommendation] = useState<RecommendationResult>({
-    action: "STAY",
-    title: t("loading"),
-    reason: lang === "ID" ? "Menunggu sensor AI Pilot..." : "Waiting for AI Pilot sensor...",
-    color: "#9CA3AF"
-  });
+  const [recommendation, setRecommendation] = useState<RecommendationResult>(() => ({
+    action: "STAY" as const,
+    title: status === "Offline" ? (lang === "ID" ? "Pilot Siaga" : "Pilot Standby") : "Standby",
+    reason: lang === "ID" ? "Memuat data..." : "Loading...",
+    color: status === "Offline" ? "#9CA3AF" : "#10B981"
+  }));
   const [merchants, setMerchants] = useState<MerchantSignal[]>([]);
   const [nearestHotspot, setNearestHotspot] = useState<(HotspotZone & { dist: number }) | null>(null);
   const [zoneStats, setZoneStats] = useState<ZoneStatsResult>({
@@ -48,44 +48,56 @@ export function LiveDashboard() {
       try {
         const idleMinutes = status === "Ngetem" && ngetemStartTime ? Math.floor((Date.now() - ngetemStartTime) / 60000) : 0;
         
-        const merchantsResult = await getActiveMerchants(areaName);
-        const statsResult = await getZoneStats(areaName);
-        const recResult = await getRecommendationV2(areaName, status, idleMinutes, statsResult.driverCount, merchantsResult.length, lang);
+        // Run ALL fetches in parallel — no sequential awaits
+        const [merchantsResult, statsResult, hotspotResult] = await Promise.all([
+          getActiveMerchants(areaName),
+          getZoneStats(areaName),
+          getHotspots()
+        ]);
+
+        // Pass hotspots directly — no extra fetch inside getRecommendationV2
+        const recResult = await getRecommendationV2(
+          areaName, status, idleMinutes,
+          statsResult.driverCount, merchantsResult.length,
+          lang, hotspotResult
+        );
         
         setMerchants(merchantsResult);
         setZoneStats(statsResult);
         setRecommendation(recResult);
 
-        // Fetch hotspots
-        const hotspotResult = await getHotspots();
+        // Find nearest hotspot
         if (hotspotResult.length > 0 && latitude && longitude) {
-          // Haversine
           const getDist = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-            const R = 6371; 
-            const dLat = (lat2 - lat1) * Math.PI / 180;  
-            const dLon = (lon2 - lon1) * Math.PI / 180; 
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2); 
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
           };
-          
           let closest = hotspotResult[0];
           let minDist = getDist(latitude, longitude, closest.lat, closest.lng);
-          
-          for(let i=1; i<hotspotResult.length; i++) {
+          for (let i = 1; i < hotspotResult.length; i++) {
             const d = getDist(latitude, longitude, hotspotResult[i].lat, hotspotResult[i].lng);
-            if (d < minDist) {
-              minDist = d;
-              closest = hotspotResult[i];
-            }
+            if (d < minDist) { minDist = d; closest = hotspotResult[i]; }
           }
           setNearestHotspot({ ...closest, dist: minDist });
         }
       } catch (e) {
         console.error("Failed to fetch dashboard data", e);
+        // Don't stay on loading — show a safe fallback
+        setRecommendation({
+          action: "STAY",
+          title: "Standby",
+          reason: lang === "ID" ? "Memantau sinyal. Tetap waspada." : "Monitoring signals. Stay alert.",
+          color: "#10B981",
+          badge: "Low"
+        });
       }
     }
+    // Always run fetchData, even if areaName is null — engine still works without location
     fetchData();
-  }, [areaName, time.getHours(), status, ngetemStartTime, latitude, longitude]);
+  }, [areaName, time.getHours(), status, ngetemStartTime, latitude, longitude, lang]);
 
   const formattedTime = time.toLocaleTimeString(lang === "ID" ? "id-ID" : "en-US", { hour: '2-digit', minute: '2-digit' });
   const minutesAgo = timestamp ? Math.floor((time.getTime() - timestamp) / 60000) : null;

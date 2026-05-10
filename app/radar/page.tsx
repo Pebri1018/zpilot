@@ -38,20 +38,25 @@ export default function RadarPage() {
       try {
         const supabase = createClient();
         const now = new Date();
-        const activeLimit = new Date(now.getTime() - 15 * 60000).toISOString();
+        const activeLimit = new Date(now.getTime() - 60 * 60000).toISOString(); // 60 min window
 
-        // 1. Fetch Drivers from users table
-        const { data: drivers } = await supabase
+        // 1. Fetch active (non-Offline) drivers from users table
+        const { data: drivers, error: dErr } = await supabase
           .from("users")
           .select("id, last_lat, last_lng, status, nama")
+          .neq("status", "Offline")
           .not("last_lat", "is", null)
           .gte("last_active", activeLimit);
 
+        if (dErr) console.error("Radar driver fetch error:", dErr.message);
+
         // 2. Fetch Active Merchants
-        const { data: merchants } = await supabase
+        const { data: merchants, error: mErr } = await supabase
           .from("merchant_signals")
           .select("id, lat, lng, name, busy_score")
           .eq("is_active", true);
+
+        if (mErr) console.error("Radar merchant fetch error:", mErr.message);
 
         // 3. Fetch Hangout Spots
         const { data: spots } = await supabase

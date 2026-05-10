@@ -53,21 +53,24 @@ export async function getHotspots(): Promise<HotspotZone[]> {
   const now = new Date().toISOString();
 
   try {
-    // 1. Fetch active drivers
-    const { data: drivers } = await supabase
+    // 1. Fetch active drivers (last 60 min, not Offline)
+    const { data: drivers, error: dErr } = await supabase
       .from("users")
       .select("last_lat, last_lng, status")
       .not("last_lat", "is", null)
-      .not("status", "eq", "Offline")
-      .gte("last_active", fifteenMinsAgo);
+      .neq("status", "Offline")
+      .gte("last_active", new Date(Date.now() - 60 * 60 * 1000).toISOString());
 
-    // 2. Fetch active merchants
-    const { data: merchants } = await supabase
+    if (dErr) console.error("hotspot drivers error:", dErr.message);
+
+    // 2. Fetch active merchants (no expires_at filter — just check is_active)
+    const { data: merchants, error: mErr } = await supabase
       .from("merchant_signals")
       .select("lat, lng")
       .eq("is_active", true)
-      .not("lat", "is", null)
-      .gt("expires_at", now);
+      .not("lat", "is", null);
+
+    if (mErr) console.error("hotspot merchants error:", mErr.message);
 
     // 3. Process each zone
     const hotspots: HotspotZone[] = PREDEFINED_ZONES.map(zone => {

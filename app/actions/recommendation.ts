@@ -1,8 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-
-import { getHotspots } from "./hotspot";
+import type { HotspotZone } from "./hotspot";
 
 export type RecommendationResult = {
   action: "STAY" | "MOVE" | "OFFLINE" | "BUSY";
@@ -19,7 +18,8 @@ export async function getRecommendationV2(
   idleMinutes: number,
   driverCount: number,
   merchantCount: number,
-  lang: string = "ID"
+  lang: string = "ID",
+  hotspots: HotspotZone[] = []
 ): Promise<RecommendationResult> {
   const hour = new Date().getHours();
   const currentArea = areaName?.toLowerCase() || "";
@@ -46,15 +46,11 @@ export async function getRecommendationV2(
     };
   }
 
-  // Fetch hotspots to give smart recommendations
-  const hotspots = await getHotspots();
   const topHotspot = hotspots.length > 0 ? hotspots[0] : null;
   const secondHotspot = hotspots.length > 1 ? hotspots[1] : null;
-  
-  // Find if current area is a known hotspot
   const currentHotspot = hotspots.find(h => currentArea.includes(h.name.toLowerCase()));
 
-  // 2. Too Long Idle (Ngetem > 15 mins)
+  // 2. Too Long Idle (Ngetem >= 15 mins)
   if (idleMinutes >= 15) {
     const target = topHotspot?.name || "area lain";
     return {
@@ -69,11 +65,9 @@ export async function getRecommendationV2(
 
   // 3. High Competition (Driver >= 5)
   if (driverCount >= 5) {
-    // If current area is the top hotspot, suggest the second one.
-    const target = (currentHotspot && topHotspot && currentHotspot.id === topHotspot.id && secondHotspot) 
-      ? secondHotspot.name 
+    const target = (currentHotspot && topHotspot && currentHotspot.id === topHotspot.id && secondHotspot)
+      ? secondHotspot.name
       : (topHotspot?.name || "area lain");
-      
     return {
       action: "MOVE",
       title: isID ? "Pesaing Padat" : "Crowded Zone",
@@ -119,7 +113,7 @@ export async function getRecommendationV2(
     };
   }
 
-  // Default Fallback
+  // Default
   return {
     action: "STAY",
     title: isID ? "Standby" : "Standby",
