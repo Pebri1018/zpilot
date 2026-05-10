@@ -49,10 +49,14 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     const currentState = stateRef.current;
     
     // --- OFFLINE RULE: STOP TRACKING ---
-    if (currentState.status === "Offline" && !force) return;
+    if (currentState.status === "Offline" && !force) {
+      if (currentState.loading) setState(s => ({ ...s, loading: false }));
+      return;
+    }
 
     const now = Date.now();
     if (!force && currentState.timestamp && (now - currentState.timestamp < 3 * 60 * 1000)) {
+      if (currentState.loading) setState(s => ({ ...s, loading: false }));
       return;
     }
 

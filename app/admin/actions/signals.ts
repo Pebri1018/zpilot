@@ -53,6 +53,7 @@ export async function upsertMerchant(formData: FormData) {
   const name = String(formData.get("name") || "").trim();
   const category = String(formData.get("category") || "Makanan");
   const promo_active = formData.get("promo_active") === "on";
+  const promo_percent = formData.get("promo_percent") ? Number(formData.get("promo_percent")) : 0;
   const pickup_fast = formData.get("pickup_fast") === "on";
   const lat = formData.get("lat") ? Number(formData.get("lat")) : null;
   const lng = formData.get("lng") ? Number(formData.get("lng")) : null;
@@ -68,7 +69,12 @@ export async function upsertMerchant(formData: FormData) {
   let score = 0;
   score += rating * 10; // Max 50
   score += Math.min(20, (reviews / 50) * 10); // Max 20 (cap at 100 reviews)
-  if (promo_active) score += 15;
+  if (promo_active) {
+    score += 10;
+    if (promo_percent > 0) {
+      score += Math.min(15, promo_percent / 4); // Up to 15 bonus points for big promos
+    }
+  }
   if (pickup_fast) score += 15;
 
   // Map to 1-5 busy_score for backward compat and Low/Med/High label
@@ -83,6 +89,7 @@ export async function upsertMerchant(formData: FormData) {
       busy_score,
       busy_level,
       promo_active,
+      promo_percent,
       pickup_fast,
       fast_pickup: pickup_fast,
       is_active: true,
@@ -146,7 +153,9 @@ export type MerchantSignal = {
   category: string;
   busy_level: "Low" | "Medium" | "High";
   busy_score?: number | null;
+  popularity_score?: number | null;
   promo_active: boolean;
+  promo_percent?: number | null;
   fast_pickup: boolean;
   pickup_fast?: boolean;
   is_active?: boolean;

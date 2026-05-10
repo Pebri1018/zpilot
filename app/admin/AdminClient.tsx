@@ -131,17 +131,25 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
                 <input name="reviews" type="number" placeholder={t("reviews")} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
               </div>
 
-              <div className="flex gap-5 pt-2">
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <input type="checkbox" name="promo_active" className="w-5 h-5 rounded-lg border-neutral-300 text-neutral-900 focus:ring-0" />
-                  <span className="text-[0.85rem] font-bold text-neutral-600 group-hover:text-neutral-900 transition-colors">{t("promo")}</span>
-                </label>
-                {merchantMode === "detail" && (
+              <div className="flex flex-col gap-3 pt-2">
+                <div className="flex gap-5">
                   <label className="flex items-center gap-2 cursor-pointer group">
-                    <input type="checkbox" name="pickup_fast" className="w-5 h-5 rounded-lg border-neutral-300 text-neutral-900 focus:ring-0" />
-                    <span className="text-[0.85rem] font-bold text-neutral-600 group-hover:text-neutral-900 transition-colors">{t("fast_pickup")}</span>
+                    <input type="checkbox" name="promo_active" id="promo_active" defaultChecked={false} onChange={(e) => {
+                      const input = document.getElementById("promo_percent_container");
+                      if (input) input.style.display = e.target.checked ? "block" : "none";
+                    }} className="w-5 h-5 rounded-lg border-neutral-300 text-neutral-900 focus:ring-0" />
+                    <span className="text-[0.85rem] font-bold text-neutral-600 group-hover:text-neutral-900 transition-colors">{t("promo")}</span>
                   </label>
-                )}
+                  {merchantMode === "detail" && (
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <input type="checkbox" name="pickup_fast" className="w-5 h-5 rounded-lg border-neutral-300 text-neutral-900 focus:ring-0" />
+                      <span className="text-[0.85rem] font-bold text-neutral-600 group-hover:text-neutral-900 transition-colors">{t("fast_pickup")}</span>
+                    </label>
+                  )}
+                </div>
+                <div id="promo_percent_container" style={{ display: "none" }}>
+                  <input name="promo_percent" type="number" placeholder="Promo Percent (e.g. 20, 40)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+                </div>
               </div>
 
               <button disabled={loading} className="w-full py-4 bg-neutral-900 text-white font-black rounded-2xl shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 text-[1.05rem]">
@@ -157,15 +165,33 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
               <div key={m.id} className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm flex flex-col gap-4">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="font-black text-[0.95rem] tracking-tight">{m.name}</p>
-                    <p className="text-[0.75rem] text-neutral-400 font-bold">{m.area} · <span className={`uppercase ${m.busy_level === 'High' ? 'text-red-500' : m.busy_level === 'Medium' ? 'text-orange-500' : 'text-emerald-500'}`}>{m.busy_level}</span></p>
+                    <p className="font-black text-[1.05rem] tracking-tight">{m.name}</p>
+                    <p className="text-[0.75rem] text-neutral-400 font-bold">{m.area}</p>
                   </div>
-                  <button onClick={() => toggleMerchantActive(m.id, !m.is_active)} className={`text-[0.65rem] font-black px-4 py-2 rounded-full uppercase tracking-widest transition-all ${m.is_active ? "bg-emerald-50 text-emerald-600" : "bg-neutral-50 text-neutral-400"}`}>
-                    {m.is_active ? t("enable") : t("disable")}
-                  </button>
+                  <div className={`flex items-center justify-center w-10 h-10 rounded-full font-black text-[0.85rem] shadow-sm ${m.busy_level === 'High' ? 'bg-red-50 text-red-600' : m.busy_level === 'Medium' ? 'bg-orange-50 text-orange-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                    {m.popularity_score || m.busy_score}
+                  </div>
                 </div>
+                
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  <div className="bg-neutral-50 rounded-xl p-2.5">
+                    <p className="text-[0.65rem] font-bold text-neutral-400 uppercase tracking-widest mb-1">Rating / Reviews</p>
+                    <p className="text-[0.85rem] font-black text-neutral-800">⭐ {m.rating || "-"} <span className="text-neutral-400 font-semibold">({m.reviews || 0})</span></p>
+                  </div>
+                  <div className="bg-neutral-50 rounded-xl p-2.5">
+                    <p className="text-[0.65rem] font-bold text-neutral-400 uppercase tracking-widest mb-1">Promo</p>
+                    <p className="text-[0.85rem] font-black text-neutral-800">{m.promo_active ? (m.promo_percent ? `${m.promo_percent}% OFF` : "Active") : "None"}</p>
+                  </div>
+                </div>
+                <p className="text-[0.65rem] text-neutral-400 font-semibold italic text-center -mt-1">
+                  Updated: {new Date(m.updated_at || m.created_at).toLocaleString()}
+                </p>
+
                 <div className="flex gap-2 border-t border-neutral-50 pt-3">
                   <button onClick={() => alert("Edit mode coming soon - use Quick Mode to update same name+area")} className="flex-1 py-2.5 rounded-xl bg-neutral-100 text-[0.75rem] font-bold text-neutral-600 active:scale-95 transition-all">{t("edit")}</button>
+                  <button onClick={() => toggleMerchantActive(m.id, !m.is_active)} className={`flex-1 py-2.5 rounded-xl text-[0.75rem] font-bold uppercase tracking-widest transition-all ${m.is_active ? "bg-emerald-50 text-emerald-600" : "bg-neutral-100 text-neutral-400"}`}>
+                    {m.is_active ? t("enable") : t("disable")}
+                  </button>
                   <button onClick={async () => {
                     if (confirm("Delete merchant?")) {
                       await deleteMerchant(m.id);
