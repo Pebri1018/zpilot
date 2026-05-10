@@ -11,7 +11,7 @@ import { useLanguage } from "@/context/LanguageContext";
 
 export function LiveDashboard() {
   const { lang, t } = useLanguage();
-  const { areaName, loading, error, timestamp, refreshLocation } = useLocation();
+  const { status, areaName, loading, error, timestamp, refreshLocation } = useLocation();
   const [time, setTime] = useState(new Date());
   const [recommendation, setRecommendation] = useState<RecommendationResult>({
     action: "STAY",
@@ -32,6 +32,8 @@ export function LiveDashboard() {
   }, []);
 
   useEffect(() => {
+    if (status === "Offline") return; // STOP FETCH IF OFFLINE
+
     async function fetchData() {
       try {
         const [recResult, merchantsResult, statsResult] = await Promise.all([
@@ -47,10 +49,27 @@ export function LiveDashboard() {
       }
     }
     fetchData();
-  }, [areaName, time.getHours()]);
+  }, [areaName, time.getHours(), status]);
 
   const formattedTime = time.toLocaleTimeString(lang === "ID" ? "id-ID" : "en-US", { hour: '2-digit', minute: '2-digit' });
   const minutesAgo = timestamp ? Math.floor((time.getTime() - timestamp) / 60000) : null;
+
+  if (status === "Offline") {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 px-6 text-center bg-white rounded-[2.5rem] border border-neutral-100 shadow-sm animate-in fade-in zoom-in-95">
+        <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mb-6">
+          <svg className="w-10 h-10 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+        </div>
+        <h3 className="text-[1.2rem] font-black text-neutral-900 mb-2">{lang === "ID" ? "Mode Offline" : "Offline Mode"}</h3>
+        <p className="text-[0.9rem] text-neutral-500 font-medium leading-relaxed mb-8">
+          {lang === "ID" 
+            ? "Status kamu tidak terlihat di radar dan AI Pilot dinonaktifkan. Ubah status ke Ngetem untuk mulai." 
+            : "Your presence is hidden from the radar and AI Pilot is disabled. Switch to Ngetem to start."}
+        </p>
+        <DriverStatusSelector />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -67,7 +86,7 @@ export function LiveDashboard() {
             <svg className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg> 
-            {lang === "ID" ? "Perbarui" : "Refresh"}
+            {t("refresh")}
           </button>
         </div>
 
@@ -75,11 +94,11 @@ export function LiveDashboard() {
           <div className="absolute -right-6 -top-6 w-24 h-24 bg-green-100 rounded-full blur-2xl opacity-60"></div>
           
           <p className="text-[0.75rem] font-bold uppercase tracking-wider text-neutral-400 mb-1">
-            {lang === "ID" ? "Lokasi Saat Ini" : "Current Location"}
+            {t("current_loc")}
           </p>
           <div className="mt-1 text-[1.25rem] font-bold text-neutral-800 flex items-center gap-2">
             {loading && !areaName ? (
-              <span className="animate-pulse">{t("loading")}</span>
+              <span className="animate-pulse">{t("searching_loc")}</span>
             ) : error ? (
               <span className="text-red-500 text-sm">{error}</span>
             ) : (
@@ -105,17 +124,17 @@ export function LiveDashboard() {
 
       <section className="mt-2 mb-8">
         <h2 className="text-[0.75rem] font-bold uppercase tracking-[0.15em] text-neutral-400 mb-3 ml-2">
-          {lang === "ID" ? "Status Zona" : "Zone Status"}
+          {t("zone_status")}
         </h2>
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-white rounded-[1.25rem] p-4 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-neutral-100 flex flex-col items-center justify-center text-center transition-transform active:scale-95">
-            <span className="text-[0.65rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5">{lang === "ID" ? "Orderan" : "Orders"}</span>
+            <span className="text-[0.65rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5">{t("order_potential")}</span>
             <span className={`text-[0.95rem] font-extrabold leading-tight ${zoneStats.orderan.includes("Tinggi") ? "text-green-600" : "text-neutral-500"}`}>
               {zoneStats.orderan}
             </span>
           </div>
           <div className="bg-white rounded-[1.25rem] p-4 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-neutral-100 flex flex-col items-center justify-center text-center transition-transform active:scale-95 relative overflow-hidden">
-            <span className="text-[0.65rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 relative z-10">{lang === "ID" ? "Pesaing" : "Rivals"}</span>
+            <span className="text-[0.65rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 relative z-10">{t("rivals")}</span>
             <span className={`text-[1.1rem] font-extrabold relative z-10 ${zoneStats.pesaing === "Padat" ? "text-red-600" : "text-green-600"}`}>
               {zoneStats.pesaing}
             </span>
@@ -127,7 +146,7 @@ export function LiveDashboard() {
       <section className="mb-8">
         <div className="flex items-center justify-between mb-3 ml-2 mr-1">
           <h2 className="text-[0.75rem] font-bold uppercase tracking-[0.15em] text-neutral-400">
-            {lang === "ID" ? "Resto & Promo Aktif" : "Active Merchants"}
+            {t("active_merchants")}
           </h2>
           <Link href="/radar" className="text-[0.7rem] font-bold text-blue-600">{lang === "ID" ? "Lihat Peta" : "Open Map"}</Link>
         </div>
@@ -159,12 +178,12 @@ export function LiveDashboard() {
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-4">
               <span className="flex h-3 w-3 rounded-full" style={{ backgroundColor: recommendation.color }}></span>
-              <p className="text-[0.75rem] font-bold uppercase tracking-[0.15em] text-neutral-500">AI PILOT</p>
+              <p className="text-[0.75rem] font-bold uppercase tracking-[0.15em] text-neutral-500">{t("ai_pilot_suggest")}</p>
             </div>
             <p className="text-[1.4rem] font-extrabold leading-tight text-neutral-900">{recommendation.title}</p>
             <p className="mt-2 text-[1.05rem] text-neutral-600 font-medium">{recommendation.reason}</p>
             <Link href="/radar" className="mt-6 flex w-full items-center justify-center rounded-[1.25rem] py-4 text-[1.05rem] font-bold text-white shadow-lg" style={{ backgroundColor: recommendation.color }}>
-              {t("radar")}
+              {t("open_radar")}
             </Link>
           </div>
         </div>

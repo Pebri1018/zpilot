@@ -1,23 +1,24 @@
 "use client";
 
 import { useLocation } from "@/hooks/useLocation";
-
-const STATUS_OPTIONS = [
-  { id: "Ngetem", label: "Ngetem", color: "bg-blue-100 text-blue-700 border-blue-200" },
-  { id: "Antar", label: "Antar", color: "bg-orange-100 text-orange-700 border-orange-200" },
-  { id: "Offline", label: "Offline", color: "bg-neutral-100 text-neutral-600 border-neutral-200" },
-];
+import { useLanguage } from "@/context/LanguageContext";
 
 export function DriverStatusSelector() {
   const { status, setStatus, loading } = useLocation();
+  const { lang, t } = useLanguage();
+
+  const STATUS_OPTIONS = [
+    { id: "Ngetem", label: t("ngetem"), color: "bg-blue-100 text-blue-700 border-blue-200" },
+    { id: "Antar", label: t("antar"), color: "bg-orange-100 text-orange-700 border-orange-200" },
+    { id: "Offline", label: t("offline"), color: "bg-neutral-100 text-neutral-600 border-neutral-200" },
+  ];
 
   return (
     <div className="mb-6">
       <h2 className="text-[0.75rem] font-bold uppercase tracking-[0.15em] text-neutral-400 mb-3 ml-2">
-        Status Saat Ini
+        {lang === "ID" ? "Status Saat Ini" : "Current Status"}
       </h2>
-      <div className="flex gap-2 overflow-x-auto pb-2 -mx-5 px-5 hide-scrollbar">
-        <style dangerouslySetInnerHTML={{__html: `::-webkit-scrollbar { display: none; }`}} />
+      <div className="flex gap-2 overflow-x-auto pb-2 -mx-5 px-5 no-scrollbar">
         {STATUS_OPTIONS.map((opt) => {
           const isActive = status === opt.id;
           return (

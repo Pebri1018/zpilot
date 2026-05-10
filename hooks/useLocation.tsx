@@ -27,7 +27,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     error: null,
     loading: true,
     timestamp: null,
-    status: "Offline", // Default is Offline
+    status: "Offline",
   });
 
   const stateRef = useRef(state);
@@ -47,9 +47,12 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
 
   const fetchLocation = useCallback(async (force: boolean = false) => {
     const currentState = stateRef.current;
-    const now = Date.now();
     
-    if (!force && currentState.timestamp && (now - currentState.timestamp < 5 * 60 * 1000)) {
+    // --- OFFLINE RULE: STOP TRACKING ---
+    if (currentState.status === "Offline" && !force) return;
+
+    const now = Date.now();
+    if (!force && currentState.timestamp && (now - currentState.timestamp < 3 * 60 * 1000)) {
       return;
     }
 
@@ -58,37 +61,38 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (!navigator.geolocation) {
-      setState((s) => ({ ...s, error: "GPS tidak didukung", loading: false }));
+      setState((s) => ({ ...s, error: "GPS not supported", loading: false }));
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        let area = currentState.areaName; 
+        
+        // --- STOP SYNC IF OFFLINE ---
+        if (stateRef.current.status === "Offline") {
+          setState(s => ({ ...s, loading: false }));
+          return;
+        }
 
+        let area = stateRef.current.areaName; 
         try {
           const response = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=14`,
             { headers: { "Accept-Language": "id" } }
           );
           const data = await response.json();
-          area = data.address?.neighbourhood || data.address?.suburb || data.address?.village || "Area tidak diketahui";
-        } catch (err) {
-          if (!area) area = "Koordinat didapat";
-        }
+          area = data.address?.neighbourhood || data.address?.suburb || data.address?.village || "Unknown Area";
+        } catch (err) {}
 
         if (area && area !== prevAreaRef.current) {
           if (prevAreaRef.current !== null) recordZoneChange(area).catch(console.error);
           prevAreaRef.current = area;
         }
 
-        // Operational Status Update to DB
         try {
-          await updateDriverStatus(currentState.status, latitude, longitude);
-        } catch (syncErr) {
-          console.error("Failed to sync status/location", syncErr);
-        }
+          await updateDriverStatus(stateRef.current.status, latitude, longitude);
+        } catch (syncErr) {}
 
         setState((s) => ({
           ...s,
@@ -101,7 +105,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
         }));
       },
       (error) => {
-        setState((s) => ({ ...s, error: "Gagal membaca GPS", loading: false }));
+        setState((s) => ({ ...s, error: "GPS Error", loading: false }));
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
@@ -110,8 +114,15 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     fetchLocation();
     const intervalId = setInterval(() => {
-      fetchLocation(false);
-      if (stateRef.current.latitude) recordActiveMinute().catch(console.error);
+      const cur = stateRef.current;
+      // --- TRACK ONLY IF ACTIVE ---
+      if (cur.status !== "Offline") {
+        fetchLocation(false);
+        // --- COUNT ACTIVE MINUTES ONLY IF NGETEM ---
+        if (cur.status === "Ngetem" && cur.latitude) {
+          recordActiveMinute().catch(console.error);
+        }
+      }
     }, 60 * 1000);
     return () => clearInterval(intervalId);
   }, [fetchLocation]);
@@ -120,10 +131,16 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     ...state,
     setStatus: async (newStatus: string) => {
       setState(s => ({ ...s, status: newStatus }));
-      // Immediate sync
+      // Force sync with server on status change
       const current = stateRef.current;
       await updateDriverStatus(newStatus, current.latitude || undefined, current.longitude || undefined);
-      fetchLocation(true);
+      
+      if (newStatus !== "Offline") {
+        fetchLocation(true);
+      } else {
+        // Clear local cache if offline
+        setState(s => ({ ...s, loading: false }));
+      }
     },
     refreshLocation: () => fetchLocation(true),
   };

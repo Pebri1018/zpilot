@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
-import type { Broadcast, BroadcastType } from "./actions";
-import { createBroadcast, toggleBroadcast, deleteBroadcast } from "./actions";
-import { upsertMerchant, toggleMerchantActive, getAllMerchants, type MerchantSignal } from "./actions/signals";
+import type { Broadcast } from "./actions";
+import { createBroadcast, deleteBroadcast } from "./actions";
+import { upsertMerchant, toggleMerchantActive, getAllMerchants, deleteMerchant, type MerchantSignal } from "./actions/signals";
 import { saveNgetemSpot } from "./actions/notes";
 import { toggleUserDisabled, deleteUserAccount } from "./actions/admin_data";
 import { useLanguage } from "@/context/LanguageContext";
@@ -30,31 +30,29 @@ const NAV = [
 
 export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = [], initialFeedback = [], stats }: Props) {
   const { lang, t } = useLanguage();
-  const [activeTab, setActiveTab] = useState(NAV[0].id);
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [merchantMode, setMerchantMode] = useState<"quick" | "detail">("quick");
   const [merchants, setMerchants] = useState(initialMerchants);
   const [users, setUsers] = useState(initialUsers);
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
-  const [area, setArea] = useState<string>("Locating...");
-  const [pickedAddress, setPickedAddress] = useState("");
+  const [area, setArea] = useState<string>("");
+  const [address, setAddress] = useState("");
+  const [loading, setLoading] = useState(false);
   const merchantFormRef = useRef<HTMLFormElement>(null);
 
+  // Auto-detect admin current location on start
   useEffect(() => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition((pos) => {
       setLat(pos.coords.latitude);
       setLng(pos.coords.longitude);
-      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&zoom=14`)
-        .then(r => r.json())
-        .then(data => {
-          const areaName = data.address?.neighbourhood || data.address?.suburb || data.address?.city_district || "Unknown Area";
-          setArea(areaName);
-        });
     });
   }, []);
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Admin Nav */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-5 px-5 no-scrollbar">
         {NAV.map(item => (
           <button
@@ -68,6 +66,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
         ))}
       </div>
 
+      {/* 1. DASHBOARD */}
       {activeTab === "dashboard" && (
         <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-2">
           <div className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm">
@@ -85,120 +84,167 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
         </div>
       )}
 
+      {/* 2. MERCHANTS */}
       {activeTab === "merchants" && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
-          <div className="bg-white p-6 rounded-[2rem] border border-neutral-100 shadow-sm">
-            <h3 className="text-[0.9rem] font-bold mb-4">Manage Merchant</h3>
+          <div className="bg-white p-6 rounded-[2.5rem] border border-neutral-100 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-[1.1rem] font-black tracking-tight">{t("manage_merchants")}</h3>
+              <div className="flex bg-neutral-100 p-1 rounded-xl">
+                <button onClick={() => setMerchantMode("quick")} className={`px-3 py-1.5 rounded-lg text-[0.7rem] font-bold transition-all ${merchantMode === "quick" ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500"}`}>{t("quick_mode")}</button>
+                <button onClick={() => setMerchantMode("detail")} className={`px-3 py-1.5 rounded-lg text-[0.7rem] font-bold transition-all ${merchantMode === "detail" ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500"}`}>{t("detail_mode")}</button>
+              </div>
+            </div>
+
             <form ref={merchantFormRef} action={async (fd) => {
-              fd.append("lat", String(lat)); fd.append("lng", String(lng)); fd.append("area", area);
+              setLoading(true);
+              fd.append("lat", String(lat)); fd.append("lng", String(lng)); fd.append("area", area); fd.append("address", address);
               const res = await upsertMerchant(fd);
-              if (res.success) { merchantFormRef.current?.reset(); const updated = await getAllMerchants(); setMerchants(updated); }
+              setLoading(false);
+              if (res.success) { 
+                merchantFormRef.current?.reset(); 
+                const updated = await getAllMerchants(); 
+                setMerchants(updated);
+                alert("Saved!");
+              } else alert(res.error);
             }} className="space-y-4">
-              <input name="name" required placeholder="Name" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+              <input name="name" required placeholder={t("merchant_name")} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold focus:border-neutral-900 focus:bg-white transition-all outline-none" />
               
-              <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, address) => {
-                setLat(newLat); setLng(newLng); setPickedAddress(address);
+              <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, addr, ar) => {
+                setLat(newLat); setLng(newLng); setAddress(addr); setArea(ar);
               }} />
-              
-              <div className="grid grid-cols-2 gap-3">
-                <select name="category" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]">
-                  <option value="Makanan">Food</option>
-                  <option value="Minuman">Drink</option>
-                  <option value="Snack">Snack</option>
-                  <option value="Paket">Parcel</option>
-                </select>
-                <select name="busy_score" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]">
-                  <option value="5">Score 5 (Very Busy)</option>
-                  <option value="4">Score 4 (Busy)</option>
-                  <option value="3" selected>Score 3 (Normal)</option>
-                  <option value="2">Score 2 (Quiet)</option>
-                  <option value="1">Score 1 (Very Quiet)</option>
-                </select>
+
+              {merchantMode === "detail" && (
+                <>
+                  <select name="category" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold">
+                    <option value="Makanan">🍱 Food</option>
+                    <option value="Minuman">🥤 Drink</option>
+                    <option value="Snack">🍟 Snack</option>
+                    <option value="Paket">📦 Package</option>
+                  </select>
+                  <textarea name="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t("address")} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] resize-none" rows={2} />
+                </>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <input name="rating" type="number" step="0.1" placeholder={t("rating")} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+                <input name="reviews" type="number" placeholder={t("reviews")} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <input name="rating" type="number" step="0.1" placeholder="Rating (0-5)" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
-                <input name="reviews" type="number" placeholder="Review Count" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+              <div className="flex gap-5 pt-2">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <input type="checkbox" name="promo_active" className="w-5 h-5 rounded-lg border-neutral-300 text-neutral-900 focus:ring-0" />
+                  <span className="text-[0.85rem] font-bold text-neutral-600 group-hover:text-neutral-900 transition-colors">{t("promo")}</span>
+                </label>
+                {merchantMode === "detail" && (
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" name="pickup_fast" className="w-5 h-5 rounded-lg border-neutral-300 text-neutral-900 focus:ring-0" />
+                    <span className="text-[0.85rem] font-bold text-neutral-600 group-hover:text-neutral-900 transition-colors">{t("fast_pickup")}</span>
+                  </label>
+                )}
               </div>
 
-              <div className="flex gap-5 pt-1">
-                <label className="flex items-center gap-2"><input type="checkbox" name="promo_active" /> <span className="text-sm font-semibold">Promo</span></label>
-                <label className="flex items-center gap-2"><input type="checkbox" name="pickup_fast" /> <span className="text-sm font-semibold">Fast Pickup</span></label>
-              </div>
-              <button className="w-full py-3.5 bg-neutral-900 text-white font-bold rounded-2xl">Save Merchant</button>
+              <button disabled={loading} className="w-full py-4 bg-neutral-900 text-white font-black rounded-2xl shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 text-[1.05rem]">
+                {loading ? "..." : t("save_merchant")}
+              </button>
             </form>
           </div>
-          <div className="space-y-2">
+
+          {/* Merchant List */}
+          <div className="space-y-3">
+            <h4 className="text-[0.75rem] font-black uppercase tracking-widest text-neutral-400 ml-2">Active Database</h4>
             {merchants.map(m => (
-              <div key={m.id} className="bg-white p-4 rounded-2xl border border-neutral-100 shadow-sm flex justify-between items-center">
-                <div><p className="font-bold text-sm">{m.name}</p><p className="text-[0.7rem] text-neutral-400">{m.area} · Score {m.busy_score}</p></div>
-                <button onClick={() => toggleMerchantActive(m.id, !m.is_active)} className={`text-[0.65rem] font-bold px-3 py-1.5 rounded-full ${m.is_active ? "bg-emerald-50 text-emerald-600" : "bg-neutral-50 text-neutral-400"}`}>{m.is_active ? "Active" : "Inactive"}</button>
+              <div key={m.id} className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm flex flex-col gap-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-black text-[0.95rem] tracking-tight">{m.name}</p>
+                    <p className="text-[0.75rem] text-neutral-400 font-bold">{m.area} · <span className={`uppercase ${m.busy_level === 'High' ? 'text-red-500' : m.busy_level === 'Medium' ? 'text-orange-500' : 'text-emerald-500'}`}>{m.busy_level}</span></p>
+                  </div>
+                  <button onClick={() => toggleMerchantActive(m.id, !m.is_active)} className={`text-[0.65rem] font-black px-4 py-2 rounded-full uppercase tracking-widest transition-all ${m.is_active ? "bg-emerald-50 text-emerald-600" : "bg-neutral-50 text-neutral-400"}`}>
+                    {m.is_active ? t("enable") : t("disable")}
+                  </button>
+                </div>
+                <div className="flex gap-2 border-t border-neutral-50 pt-3">
+                  <button onClick={() => alert("Edit mode coming soon - use Quick Mode to update same name+area")} className="flex-1 py-2.5 rounded-xl bg-neutral-100 text-[0.75rem] font-bold text-neutral-600 active:scale-95 transition-all">{t("edit")}</button>
+                  <button onClick={async () => {
+                    if (confirm("Delete merchant?")) {
+                      await deleteMerchant(m.id);
+                      setMerchants(prev => prev.filter(x => x.id !== m.id));
+                    }
+                  }} className="flex-1 py-2.5 rounded-xl bg-red-50 text-[0.75rem] font-bold text-red-600 active:scale-95 transition-all">{t("delete")}</button>
+                </div>
               </div>
             ))}
           </div>
         </div>
       )}
 
+      {/* 3. RADAR SPOTS */}
       {activeTab === "radar" && (
-        <div className="bg-white p-6 rounded-[2rem] border border-neutral-100 shadow-sm animate-in fade-in slide-in-from-bottom-2">
-          <h3 className="text-[0.9rem] font-bold mb-4">Add Spot Mangkal</h3>
+        <div className="bg-white p-6 rounded-[2.5rem] border border-neutral-100 shadow-sm animate-in fade-in slide-in-from-bottom-2">
+          <h3 className="text-[1.1rem] font-black mb-6 tracking-tight">Add Spot Mangkal</h3>
           <form action={async (fd) => {
+            setLoading(true);
             fd.append("lat", String(lat)); fd.append("lng", String(lng)); fd.append("area", area);
             const res = await saveNgetemSpot(fd);
+            setLoading(false);
             if (res.success) alert("Spot saved!");
           }} className="space-y-4">
-            <input name="name" required placeholder="Spot Name" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+            <input name="name" required placeholder="Spot Name" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold outline-none focus:border-neutral-900 focus:bg-white" />
             
-            <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng) => {
-              setLat(newLat); setLng(newLng);
+            <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, addr, ar) => {
+              setLat(newLat); setLng(newLng); setArea(ar);
             }} />
 
             <div className="grid grid-cols-2 gap-3">
-              <select name="quality" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]">
-                <option value="Bagus">Good Quality</option>
-                <option value="Lumayan">Medium Quality</option>
-                <option value="Jebakan">Trap (Avoid)</option>
+              <select name="quality" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold">
+                <option value="Bagus">💎 Good Quality</option>
+                <option value="Lumayan">⚖️ Medium Quality</option>
+                <option value="Jebakan">⚠️ Trap (Avoid)</option>
               </select>
-              <input name="best_hours" placeholder="Best Hours (e.g. 11-13)" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+              <input name="best_hours" placeholder="Best Hours (e.g. 11-13)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
             </div>
-            <textarea name="notes" placeholder="Additional Notes" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] resize-none" rows={2} />
-            <button className="w-full py-3.5 bg-neutral-900 text-white font-bold rounded-2xl">Save Radar Spot</button>
+            <textarea name="notes" placeholder="Additional Notes" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] resize-none" rows={2} />
+            <button disabled={loading} className="w-full py-4 bg-neutral-900 text-white font-black rounded-2xl shadow-lg active:scale-[0.98] transition-all disabled:opacity-50">
+              {loading ? "..." : "Save Radar Spot"}
+            </button>
           </form>
         </div>
       )}
 
+      {/* 4. USERS */}
       {activeTab === "users" && (
         <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2">
           {users.map(u => (
-            <div key={u.id} className={`bg-white p-4 rounded-2xl border border-neutral-100 shadow-sm flex flex-col gap-3 ${u.is_disabled ? "opacity-60 bg-neutral-50" : ""}`}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center font-bold text-neutral-500">{u.nama?.[0] || "?"}</div>
+            <div key={u.id} className={`bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm flex flex-col gap-4 ${u.is_disabled ? "opacity-60 grayscale bg-neutral-50" : ""}`}>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-neutral-100 flex items-center justify-center font-black text-neutral-900 text-lg shadow-inner">{u.nama?.[0] || "?"}</div>
                 <div className="flex-1">
-                  <p className="font-bold text-sm">{u.nama || "Unknown"}</p>
-                  <p className="text-[0.7rem] text-neutral-400">{u.email} · ID: {u.driver_id || "-"}</p>
+                  <p className="font-black text-[1rem] tracking-tight text-neutral-900 leading-tight">{u.nama || "Unknown"}</p>
+                  <p className="text-[0.7rem] text-neutral-400 font-bold uppercase tracking-widest mt-0.5">{u.platform} · {u.kota}</p>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className={`w-2 h-2 rounded-full ${new Date().getTime() - new Date(u.last_active).getTime() < 300000 ? "bg-emerald-500" : "bg-neutral-300"}`} />
+                  <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${new Date().getTime() - new Date(u.last_active).getTime() < 300000 ? "bg-emerald-500 animate-pulse" : "bg-neutral-300"}`} />
                 </div>
               </div>
-              <div className="flex gap-2 border-t border-neutral-50 pt-3">
+              <div className="flex gap-2 border-t border-neutral-50 pt-4">
                 <button 
                   onClick={async () => {
                     const res = await toggleUserDisabled(u.id, !u.is_disabled);
                     if (res.success) setUsers(prev => prev.map(x => x.id === u.id ? {...x, is_disabled: !u.is_disabled} : x));
                   }}
-                  className={`flex-1 py-2 rounded-xl text-[0.7rem] font-bold ${u.is_disabled ? "bg-emerald-50 text-emerald-600" : "bg-orange-50 text-orange-600"}`}
+                  className={`flex-1 py-2.5 rounded-xl text-[0.75rem] font-black uppercase tracking-widest transition-all ${u.is_disabled ? "bg-emerald-50 text-emerald-600" : "bg-orange-50 text-orange-600"}`}
                 >
-                  {u.is_disabled ? "Reactivate" : "Disable"}
+                  {u.is_disabled ? "Enable" : "Disable"}
                 </button>
                 <button 
                   onClick={async () => {
-                    if (confirm("Delete user permanently?")) {
+                    if (confirm("Delete user account?")) {
                       const res = await deleteUserAccount(u.id);
                       if (res.success) setUsers(prev => prev.filter(x => x.id !== u.id));
                     }
                   }}
-                  className="flex-1 py-2 rounded-xl bg-red-50 text-red-600 text-[0.7rem] font-bold"
+                  className="flex-1 py-2.5 rounded-xl bg-red-50 text-red-600 text-[0.75rem] font-black uppercase tracking-widest transition-all"
                 >
                   Delete
                 </button>
@@ -208,45 +254,54 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
         </div>
       )}
 
+      {/* 5. FEEDBACK */}
       {activeTab === "feedback" && (
-        <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2">
-          {initialFeedback.length === 0 && <p className="text-center text-neutral-400 py-10">No feedback yet.</p>}
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
+          {initialFeedback.length === 0 && <p className="text-center text-neutral-400 py-10 font-bold">No feedback received.</p>}
           {initialFeedback.map(f => (
-            <div key={f.id} className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm">
-              <div className="flex justify-between items-start mb-2">
-                <p className="font-bold text-sm">{f.users?.nama || "User"}</p>
-                <span className="text-[0.65rem] text-neutral-400">{new Date(f.created_at).toLocaleDateString()}</span>
+            <div key={f.id} className="bg-white p-6 rounded-[2.5rem] border border-neutral-100 shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
+              <div className="flex justify-between items-start mb-3 pl-2">
+                <div>
+                  <p className="font-black text-[0.95rem] tracking-tight">{f.users?.nama || "User"}</p>
+                  <p className="text-[0.7rem] text-neutral-400 font-bold uppercase">{new Date(f.created_at).toLocaleDateString()}</p>
+                </div>
               </div>
-              <p className="text-[0.85rem] text-neutral-600 leading-relaxed">{f.message}</p>
+              <p className="text-[0.9rem] text-neutral-700 leading-relaxed font-medium pl-2 italic">"{f.message}"</p>
             </div>
           ))}
         </div>
       )}
 
+      {/* 6. BROADCAST */}
       {activeTab === "broadcast" && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
-          <div className="bg-white p-6 rounded-[2rem] border border-neutral-100 shadow-sm">
-            <h3 className="text-[0.9rem] font-bold mb-4">New Broadcast (Expires 10m)</h3>
-            <form action={createBroadcast} className="space-y-3">
-              <input name="title" required placeholder="Title" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
-              <textarea name="message" required placeholder="Message" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] resize-none" rows={3} />
-              <select name="type" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]">
-                <option value="spot_ramai">Spot Ramai</option>
-                <option value="hindari_area">Hindari Area</option>
+          <div className="bg-white p-6 rounded-[2.5rem] border border-neutral-100 shadow-sm">
+            <h3 className="text-[1.1rem] font-black mb-6 tracking-tight tracking-tight">New Broadcast (10m)</h3>
+            <form action={createBroadcast} className="space-y-4">
+              <input name="title" required placeholder="Subject" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold outline-none focus:border-neutral-900 focus:bg-white" />
+              <textarea name="message" required placeholder="Short Intel Message" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] resize-none font-medium" rows={3} />
+              <select name="type" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-black uppercase tracking-wider">
+                <option value="spot_ramai">🔥 Spot Ramai</option>
+                <option value="hindari_area">⚠️ Hindari Area</option>
+                <option value="promo_seller">💰 Promo Seller</option>
               </select>
-              <button className="w-full py-3.5 bg-neutral-900 text-white font-bold rounded-2xl">Broadcast to All</button>
+              <button className="w-full py-4 bg-neutral-900 text-white font-black rounded-2xl shadow-lg active:scale-[0.98] transition-all">Broadcast Intel</button>
             </form>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {broadcasts.map(b => (
-              <div key={b.id} className="bg-white p-4 rounded-2xl border border-neutral-100 shadow-sm flex justify-between items-center">
+              <div key={b.id} className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm flex justify-between items-center relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-emerald-500"></div>
                 <div>
-                  <p className="font-bold text-sm">{b.title}</p>
-                  <p className="text-[0.65rem] text-neutral-400">
-                    {b.expires_at ? `Expires: ${new Date(b.expires_at).toLocaleTimeString()}` : "No expiry"}
+                  <p className="font-black text-[0.95rem] tracking-tight">{b.title}</p>
+                  <p className="text-[0.65rem] text-neutral-400 font-bold uppercase tracking-widest mt-1">
+                    {b.expires_at ? `Exp: ${new Date(b.expires_at).toLocaleTimeString()}` : "Permanent"}
                   </p>
                 </div>
-                <button onClick={() => deleteBroadcast(b.id)} className="text-[0.65rem] font-bold text-red-500 p-2">Delete</button>
+                <button onClick={() => deleteBroadcast(b.id)} className="w-10 h-10 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </button>
               </div>
             ))}
           </div>

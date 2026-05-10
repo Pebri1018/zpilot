@@ -2,16 +2,15 @@
 
 import { useEffect, useState, useCallback } from "react";
 import L from "leaflet";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
 type Props = {
   initialLat: number | null;
   initialLng: number | null;
-  onLocationSelect: (lat: number, lng: number, address: string) => void;
+  onLocationSelect: (lat: number, lng: number, address: string, area: string) => void;
 };
 
-// Component to handle icon fix inside browser context
 function LeafletIconFix() {
   useEffect(() => {
     // @ts-ignore
@@ -22,6 +21,14 @@ function LeafletIconFix() {
       shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
     });
   }, []);
+  return null;
+}
+
+function RecenterMap({ lat, lng }: { lat: number; lng: number }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView([lat, lng], map.getZoom());
+  }, [lat, lng, map]);
   return null;
 }
 
@@ -60,11 +67,17 @@ export default function LocationPicker({ initialLat, initialLng, onLocationSelec
     setIsMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (initialLat && initialLng) {
-      setPosition({ lat: initialLat, lng: initialLng });
+  const handleLocationUpdate = useCallback(async (lat: number, lng: number) => {
+    setPosition({ lat, lng });
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18`);
+      const data = await res.json();
+      const area = data.address?.neighbourhood || data.address?.suburb || data.address?.city_district || "Unknown Area";
+      onLocationSelect(lat, lng, data.display_name || "", area);
+    } catch (err) {
+      onLocationSelect(lat, lng, "Custom location", "Unknown Area");
     }
-  }, [initialLat, initialLng]);
+  }, [onLocationSelect]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,8 +89,7 @@ export default function LocationPicker({ initialLat, initialLng, onLocationSelec
       if (data && data[0]) {
         const newLat = parseFloat(data[0].lat);
         const newLng = parseFloat(data[0].lon);
-        setPosition({ lat: newLat, lng: newLng });
-        onLocationSelect(newLat, newLng, data[0].display_name);
+        handleLocationUpdate(newLat, newLng);
       }
     } catch (err) {
       console.error("Search error", err);
@@ -86,18 +98,7 @@ export default function LocationPicker({ initialLat, initialLng, onLocationSelec
     }
   };
 
-  const handleDragEnd = useCallback(async (lat: number, lng: number) => {
-    setPosition({ lat, lng });
-    try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18`);
-      const data = await res.json();
-      onLocationSelect(lat, lng, data.display_name || "Custom location");
-    } catch (err) {
-      onLocationSelect(lat, lng, "Custom location");
-    }
-  }, [onLocationSelect]);
-
-  if (!isMounted) return <div className="h-[200px] w-full bg-neutral-100 animate-pulse rounded-2xl" />;
+  if (!isMounted) return <div className="h-[250px] w-full bg-neutral-100 animate-pulse rounded-2xl" />;
 
   return (
     <div className="space-y-3">
@@ -107,28 +108,30 @@ export default function LocationPicker({ initialLat, initialLng, onLocationSelec
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Cari alamat..."
-          className="flex-1 px-4 py-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-sm focus:outline-none focus:border-neutral-400"
+          className="flex-1 px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] focus:outline-none focus:border-neutral-400"
         />
         <button
           onClick={handleSearch}
           disabled={searching}
-          className="px-4 py-2.5 bg-neutral-900 text-white rounded-xl text-sm font-bold disabled:opacity-50"
+          className="px-5 py-3 bg-neutral-900 text-white rounded-2xl text-sm font-bold disabled:opacity-50"
         >
           {searching ? "..." : "Cari"}
         </button>
       </div>
 
-      <div className="h-[200px] w-full rounded-2xl overflow-hidden border border-neutral-200 relative z-0">
+      <div className="h-[250px] w-full rounded-[2rem] overflow-hidden border border-neutral-100 relative z-0">
         <MapContainer
           center={[position.lat, position.lng]}
-          zoom={15}
+          zoom={16}
           style={{ height: "100%", width: "100%" }}
         >
           <LeafletIconFix />
+          <RecenterMap lat={position.lat} lng={position.lng} />
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          <DraggableMarker lat={position.lat} lng={position.lng} onDragEnd={handleDragEnd} />
+          <DraggableMarker lat={position.lat} lng={position.lng} onDragEnd={handleLocationUpdate} />
         </MapContainer>
       </div>
+      <p className="text-[0.7rem] text-neutral-400 text-center font-medium italic">Ketuk peta atau geser pin untuk set lokasi</p>
     </div>
   );
 }

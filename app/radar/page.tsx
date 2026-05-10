@@ -6,12 +6,13 @@ import dynamic from "next/dynamic";
 import { DriverBottomNav } from "@/components/DriverBottomNav";
 import { useLocation } from "@/hooks/useLocation";
 import { createClient } from "@/lib/supabase/client";
+import { useLanguage } from "@/context/LanguageContext";
 
 const RadarMap = dynamic(() => import("@/components/RadarMap"), {
   ssr: false,
   loading: () => (
     <div className="h-full w-full bg-[#f0f0f0] animate-pulse rounded-[1.25rem] flex items-center justify-center">
-      <span className="text-neutral-500 text-[0.8rem] font-bold uppercase tracking-widest">Memuat Radar...</span>
+      <span className="text-neutral-500 text-[0.8rem] font-bold uppercase tracking-widest">Scanning...</span>
     </div>
   ),
 });
@@ -25,6 +26,7 @@ export type RadarMarker = {
 };
 
 export default function RadarPage() {
+  const { lang, t } = useLanguage();
   const { latitude, longitude, areaName, loading, error } = useLocation();
   const [markers, setMarkers] = useState<RadarMarker[]>([]);
   const [fetching, setFetching] = useState(true);
@@ -113,7 +115,7 @@ export default function RadarPage() {
       <header className="px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-4 flex justify-between items-end">
         <div>
           <h1 className="text-[1.35rem] font-bold tracking-tight">Radar Intel</h1>
-          <p className="text-[0.85rem] text-neutral-500">{areaName || "Scanning area..."}</p>
+          <p className="text-[0.85rem] text-neutral-500">{areaName || t("searching_loc")}</p>
         </div>
         <div className="bg-white px-3 py-1.5 rounded-xl border border-neutral-100 shadow-sm flex items-center gap-2">
           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -126,13 +128,13 @@ export default function RadarPage() {
         
         {/* Legend */}
         <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md p-4 rounded-[1.5rem] shadow-lg z-[1000] border border-white/50">
-          <p className="text-[0.65rem] font-bold uppercase tracking-widest text-neutral-400 mb-2">Keterangan Radar</p>
+          <p className="text-[0.65rem] font-bold uppercase tracking-widest text-neutral-400 mb-2">{t("legend")}</p>
           <div className="grid grid-cols-2 gap-y-2 gap-x-4">
-            <LegendItem color="bg-blue-500" label="Ngetem" />
-            <LegendItem color="bg-neutral-400" label="Antar" />
-            <LegendItem color="bg-red-500" label="Resto Ramai" />
-            <LegendItem color="bg-orange-400" label="Resto Sedang" />
-            <LegendItem color="bg-emerald-500" label="Resto Sepi" />
+            <LegendItem color="bg-blue-500" label={t("ngetem")} />
+            <LegendItem color="bg-neutral-400" label={t("antar")} />
+            <LegendItem color="bg-red-500" label={lang === "ID" ? "Resto Ramai" : "Busy Merch"} />
+            <LegendItem color="bg-orange-400" label={lang === "ID" ? "Resto Sedang" : "Med Merch"} />
+            <LegendItem color="bg-emerald-500" label={lang === "ID" ? "Resto Sepi" : "Low Merch"} />
             <LegendItem color="bg-purple-500" label="Spot Mangkal" />
           </div>
         </div>

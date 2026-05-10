@@ -52,26 +52,27 @@ export async function upsertMerchant(formData: FormData) {
 
   const name = String(formData.get("name") || "").trim();
   const category = String(formData.get("category") || "Makanan");
-  const busy_score = Math.min(5, Math.max(1, Number(formData.get("busy_score") || 3)));
   const promo_active = formData.get("promo_active") === "on";
   const pickup_fast = formData.get("pickup_fast") === "on";
   const lat = formData.get("lat") ? Number(formData.get("lat")) : null;
   const lng = formData.get("lng") ? Number(formData.get("lng")) : null;
+  const area = String(formData.get("area") || "").trim();
+  const address = String(formData.get("address") || "").trim();
+  const rating = formData.get("rating") ? Number(formData.get("rating")) : 0;
+  const reviews = formData.get("reviews") ? Number(formData.get("reviews")) : 0;
 
-  const area_override = String(formData.get("area_override") || "").trim();
-  const area_gps = String(formData.get("area") || "").trim();
-  const area = area_override || area_gps;
+  if (!name || !area) return { error: "Nama resto dan area wajib diisi" };
 
-  const rating = formData.get("rating") ? Number(formData.get("rating")) : null;
-  const reviews = formData.get("reviews") ? Number(formData.get("reviews")) : null;
+  // --- AUTO SCORE LOGIC ---
+  // Score 0-100 base
+  let score = 0;
+  score += rating * 10; // Max 50
+  score += Math.min(20, (reviews / 50) * 10); // Max 20 (cap at 100 reviews)
+  if (promo_active) score += 15;
+  if (pickup_fast) score += 15;
 
-  // Auto calculate popularity score (0-10)
-  // Logic: (rating * 1.5) + (log10(reviews + 1))
-  const popularity_score = rating ? (rating * 1.5) + (reviews ? Math.log10(reviews + 1) : 0) : null;
-
-  if (!name || !area) return { error: "Nama restoran dan area wajib diisi" };
-
-  // Map busy_score to busy_level for backward compat
+  // Map to 1-5 busy_score for backward compat and Low/Med/High label
+  const busy_score = Math.max(1, Math.min(5, Math.floor(score / 20)));
   const busy_level = busy_score >= 4 ? "High" : busy_score >= 2 ? "Medium" : "Low";
 
   const supabase = getServiceClient();
@@ -82,29 +83,41 @@ export async function upsertMerchant(formData: FormData) {
       busy_score,
       busy_level,
       promo_active,
-      fast_pickup: pickup_fast,
       pickup_fast,
-      rating,
-      reviews,
-      popularity_score,
+      fast_pickup: pickup_fast,
       is_active: true,
       lat: lat && !isNaN(lat) ? lat : null,
       lng: lng && !isNaN(lng) ? lng : null,
       area,
+      address,
+      rating,
+      reviews,
+      popularity_score: score,
       updated_at: new Date().toISOString(),
       expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-      created_at: new Date().toISOString(),
     },
     { onConflict: "name,area" }
   );
 
-  if (error) {
-    console.error("Error upserting merchant:", error);
-    return { error: error.message };
-  }
+  if (error) return { error: error.message };
 
   revalidatePath("/admin");
   revalidatePath("/");
+  revalidatePath("/radar");
+  return { success: true };
+}
+
+export async function deleteMerchant(id: string) {
+  const isAdmin = await verifyAdmin();
+  if (!isAdmin) return { error: "Unauthorized" };
+
+  const supabase = getServiceClient();
+  const { error } = await supabase.from("merchant_signals").delete().eq("id", id);
+  
+  if (error) return { error: error.message };
+  revalidatePath("/admin");
+  revalidatePath("/");
+  revalidatePath("/radar");
   return { success: true };
 }
 
