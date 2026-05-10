@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 
+import { getHotspots } from "./hotspot";
+
 export type RecommendationResult = {
   action: "STAY" | "MOVE" | "OFFLINE" | "BUSY";
   title: string;
@@ -29,7 +31,7 @@ export async function getRecommendationV2(
       action: "OFFLINE",
       title: isID ? "Pilot Siaga" : "Pilot Standby",
       reason: isID ? "Kamu sedang offline. Aktifkan status untuk mulai memindai hotspot." : "You're offline. Go online to start scanning hotspot.",
-      color: "#9CA3AF", // Gray
+      color: "#9CA3AF",
       badge: "High"
     };
   }
@@ -39,87 +41,89 @@ export async function getRecommendationV2(
       action: "BUSY",
       title: isID ? "Sedang Mengantar" : "Delivery in Progress",
       reason: isID ? "Selesaikan pengantaran dulu. Hotspot berikutnya akan disarankan setelah selesai." : "Complete delivery first. Next hotspot will be suggested after finish.",
-      color: "#F59E0B", // Orange
-      badge: "High"
-    };
-  }
-
-  // 2. High Competition Rule
-  if (driverCount >= 5) {
-    return {
-      action: "MOVE",
-      title: isID ? "Pesaing Padat" : "High Competition",
-      reason: isID ? "Persaingan padat. Geser 500m menjauh untuk menghindari rebutan." : "Competition high. Shift 500m away to avoid crowd.",
       color: "#F59E0B",
       badge: "High"
     };
   }
 
-  // 3. Time-based Rules
-  const isLunchPeak = hour >= 11 && hour <= 13;
-  const isDinnerPeak = hour >= 17 && hour <= 20;
+  // Fetch hotspots to give smart recommendations
+  const hotspots = await getHotspots();
+  const topHotspot = hotspots.length > 0 ? hotspots[0] : null;
+  const secondHotspot = hotspots.length > 1 ? hotspots[1] : null;
+  
+  // Find if current area is a known hotspot
+  const currentHotspot = hotspots.find(h => currentArea.includes(h.name.toLowerCase()));
 
+  // 2. Too Long Idle (Ngetem > 15 mins)
+  if (idleMinutes >= 15) {
+    const target = topHotspot?.name || "area lain";
+    return {
+      action: "MOVE",
+      title: isID ? "Pindah Sekarang" : "Move Now",
+      reason: isID ? `Kamu ngetem ${idleMinutes} menit. Geser ke ${target} sekarang.` : `Idle for ${idleMinutes} mins. Move to ${target}.`,
+      targetZone: target,
+      color: "#EF4444",
+      badge: "High"
+    };
+  }
+
+  // 3. High Competition (Driver >= 5)
+  if (driverCount >= 5) {
+    // If current area is the top hotspot, suggest the second one.
+    const target = (currentHotspot && topHotspot && currentHotspot.id === topHotspot.id && secondHotspot) 
+      ? secondHotspot.name 
+      : (topHotspot?.name || "area lain");
+      
+    return {
+      action: "MOVE",
+      title: isID ? "Pesaing Padat" : "Crowded Zone",
+      reason: isID ? `Area ini padat pesaing. Geser ke ${target}.` : `Too many drivers here. Shift to ${target}.`,
+      targetZone: target,
+      color: "#F59E0B",
+      badge: "High"
+    };
+  }
+
+  // 4. Peak Hours
+  const isLunchPeak = hour >= 11 && hour <= 13;
   if (isLunchPeak) {
-    if (!currentArea.includes("kampus") && !currentArea.includes("seturan") && !currentArea.includes("babarsari")) {
+    if (currentArea.includes("kampus") || currentArea.includes("seturan") || currentArea.includes("babarsari")) {
+      return {
+        action: "STAY",
+        title: isID ? "Lunch Peak" : "Lunch Peak",
+        reason: isID ? "Tahan di sini. Prioritaskan merchant food zone." : "Stay here. Prioritize food merchants.",
+        color: "#10B981",
+        badge: "Medium"
+      };
+    } else {
+      const target = hotspots.find(h => h.name.includes("Seturan") || h.name.includes("Babarsari") || h.name.includes("UGM"))?.name || "Seturan";
       return {
         action: "MOVE",
-        title: isID ? "Puncak Makan Siang" : "Lunch Peak Active",
-        reason: isID ? "Prioritaskan area makanan seperti kampus atau Seturan." : "Prioritize food zones like campus area or Seturan.",
-        color: "#10B981", // Green
+        title: isID ? "Lunch Peak Mulai" : "Lunch Peak Started",
+        reason: isID ? `Jam makan siang. Geser ke ${target}.` : `Lunch time. Move to ${target}.`,
+        targetZone: target,
+        color: "#F59E0B",
         badge: "Medium"
       };
     }
   }
 
-  // 4. Idle Timer & Density Rules
-  const hasMerchants = merchantCount > 0;
-
-  if (idleMinutes < 8 && hasMerchants) {
+  // 5. If current zone is Menarik/Ramai
+  if (currentHotspot && (currentHotspot.label === "RAMAI" || currentHotspot.label === "MENARIK")) {
     return {
       action: "STAY",
-      title: isID ? "Potensi Bagus" : "Good Potential",
-      reason: isID ? "Tahan 5 menit lagi. Area ini masih ada resto aktif." : "Stay 5 more minutes. Area still has active merchants.",
-      color: "#3B82F6", // Blue
+      title: isID ? "Zona Bagus" : "Good Zone",
+      reason: isID ? `Sinyal ${currentHotspot.label.toLowerCase()}. Tahan posisi.` : `Zone is ${currentHotspot.label}. Hold position.`,
+      color: "#3B82F6",
       badge: "High"
-    };
-  }
-
-  if (idleMinutes > 15 && !hasMerchants) {
-    return {
-      action: "MOVE",
-      title: isID ? "Zona Mati" : "Dead Zone",
-      reason: isID ? "Tidak ada sinyal di sini. Geser ke Seturan / Babarsari atau hotspot terdekat." : "No signal here. Move to Seturan / Babarsari or nearby hotspots.",
-      color: "#EF4444", // Red
-      badge: "High"
-    };
-  }
-
-  if (idleMinutes > 30) {
-    return {
-      action: "MOVE",
-      title: isID ? "Terlalu Lama Ngetem" : "Stuck Too Long",
-      reason: isID ? "Kamu sudah ngetem terlalu lama. Pindah area untuk reset algoritma." : "You've been waiting too long. Shift area to reset algorithm.",
-      color: "#EF4444",
-      badge: "Medium"
-    };
-  }
-
-  // Future Ready / Evening
-  if (hour >= 15 && hour < 17) {
-    return {
-      action: "STAY",
-      title: isID ? "Persiapan Sore" : "Evening Prep",
-      reason: isID ? "Permintaan akan segera naik untuk makan malam. Posisi di dekat resto." : "Demand may rise soon for dinner. Position yourself near restos.",
-      color: "#10B981",
-      badge: "Low"
     };
   }
 
   // Default Fallback
   return {
     action: "STAY",
-    title: isID ? "Memindai Radar" : "Scanning Radar",
-    reason: isID ? "Memantau sinyal lokal. Tetap waspada untuk orderan mendadak." : "Monitoring local signals. Stay alert for sudden orders.",
+    title: isID ? "Standby" : "Standby",
+    reason: isID ? "Memantau pergerakan pasar. Tetap waspada." : "Monitoring market. Stay alert.",
     color: "#10B981",
     badge: "Low"
   };

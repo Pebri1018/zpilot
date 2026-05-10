@@ -9,6 +9,7 @@ import { getHotspots, type HotspotZone } from "@/app/actions/hotspot";
 import { DriverStatusSelector } from "./DriverStatusSelector";
 import { NgetemTimer } from "./NgetemTimer";
 import { useLanguage } from "@/context/LanguageContext";
+import { AIFeedback } from "./AIFeedback";
 
 export function LiveDashboard() {
   const { lang, t } = useLanguage();
@@ -221,9 +222,18 @@ export function LiveDashboard() {
             )}
 
             {recommendation.action !== "OFFLINE" && recommendation.action !== "BUSY" && (
-              <Link href="/radar" className="mt-6 flex w-full items-center justify-center rounded-[1.25rem] py-4 text-[1.05rem] font-bold text-white shadow-lg active:scale-95 transition-all" style={{ backgroundColor: recommendation.color }}>
-                {t("open_radar")}
-              </Link>
+              <>
+                <Link href="/radar" className="mt-6 flex w-full items-center justify-center rounded-[1.25rem] py-4 text-[1.05rem] font-bold text-white shadow-lg active:scale-95 transition-all" style={{ backgroundColor: recommendation.color }}>
+                  {t("open_radar")}
+                </Link>
+                
+                <AIFeedback 
+                  title={recommendation.title} 
+                  zone={areaName || "Unknown"} 
+                  idleMinutes={status === "Ngetem" && ngetemStartTime ? Math.floor((Date.now() - ngetemStartTime) / 60000) : 0} 
+                  lang={lang} 
+                />
+              </>
             )}
           </div>
         </div>

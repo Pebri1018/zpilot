@@ -6,6 +6,8 @@ import { useLocation } from "@/hooks/useLocation";
 import { getZoneStats, type ZoneStatsResult } from "@/app/actions/recommendation";
 import { getActiveMerchants, type MerchantSignal } from "@/app/admin/actions/signals";
 import { jogjaTrends, getCurrentTimeSlot, type TimeSlot } from "@/lib/trendData";
+import { getHotspots, type HotspotZone } from "@/app/actions/hotspot";
+import { getDailyPerformance, type DailyPerformance } from "@/app/actions/feedback";
 
 type PulseState = "Rising" | "Stable" | "Falling" | "Analyzing";
 
@@ -65,6 +67,8 @@ export default function TrenPage() {
   const { areaName, loading: locLoading } = useLocation();
   const [stats, setStats] = useState<ZoneStatsResult | null>(null);
   const [merchants, setMerchants] = useState<MerchantSignal[]>([]);
+  const [hotspots, setHotspots] = useState<HotspotZone[]>([]);
+  const [performance, setPerformance] = useState<DailyPerformance>({ correct: 0, failed: 0, avgWaitSaved: 0 });
   const [pulse, setPulse] = useState<PulseState>("Analyzing");
   const [currentSlot, setCurrentSlot] = useState<TimeSlot>("siang");
   const [mounted, setMounted] = useState(false);
@@ -80,13 +84,17 @@ export default function TrenPage() {
 
     async function fetchPulse() {
       try {
-        const [zoneStats, merchs] = await Promise.all([
+        const [zoneStats, merchs, hSpots, perf] = await Promise.all([
           getZoneStats(areaName),
-          getActiveMerchants(areaName)
+          getActiveMerchants(areaName),
+          getHotspots(),
+          getDailyPerformance()
         ]);
 
         setStats(zoneStats);
         setMerchants(merchs);
+        setHotspots(hSpots.slice(0, 5)); // Top 5
+        setPerformance(perf);
 
         if (zoneStats.orderan === "Potensi Tinggi" && zoneStats.pesaing !== "Padat") {
           setPulse("Rising");
@@ -158,7 +166,59 @@ export default function TrenPage() {
               </div>
             </section>
 
-            {/* LIVE PULSE */}
+            {/* DAILY PERFORMANCE */}
+            <section>
+              <h2 className="text-[0.72rem] font-bold uppercase tracking-widest text-neutral-400 mb-2 ml-1">Performa Hari Ini</h2>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="bg-white rounded-2xl p-3 shadow-sm border border-neutral-100 flex flex-col items-center justify-center text-center">
+                  <span className="text-[1.25rem] font-black text-green-600">{performance.correct}</span>
+                  <span className="text-[0.6rem] font-bold text-neutral-400 uppercase mt-1 tracking-wider">Tepat</span>
+                </div>
+                <div className="bg-white rounded-2xl p-3 shadow-sm border border-neutral-100 flex flex-col items-center justify-center text-center">
+                  <span className="text-[1.25rem] font-black text-red-500">{performance.failed}</span>
+                  <span className="text-[0.6rem] font-bold text-neutral-400 uppercase mt-1 tracking-wider">Meleset</span>
+                </div>
+                <div className="bg-white rounded-2xl p-3 shadow-sm border border-neutral-100 flex flex-col items-center justify-center text-center">
+                  <span className="text-[1.25rem] font-black text-blue-600">{performance.avgWaitSaved}m</span>
+                  <span className="text-[0.6rem] font-bold text-neutral-400 uppercase mt-1 tracking-wider">Waktu Hemat</span>
+                </div>
+              </div>
+            </section>
+
+            {/* TOP 5 LIVE ZONES */}
+            <section>
+              <div className="flex items-center justify-between mb-2 ml-1">
+                <h2 className="text-[0.72rem] font-bold uppercase tracking-widest text-neutral-400">Top 5 Live Zones</h2>
+                <span className="text-[0.65rem] font-bold bg-neutral-200 text-neutral-600 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" /> LIVE
+                </span>
+              </div>
+              <div className="bg-white rounded-3xl border border-neutral-100 shadow-sm overflow-hidden">
+                {hotspots.map((h, i) => (
+                  <div key={h.id} className={`p-4 flex items-center justify-between ${i !== hotspots.length - 1 ? 'border-b border-neutral-50' : ''}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 rounded-full bg-neutral-100 flex items-center justify-center text-[0.75rem] font-bold text-neutral-500 shrink-0">
+                        {i + 1}
+                      </div>
+                      <div>
+                        <p className="font-bold text-[0.95rem] text-neutral-900 leading-none mb-1">{h.name}</p>
+                        <p className="text-[0.7rem] font-medium text-neutral-500">
+                          {h.antar_drivers} Antar • {h.ngetem_drivers} Ngetem • {h.merchant_count} Resto
+                        </p>
+                      </div>
+                    </div>
+                    <span className={`text-[0.65rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg shrink-0 ${h.label === 'RAMAI' ? 'bg-red-50 text-red-600 border border-red-100' : h.label === 'MENARIK' ? 'bg-orange-50 text-orange-600 border border-orange-100' : 'bg-neutral-50 text-neutral-600 border border-neutral-200'}`}>
+                      {h.label}
+                    </span>
+                  </div>
+                ))}
+                {hotspots.length === 0 && (
+                  <div className="p-6 text-center text-sm text-neutral-500">Belum ada data hotspot tersedia.</div>
+                )}
+              </div>
+            </section>
+
+            {/* LIVE PULSE (Current Area) */}
             <section>
               <div className="flex items-center justify-between mb-2 ml-1">
                 <h2 className="text-[0.72rem] font-bold uppercase tracking-widest text-neutral-400">

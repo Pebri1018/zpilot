@@ -42,6 +42,19 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     if (!sessionOpenedRef.current) {
       sessionOpenedRef.current = true;
       recordSessionOpen().catch(console.error);
+
+      // Fetch initial status so it doesn't default to Offline on refresh
+      async function fetchInitialStatus() {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data } = await supabase.from('users').select('status').eq('id', user.id).maybeSingle();
+          if (data && data.status) {
+            setState(s => ({ ...s, status: data.status }));
+          }
+        }
+      }
+      fetchInitialStatus();
     }
   }, []);
 
