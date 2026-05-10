@@ -55,8 +55,6 @@ export async function upsertMerchant(formData: FormData) {
   const busy_score = Math.min(5, Math.max(1, Number(formData.get("busy_score") || 3)));
   const promo_active = formData.get("promo_active") === "on";
   const pickup_fast = formData.get("pickup_fast") === "on";
-  const rating = formData.get("rating") ? Number(formData.get("rating")) : null;
-  const review_count = formData.get("review_count") ? Number(formData.get("review_count")) : null;
   const lat = formData.get("lat") ? Number(formData.get("lat")) : null;
   const lng = formData.get("lng") ? Number(formData.get("lng")) : null;
 
@@ -65,12 +63,6 @@ export async function upsertMerchant(formData: FormData) {
   const area = area_override || area_gps;
 
   if (!name || !area) return { error: "Nama restoran dan area wajib diisi" };
-
-  // Calculate popularity score: rating * log(review_count + 1) * busy_score
-  let popularity_score = busy_score; // default
-  if (rating && review_count) {
-    popularity_score = rating * Math.log(review_count + 1) * (busy_score / 3);
-  }
 
   // Map busy_score to busy_level for backward compat
   const busy_level = busy_score >= 4 ? "High" : busy_score >= 2 ? "Medium" : "Low";
@@ -89,9 +81,6 @@ export async function upsertMerchant(formData: FormData) {
       lat: lat && !isNaN(lat) ? lat : null,
       lng: lng && !isNaN(lng) ? lng : null,
       area,
-      rating: rating && !isNaN(rating) ? rating : null,
-      reviews: review_count && !isNaN(review_count) ? review_count : null,
-      popularity_score,
       updated_at: new Date().toISOString(),
       // Set expires far in the future so persistent merchants always appear
       expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
@@ -144,7 +133,6 @@ export type MerchantSignal = {
   lng?: number | null;
   rating?: number | null;
   reviews?: number | null;
-  popularity_score?: number | null;
   eta_minutes?: number | null;
   distance_km?: number | null;
   discount_text?: string | null;

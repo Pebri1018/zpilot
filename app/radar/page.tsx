@@ -5,8 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { DriverBottomNav } from "@/components/DriverBottomNav";
 import { useLocation } from "@/hooks/useLocation";
-import { getActiveMerchants, type MerchantSignal } from "@/app/admin/actions/signals";
-import { saveNgetemSpot } from "@/app/admin/actions/notes";
+import { createClient } from "@/lib/supabase/client";
 
 // Dynamically import map so it doesn't break during Server-Side Rendering
 const RadarMap = dynamic(() => import("@/components/RadarMap"), {
@@ -22,18 +21,15 @@ export type ActiveDriver = {
   user_id: string;
   latitude: number;
   longitude: number;
-  status?: "ngetem" | "antar" | "offline";
 };
 
 export default function RadarPage() {
   const { latitude, longitude, areaName, loading, error } = useLocation();
   const [activeDrivers, setActiveDrivers] = useState<ActiveDriver[]>([]);
-  const [merchants, setMerchants] = useState<MerchantSignal[]>([]);
-  const [ngetemSpots, setNgetemSpots] = useState<any[]>([]);
   const [fetchingDrivers, setFetchingDrivers] = useState(true);
 
   useEffect(() => {
-    async function fetchData() {
+    async function fetchDrivers() {
       try {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
@@ -43,7 +39,7 @@ export default function RadarPage() {
 
         let query = supabase
           .from("driver_locations")
-          .select("user_id, latitude, longitude, status")
+          .select("user_id, latitude, longitude")
           .gte("updated_at", fifteenMinsAgo);
 
         if (user) {
@@ -51,40 +47,23 @@ export default function RadarPage() {
           query = query.neq("user_id", user.id);
         }
 
-        const { data: drivers } = await query;
-        if (drivers) {
-          // Map status to our types
-          const driversWithStatus = drivers.map(d => ({
-            ...d,
-            status: (d.status === "Ngetem" ? "ngetem" : d.status === "Antar" ? "antar" : "offline") as "ngetem" | "antar" | "offline"
-          }));
-          setActiveDrivers(driversWithStatus);
+        const { data } = await query;
+        if (data) {
+          setActiveDrivers(data);
         }
-
-        // Fetch merchants
-        const merchantsData = await getActiveMerchants(areaName);
-        setMerchants(merchantsData);
-
-        // Fetch ngetem spots (assuming there's a table)
-        const { data: spots } = await supabase
-          .from("ngetem_spots")
-          .select("*")
-          .eq("is_active", true);
-        setNgetemSpots(spots || []);
-
       } catch (err) {
-        console.error("Failed to fetch data", err);
+        console.error("Failed to fetch active drivers", err);
       } finally {
         setFetchingDrivers(false);
       }
     }
 
-    fetchData();
+    fetchDrivers();
     
-    // Refresh data every minute
-    const interval = setInterval(fetchData, 60000);
+    // Refresh driver positions every minute
+    const interval = setInterval(fetchDrivers, 60000);
     return () => clearInterval(interval);
-  }, [areaName]);
+  }, []);
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-[#f7f7f8] text-neutral-900 antialiased">
@@ -110,44 +89,7 @@ export default function RadarPage() {
 
       <div className="relative mx-4 mb-4 min-h-0 flex-1 shadow-[0_2px_8px_rgba(0,0,0,0.08)] rounded-[1.25rem]">
         {/* Render the interactive Leaflet map */}
-        <RadarMap 
-          latitude={latitude} 
-          longitude={longitude} 
-          activeDrivers={activeDrivers} 
-          merchants={merchants}
-          ngetemSpots={ngetemSpots}
-        />
-        
-        {/* Legend */}
-        <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl p-3 shadow-lg z-10">
-          <div className="text-xs font-bold text-neutral-900 mb-2">LEGEND</div>
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-              <span className="text-xs text-neutral-700">Driver Ngetem</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-gray-500"></div>
-              <span className="text-xs text-neutral-700">Driver Antar</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500"></div>
-              <span className="text-xs text-neutral-700">Merchant Busy</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-              <span className="text-xs text-neutral-700">Merchant Medium</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span className="text-xs text-neutral-700">Merchant Low</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-              <span className="text-xs text-neutral-700">Hangout Spot</span>
-            </div>
-          </div>
-        </div>
+        <RadarMap latitude={latitude} longitude={longitude} activeDrivers={activeDrivers} />
         
         {/* Overlay error message if GPS fails */}
         {error && (
