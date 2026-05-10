@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef } from "react";
 import type { Broadcast, BroadcastType } from "./actions";
 import { createBroadcast, toggleBroadcast, deleteBroadcast } from "./actions";
-import { reportManualDensity, reportMerchantSignal } from "./actions/signals";
+import { reportManualDensity, upsertMerchant, toggleMerchantActive, getAllMerchants, type MerchantSignal } from "./actions/signals";
 import { saveFounderNote, saveNgetemSpot } from "./actions/notes";
 
 type Props = {
   broadcasts: Broadcast[];
+  initialMerchants?: MerchantSignal[];
 };
 
 const TYPE_META: Record<BroadcastType, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
@@ -64,11 +65,14 @@ const TYPE_META: Record<BroadcastType, { label: string; color: string; bg: strin
   },
 };
 
-export function AdminClient({ broadcasts }: Props) {
-  const [activeTab, setActiveTab] = useState<"broadcast" | "density" | "merchant" | "notes" | "spots">("broadcast");
+export function AdminClient({ broadcasts, initialMerchants = [] }: Props) {
+  const [activeTab, setActiveTab] = useState<"broadcast" | "density" | "merchant" | "notes" | "spots">("merchant");
   const [advancedMode, setAdvancedMode] = useState(false);
   const notesFormRef = useRef<HTMLFormElement>(null);
   const spotsFormRef = useRef<HTMLFormElement>(null);
+  const merchantFormRef = useRef<HTMLFormElement>(null);
+  const [merchants, setMerchants] = useState<MerchantSignal[]>(initialMerchants);
+  const [savingMerchant, setSavingMerchant] = useState(false);
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
   const [area, setArea] = useState<string>("Mengambil lokasi...");
@@ -99,25 +103,23 @@ export function AdminClient({ broadcasts }: Props) {
   return (
     <>
       {/* Tab Switcher */}
-      <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2 -mx-5 px-5 hide-scrollbar">
+      <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-2 -mx-5 px-5">
         <style dangerouslySetInnerHTML={{__html: `::-webkit-scrollbar { display: none; }`}} />
-        <button onClick={() => setActiveTab("broadcast")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "broadcast" ? "bg-neutral-900 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>Broadcast</button>
-        <button onClick={() => setActiveTab("density")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "density" ? "bg-blue-600 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>Kepadatan</button>
-        <button onClick={() => setActiveTab("merchant")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "merchant" ? "bg-orange-500 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>Sinyal Resto</button>
-        <button onClick={() => setActiveTab("spots")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "spots" ? "bg-emerald-600 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>Spot Ngetem</button>
-        <button onClick={() => setActiveTab("notes")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "notes" ? "bg-purple-600 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>Catatan</button>
+        <button onClick={() => setActiveTab("merchant")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "merchant" ? "bg-orange-500 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>🏪 Resto</button>
+        <button onClick={() => setActiveTab("broadcast")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "broadcast" ? "bg-neutral-900 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>📡 Broadcast</button>
+        <button onClick={() => setActiveTab("density")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "density" ? "bg-blue-600 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>👥 Driver</button>
+        <button onClick={() => setActiveTab("spots")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "spots" ? "bg-emerald-600 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>📍 Spot</button>
+        <button onClick={() => setActiveTab("notes")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "notes" ? "bg-purple-600 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>📝 Catatan</button>
       </div>
 
-      {/* GPS Status Indicator for forms */}
-      {(activeTab === "density" || activeTab === "merchant") && (
-        <div className="mb-4 flex items-center justify-between bg-neutral-100 rounded-2xl p-3 border border-neutral-200">
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${lat ? 'bg-green-500 animate-pulse' : 'bg-neutral-400'}`} />
-            <span className="text-[0.75rem] font-bold text-neutral-600">GPS Sensor</span>
-          </div>
-          <span className="text-[0.75rem] font-semibold text-neutral-900 truncate max-w-[150px]">{area}</span>
+      {/* GPS Bar — always visible */}
+      <div className="mb-4 flex items-center justify-between bg-neutral-100 rounded-2xl p-3 border border-neutral-200">
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${lat ? 'bg-green-500 animate-pulse' : 'bg-neutral-400'}`} />
+          <span className="text-[0.75rem] font-bold text-neutral-600">GPS</span>
         </div>
-      )}
+        <span className="text-[0.75rem] font-semibold text-neutral-900 truncate max-w-[200px]">{area}</span>
+      </div>
 
       {/* 1. BROADCAST TAB */}
       {activeTab === "broadcast" && (
@@ -222,106 +224,122 @@ export function AdminClient({ broadcasts }: Props) {
         </div>
       )}
 
-      {/* 3. MERCHANT TAB */}
+      {/* 3. MERCHANT TAB — OPERATIONAL */}
       {activeTab === "merchant" && (
-        <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-neutral-100 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-[0.8rem] font-bold uppercase tracking-widest text-neutral-400">Manual Merchant Signal</h2>
-            <button 
-              onClick={() => setAdvancedMode(!advancedMode)} 
-              className={`text-[0.7rem] font-bold px-2 py-1 rounded-md transition-colors ${advancedMode ? 'bg-orange-100 text-orange-700' : 'bg-neutral-100 text-neutral-500'}`}
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          {/* Add / Update Form */}
+          <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-neutral-100">
+            <h2 className="text-[0.8rem] font-bold uppercase tracking-widest text-orange-500 mb-4">Tambah / Update Restoran</h2>
+            <form
+              ref={merchantFormRef}
+              action={async (formData) => {
+                setSavingMerchant(true);
+                formData.append("lat", String(lat));
+                formData.append("lng", String(lng));
+                formData.append("area", area);
+                const result = await upsertMerchant(formData);
+                setSavingMerchant(false);
+                if (result?.success) {
+                  merchantFormRef.current?.reset();
+                  // Refresh list
+                  const updated = await getAllMerchants();
+                  setMerchants(updated);
+                  alert("✅ Restoran disimpan dan langsung muncul di Home!");
+                } else {
+                  alert(result?.error || "Gagal menyimpan");
+                }
+              }}
+              className="space-y-3"
             >
-              Mode Mahir
-            </button>
+              <div>
+                <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1">Nama Restoran *</label>
+                <input name="name" required placeholder="cth: Gacoan Seturan" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:outline-none focus:border-orange-400 transition" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1">Kategori</label>
+                  <select name="category" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:outline-none focus:border-orange-400 transition">
+                    <option value="Makanan">🍱 Makanan</option>
+                    <option value="Minuman">🧋 Minuman</option>
+                    <option value="Snack">🍟 Snack</option>
+                    <option value="Paket">📦 Paket</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1">Busy Score (1-5)</label>
+                  <select name="busy_score" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:outline-none focus:border-orange-400 transition">
+                    <option value="5">🔥 5 — Sangat Ramai</option>
+                    <option value="4">⚡ 4 — Ramai</option>
+                    <option value="3" selected>🟡 3 — Normal</option>
+                    <option value="2">🔵 2 — Sepi</option>
+                    <option value="1">⬜ 1 — Sangat Sepi</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Area field — auto-filled from GPS */}
+              <div>
+                <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1">Area (auto-GPS)</label>
+                <input
+                  name="area_override"
+                  placeholder={area}
+                  defaultValue={area !== "Mengambil lokasi..." ? area : ""}
+                  onChange={(e) => { /* area is appended via formData.append separately */ }}
+                  className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:outline-none focus:border-orange-400 transition"
+                />
+                <p className="text-[0.7rem] text-neutral-400 mt-1 ml-1">Kosongkan untuk pakai GPS otomatis</p>
+              </div>
+
+              <div className="flex gap-5 pt-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" name="promo_active" className="w-4 h-4 accent-orange-500" />
+                  <span className="text-[0.88rem] font-semibold text-neutral-700">🏷️ Promo Aktif</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" name="pickup_fast" className="w-4 h-4 accent-orange-500" />
+                  <span className="text-[0.88rem] font-semibold text-neutral-700">⚡ Pickup Cepat</span>
+                </label>
+              </div>
+
+              <button
+                type="submit"
+                disabled={savingMerchant}
+                className="w-full rounded-2xl bg-orange-500 py-3.5 text-[0.95rem] font-bold text-white transition active:scale-[0.98] hover:bg-orange-600 disabled:opacity-60"
+              >
+                {savingMerchant ? "Menyimpan..." : "Simpan Restoran (Permanen)"}
+              </button>
+            </form>
           </div>
-          <form action={async (formData) => {
-            formData.append("lat", String(lat));
-            formData.append("lng", String(lng));
-            formData.append("area", area);
-            await reportMerchantSignal(formData);
-            alert("Sinyal restoran disimpan!");
-          }} className="space-y-4">
+
+          {/* Merchant List */}
+          {merchants.length > 0 && (
             <div>
-              <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Nama Resto</label>
-              <input name="name" required placeholder="cth: Gacoan Seturan" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:outline-none focus:border-orange-400 transition" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Tingkat Ramai</label>
-                <select name="busy_level" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:outline-none focus:border-orange-400 transition">
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High" selected>High</option>
-                </select>
+              <p className="text-[0.7rem] font-bold uppercase tracking-widest text-neutral-400 mb-2 ml-1">Semua Restoran ({merchants.length})</p>
+              <div className="space-y-2">
+                {merchants.map(m => (
+                  <div key={m.id} className={`bg-white rounded-2xl p-3.5 border shadow-sm flex items-center gap-3 transition ${m.is_active ? 'border-neutral-100' : 'opacity-50 border-neutral-200'}`}>
+                    <div className="w-9 h-9 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center font-extrabold text-[1rem] shrink-0">
+                      {m.name.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-[0.88rem] text-neutral-900 truncate">{m.name}</p>
+                      <p className="text-[0.72rem] text-neutral-500">{m.area} · {m.category} · Score {m.busy_score ?? '—'}</p>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        await toggleMerchantActive(m.id, !m.is_active);
+                        setMerchants(prev => prev.map(x => x.id === m.id ? {...x, is_active: !m.is_active} : x));
+                      }}
+                      className={`shrink-0 text-[0.7rem] font-bold px-2.5 py-1 rounded-full transition active:scale-95 ${m.is_active ? 'bg-green-100 text-green-700' : 'bg-neutral-100 text-neutral-500'}`}
+                    >
+                      {m.is_active ? 'Aktif' : 'Nonaktif'}
+                    </button>
+                  </div>
+                ))}
               </div>
-              <div>
-                <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Kategori</label>
-                <select name="category" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:outline-none focus:border-orange-400 transition">
-                  <option value="Makanan">Makanan</option>
-                  <option value="Minuman">Minuman</option>
-                  <option value="Snack">Snack</option>
-                </select>
-              </div>
             </div>
-            
-            <div className="flex gap-4 pt-2">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" name="promo_active" className="w-4 h-4 rounded text-orange-500 focus:ring-orange-500" />
-                <span className="text-[0.85rem] font-semibold text-neutral-700">Promo Aktif</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" name="fast_pickup" className="w-4 h-4 rounded text-orange-500 focus:ring-orange-500" />
-                <span className="text-[0.85rem] font-semibold text-neutral-700">Pickup Cepat</span>
-              </label>
-            </div>
-
-            {advancedMode && (
-              <div className="pt-3 border-t border-dashed border-neutral-200 mt-2 space-y-4 animate-in fade-in slide-in-from-top-2">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Rating (1-5)</label>
-                    <input name="rating" type="number" step="0.1" placeholder="4.8" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:border-orange-400 focus:outline-none transition" />
-                  </div>
-                  <div>
-                    <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Jml Ulasan</label>
-                    <input name="reviews" type="number" placeholder="100+" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:border-orange-400 focus:outline-none transition" />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Estimasi Waktu (Menit)</label>
-                    <input name="eta_minutes" type="number" placeholder="15" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:border-orange-400 focus:outline-none transition" />
-                  </div>
-                  <div>
-                    <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Jarak (Km)</label>
-                    <input name="distance_km" type="number" step="0.1" placeholder="2.5" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:border-orange-400 focus:outline-none transition" />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Teks Diskon Tambahan</label>
-                  <input name="discount_text" type="text" placeholder="Diskon 50% max 20rb" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:border-orange-400 focus:outline-none transition" />
-                </div>
-
-                <div className="flex gap-4 pt-1">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" name="free_shipping" className="w-4 h-4 rounded text-orange-500 focus:ring-orange-500" />
-                    <span className="text-[0.85rem] font-semibold text-neutral-700">Gratis Ongkir</span>
-                  </label>
-                </div>
-
-                <div>
-                  <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Catatan Khusus</label>
-                  <textarea name="notes" rows={2} placeholder="Parkir susah, pesanan numpuk..." className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:border-orange-400 focus:outline-none transition resize-none"></textarea>
-                </div>
-              </div>
-            )}
-
-            <button type="submit" className="w-full rounded-2xl bg-orange-500 py-3.5 text-[0.95rem] font-bold text-white transition active:scale-[0.98] hover:bg-orange-600 mt-2">
-              Kirim Info Resto (60 Menit)
-            </button>
-          </form>
+          )}
         </div>
       )}
 

@@ -27,7 +27,7 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
     router.refresh();
   }
 
-  const WHATSAPP_NUMBER = "6281234567890"; // Ganti dengan nomor WhatsApp founder
+  const WHATSAPP_NUMBER = "6285811757552"; // Ganti dengan nomor WhatsApp founder
 
   const profileItems = [
     { label: "Email", value: email },

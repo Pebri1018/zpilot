@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
-import { verifyAdmin, getBroadcasts, createBroadcast, toggleBroadcast, deleteBroadcast } from "./actions";
-import type { Broadcast, BroadcastType } from "./actions";
-
+import { verifyAdmin, getBroadcasts } from "./actions";
+import { getAllMerchants } from "./actions/signals";
 import { AdminClient } from "./AdminClient";
 
 export default async function AdminPage() {
@@ -9,6 +8,7 @@ export default async function AdminPage() {
   if (!isAdmin) redirect("/");
 
   const broadcasts = await getBroadcasts();
+  const initialMerchants = await getAllMerchants();
 
   return (
     <div className="min-h-[100dvh] bg-[#f7f7f8] text-neutral-900 antialiased">
@@ -22,7 +22,7 @@ export default async function AdminPage() {
           <h1 className="text-[1.6rem] font-extrabold tracking-[-0.02em]">Intelijen Lapangan</h1>
         </div>
 
-        <AdminClient broadcasts={broadcasts} />
+        <AdminClient broadcasts={broadcasts} initialMerchants={initialMerchants} />
       </div>
     </div>
   );
