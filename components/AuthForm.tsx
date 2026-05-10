@@ -45,7 +45,6 @@ export function AuthForm({ disabled = false }: Props) {
     setTab(t);
     setMessage(null);
     setPassword("");
-    setKonfirmasi("");
   }
 
   async function handleMasuk(e: React.FormEvent) {
