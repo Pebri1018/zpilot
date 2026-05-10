@@ -65,6 +65,7 @@ const TYPE_META: Record<BroadcastType, { label: string; color: string; bg: strin
 
 export function AdminClient({ broadcasts }: Props) {
   const [activeTab, setActiveTab] = useState<"broadcast" | "density" | "merchant">("broadcast");
+  const [advancedMode, setAdvancedMode] = useState(false);
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
   const [area, setArea] = useState<string>("Mengambil lokasi...");
@@ -240,7 +241,15 @@ export function AdminClient({ broadcasts }: Props) {
       {/* 3. MERCHANT TAB */}
       {activeTab === "merchant" && (
         <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-neutral-100 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <h2 className="text-[0.8rem] font-bold uppercase tracking-widest text-neutral-400 mb-4">Manual Merchant Signal</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[0.8rem] font-bold uppercase tracking-widest text-neutral-400">Manual Merchant Signal</h2>
+            <button 
+              onClick={() => setAdvancedMode(!advancedMode)} 
+              className={`text-[0.7rem] font-bold px-2 py-1 rounded-md transition-colors ${advancedMode ? 'bg-orange-100 text-orange-700' : 'bg-neutral-100 text-neutral-500'}`}
+            >
+              Mode Mahir
+            </button>
+          </div>
           <form action={async (formData) => {
             formData.append("lat", String(lat));
             formData.append("lng", String(lng));
@@ -281,6 +290,49 @@ export function AdminClient({ broadcasts }: Props) {
                 <span className="text-[0.85rem] font-semibold text-neutral-700">Pickup Cepat</span>
               </label>
             </div>
+
+            {advancedMode && (
+              <div className="pt-3 border-t border-dashed border-neutral-200 mt-2 space-y-4 animate-in fade-in slide-in-from-top-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Rating (1-5)</label>
+                    <input name="rating" type="number" step="0.1" placeholder="4.8" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:border-orange-400 focus:outline-none transition" />
+                  </div>
+                  <div>
+                    <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Jml Ulasan</label>
+                    <input name="reviews" type="number" placeholder="100+" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:border-orange-400 focus:outline-none transition" />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Estimasi Waktu (Menit)</label>
+                    <input name="eta_minutes" type="number" placeholder="15" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:border-orange-400 focus:outline-none transition" />
+                  </div>
+                  <div>
+                    <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Jarak (Km)</label>
+                    <input name="distance_km" type="number" step="0.1" placeholder="2.5" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:border-orange-400 focus:outline-none transition" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Teks Diskon Tambahan</label>
+                  <input name="discount_text" type="text" placeholder="Diskon 50% max 20rb" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:border-orange-400 focus:outline-none transition" />
+                </div>
+
+                <div className="flex gap-4 pt-1">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" name="free_shipping" className="w-4 h-4 rounded text-orange-500 focus:ring-orange-500" />
+                    <span className="text-[0.85rem] font-semibold text-neutral-700">Gratis Ongkir</span>
+                  </label>
+                </div>
+
+                <div>
+                  <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Catatan Khusus</label>
+                  <textarea name="notes" rows={2} placeholder="Parkir susah, pesanan numpuk..." className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:border-orange-400 focus:outline-none transition resize-none"></textarea>
+                </div>
+              </div>
+            )}
 
             <button type="submit" className="w-full rounded-2xl bg-orange-500 py-3.5 text-[0.95rem] font-bold text-white transition active:scale-[0.98] hover:bg-orange-600 mt-2">
               Kirim Info Resto (60 Menit)

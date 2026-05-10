@@ -23,8 +23,11 @@ export default async function LoginPage({ searchParams }: Props) {
           <h1 className="text-[1.75rem] font-bold tracking-[-0.02em] text-neutral-900">
             ZTIPS Pilot
           </h1>
-          <p className="mt-2 text-[0.95rem] text-neutral-500">
-            Asisten cerdas driver ShopeeFood Jogja
+          <p className="mt-2 text-[0.95rem] font-semibold text-neutral-600">
+            Hyperlocal Intelligence Dashboard
+          </p>
+          <p className="mt-1 text-[0.8rem] text-neutral-500">
+            Lebih presisi dari sekadar heatmap bawaan aplikator.
           </p>
         </div>
 

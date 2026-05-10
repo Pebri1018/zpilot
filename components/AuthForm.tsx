@@ -30,10 +30,15 @@ function translateError(msg: string): string {
 
 export function AuthForm({ disabled = false }: Props) {
   const [tab, setTab] = useState<Tab>("masuk");
+  const [step, setStep] = useState<1 | 2>(1); // 1: Auth, 2: Onboarding
   const [nama, setNama] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [konfirmasi, setKonfirmasi] = useState("");
+  const [kota, setKota] = useState("Yogyakarta");
+  const [driverId, setDriverId] = useState("");
+  const [platform, setPlatform] = useState("ShopeeFood");
+  const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
   const [showPass, setShowPass] = useState(false);
@@ -95,34 +100,34 @@ export function AuthForm({ disabled = false }: Props) {
         return;
       }
 
-      // data.user always exists if signup succeeded (even if session is null)
-      const userId = data.user?.id;
-      if (!userId) {
-        setMessage({ type: "error", text: "Gagal membuat akun. Coba lagi." });
-        return;
-      }
+      // User created successfully, move to onboarding step
+      setUserId(userId);
+      setStep(2);
+      setMessage(null);
+    } catch (err) {
+      setMessage({ type: "error", text: "Terjadi kesalahan. Coba lagi." });
+    } finally {
+      setLoading(false);
+    }
+  }
 
-      // Insert to users table via server action (bypasses RLS)
-      const result = await createUserProfile(userId, nama);
+  async function handleOnboarding(e: React.FormEvent) {
+    e.preventDefault();
+    if (!userId) return;
+    
+    setLoading(true);
+    setMessage(null);
+    try {
+      const result = await createUserProfile(userId, { nama, kota, driverId, platform });
       if (result.error) {
         setMessage({ type: "error", text: `Akun dibuat tapi profil gagal disimpan: ${result.error}` });
         return;
       }
-
-      if (data.session) {
-        // Session auto-created (email confirm disabled) — langsung masuk
-        router.push("/");
-        router.refresh();
-      } else {
-        // Perlu konfirmasi email — suruh masuk manual
-        setMessage({
-          type: "success",
-          text: "Akun berhasil dibuat! Silakan masuk menggunakan email dan password kamu.",
-        });
-        switchTab("masuk");
-      }
+      
+      router.push("/");
+      router.refresh();
     } catch (err) {
-      setMessage({ type: "error", text: "Terjadi kesalahan. Coba lagi." });
+      setMessage({ type: "error", text: "Terjadi kesalahan saat menyimpan profil." });
     } finally {
       setLoading(false);
     }
@@ -131,23 +136,25 @@ export function AuthForm({ disabled = false }: Props) {
 
   return (
     <div className="w-full">
-      {/* Tab Switcher */}
-      <div className="flex rounded-2xl bg-neutral-100 p-1 mb-8">
-        {(["masuk", "daftar"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => switchTab(t)}
-            className={`flex-1 rounded-xl py-2.5 text-[0.95rem] font-semibold transition-all duration-200 ${
-              tab === t
-                ? "bg-white text-neutral-900 shadow-sm"
-                : "text-neutral-500 hover:text-neutral-700"
-            }`}
-          >
-            {t === "masuk" ? "Masuk" : "Daftar"}
-          </button>
-        ))}
-      </div>
+      {/* Tab Switcher (Only in Step 1) */}
+      {step === 1 && (
+        <div className="flex rounded-2xl bg-neutral-100 p-1 mb-8">
+          {(["masuk", "daftar"] as Tab[]).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => switchTab(t)}
+              className={`flex-1 rounded-xl py-2.5 text-[0.95rem] font-semibold transition-all duration-200 ${
+                tab === t
+                  ? "bg-white text-neutral-900 shadow-sm"
+                  : "text-neutral-500 hover:text-neutral-700"
+              }`}
+            >
+              {t === "masuk" ? "Masuk" : "Daftar"}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Error / Success Banner */}
       {message && (
@@ -226,25 +233,9 @@ export function AuthForm({ disabled = false }: Props) {
         </form>
       )}
 
-      {/* DAFTAR FORM */}
-      {tab === "daftar" && (
+      {/* DAFTAR FORM - STEP 1 */}
+      {step === 1 && tab === "daftar" && (
         <form onSubmit={handleDaftar} className="space-y-4">
-          <div>
-            <label htmlFor="daftar-nama" className="block text-[0.85rem] font-semibold text-neutral-600 mb-1.5">
-              Nama
-            </label>
-            <input
-              id="daftar-nama"
-              type="text"
-              required
-              placeholder="Nama lengkap kamu"
-              value={nama}
-              onChange={(e) => setNama(e.target.value)}
-              disabled={loading || disabled}
-              className="block w-full rounded-2xl border border-neutral-200 bg-white px-4 py-4 text-[1rem] text-neutral-900 placeholder-neutral-400 focus:border-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-800/10 disabled:opacity-50 transition"
-            />
-          </div>
-
           <div>
             <label htmlFor="daftar-email" className="block text-[0.85rem] font-semibold text-neutral-600 mb-1.5">
               Email
@@ -313,11 +304,95 @@ export function AuthForm({ disabled = false }: Props) {
 
           <button
             type="submit"
-            disabled={loading || disabled || !nama || !email || !password || !konfirmasi}
+            disabled={loading || disabled || !email || !password || !konfirmasi}
             className="mt-2 flex w-full items-center justify-center rounded-2xl bg-[#00A651] py-4 text-[1.05rem] font-bold text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
             style={{ boxShadow: "0 8px 24px -6px rgba(0,166,81,0.35)" }}
           >
-            {loading ? "Membuat akun..." : "Buat Akun Gratis"}
+            {loading ? "Mendaftar..." : "Lanjut ke Step 2"}
+          </button>
+        </form>
+      )}
+
+      {/* DAFTAR FORM - STEP 2 (ONBOARDING) */}
+      {step === 2 && (
+        <form onSubmit={handleOnboarding} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="mb-6">
+            <h2 className="text-xl font-bold">Lengkapi Profil Kamu</h2>
+            <p className="text-sm text-neutral-500 mt-1">Satu langkah lagi untuk masuk ke Dasbor.</p>
+          </div>
+
+          <div>
+            <label htmlFor="onboarding-nama" className="block text-[0.85rem] font-semibold text-neutral-600 mb-1.5">
+              Nama Panggilan
+            </label>
+            <input
+              id="onboarding-nama"
+              type="text"
+              required
+              placeholder="cth: Budi"
+              value={nama}
+              onChange={(e) => setNama(e.target.value)}
+              disabled={loading || disabled}
+              className="block w-full rounded-2xl border border-neutral-200 bg-white px-4 py-4 text-[1rem] text-neutral-900 placeholder-neutral-400 focus:border-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-800/10 disabled:opacity-50 transition"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="onboarding-kota" className="block text-[0.85rem] font-semibold text-neutral-600 mb-1.5">
+              Area Narik (Kota)
+            </label>
+            <input
+              id="onboarding-kota"
+              type="text"
+              required
+              placeholder="cth: Yogyakarta"
+              value={kota}
+              onChange={(e) => setKota(e.target.value)}
+              disabled={loading || disabled}
+              className="block w-full rounded-2xl border border-neutral-200 bg-white px-4 py-4 text-[1rem] text-neutral-900 placeholder-neutral-400 focus:border-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-800/10 disabled:opacity-50 transition"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="onboarding-platform" className="block text-[0.85rem] font-semibold text-neutral-600 mb-1.5">
+                Aplikator Utama
+              </label>
+              <select
+                id="onboarding-platform"
+                value={platform}
+                onChange={(e) => setPlatform(e.target.value)}
+                disabled={loading || disabled}
+                className="block w-full rounded-2xl border border-neutral-200 bg-white px-3 py-4 text-[0.95rem] text-neutral-900 focus:border-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-800/10 disabled:opacity-50 transition"
+              >
+                <option value="ShopeeFood">ShopeeFood</option>
+                <option value="GrabFood">GrabFood</option>
+                <option value="GoFood">GoFood</option>
+                <option value="Maxim">Maxim</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="onboarding-driverid" className="block text-[0.85rem] font-semibold text-neutral-600 mb-1.5">
+                ID Driver <span className="text-neutral-400 font-normal">(Opsional)</span>
+              </label>
+              <input
+                id="onboarding-driverid"
+                type="text"
+                placeholder="cth: DRV-123"
+                value={driverId}
+                onChange={(e) => setDriverId(e.target.value)}
+                disabled={loading || disabled}
+                className="block w-full rounded-2xl border border-neutral-200 bg-white px-3 py-4 text-[0.95rem] text-neutral-900 placeholder-neutral-400 focus:border-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-800/10 disabled:opacity-50 transition"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading || disabled || !nama || !kota}
+            className="mt-4 flex w-full items-center justify-center rounded-2xl bg-neutral-900 py-4 text-[1.05rem] font-bold text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
+          >
+            {loading ? "Menyimpan Profil..." : "Selesai & Masuk Aplikasi"}
           </button>
         </form>
       )}

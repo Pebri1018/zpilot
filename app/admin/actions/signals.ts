@@ -59,10 +59,18 @@ export async function reportMerchantSignal(formData: FormData) {
   const lng = Number(formData.get("lng"));
   const area = String(formData.get("area") || "Area tidak diketahui");
 
+  const rating = formData.get("rating") ? Number(formData.get("rating")) : null;
+  const reviews = formData.get("reviews") ? Number(formData.get("reviews")) : null;
+  const eta_minutes = formData.get("eta_minutes") ? Number(formData.get("eta_minutes")) : null;
+  const distance_km = formData.get("distance_km") ? Number(formData.get("distance_km")) : null;
+  const discount_text = formData.get("discount_text") ? String(formData.get("discount_text")) : null;
+  const free_shipping = formData.get("free_shipping") === "on";
+  const notes = formData.get("notes") ? String(formData.get("notes")) : null;
+
   if (!name || !busy_level) return;
 
   const supabase = getServiceClient();
-  const { error } = await supabase.from("merchant_signals").insert({
+  const { error } = await supabase.from("merchant_signals").upsert({
     name,
     category,
     busy_level,
@@ -70,8 +78,17 @@ export async function reportMerchantSignal(formData: FormData) {
     fast_pickup,
     lat: isNaN(lat) ? null : lat,
     lng: isNaN(lng) ? null : lng,
-    area
-  });
+    area,
+    rating,
+    reviews,
+    eta_minutes,
+    distance_km,
+    discount_text,
+    free_shipping,
+    notes,
+    created_at: new Date().toISOString(),
+    expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString()
+  }, { onConflict: "name,area" });
 
   if (error) {
     console.error("Error inserting merchant signal", error);

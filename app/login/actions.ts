@@ -3,7 +3,7 @@
 import { createClient as createServerClient } from "@supabase/supabase-js";
 import { getSupabaseUrl } from "@/lib/supabase/env";
 
-export async function createUserProfile(userId: string, nama: string) {
+export async function createUserProfile(userId: string, data: { nama: string; kota: string; driverId: string; platform: string }) {
   const supabaseUrl = getSupabaseUrl();
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -20,9 +20,10 @@ export async function createUserProfile(userId: string, nama: string) {
   const { error } = await supabase.from("users").upsert(
     {
       id: userId,
-      nama: nama || "Driver",
-      kota: "Yogyakarta",
-      platform: "ShopeeFood",
+      nama: data.nama || "Driver",
+      kota: data.kota || "Yogyakarta",
+      driver_id: data.driverId || null,
+      platform: data.platform || "Lainnya",
       onboarding_completed: true,
     },
     { onConflict: "id" }

@@ -3,10 +3,9 @@
 import { useLocation } from "@/hooks/useLocation";
 
 const STATUS_OPTIONS = [
-  { id: "Cari Spot", label: "Cari Spot", color: "bg-blue-100 text-blue-700 border-blue-200" },
-  { id: "Ngetem", label: "Ngetem", color: "bg-orange-100 text-orange-700 border-orange-200" },
-  { id: "Antar", label: "Antar", color: "bg-green-100 text-green-700 border-green-200" },
-  { id: "Istirahat", label: "Istirahat", color: "bg-neutral-100 text-neutral-600 border-neutral-200" },
+  { id: "Ngetem", label: "Ngetem", color: "bg-blue-100 text-blue-700 border-blue-200" },
+  { id: "Antar", label: "Antar", color: "bg-orange-100 text-orange-700 border-orange-200" },
+  { id: "Offline", label: "Offline", color: "bg-neutral-100 text-neutral-600 border-neutral-200" },
 ];
 
 export function DriverStatusSelector() {
