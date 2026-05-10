@@ -5,26 +5,28 @@ import L from "leaflet";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
-// Fix for default marker icon
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-    iconUrl: markerIcon.src,
-    iconRetinaUrl: markerIcon2x.src,
-    shadowUrl: markerShadow.src,
-});
-
 type Props = {
   initialLat: number | null;
   initialLng: number | null;
   onLocationSelect: (lat: number, lng: number, address: string) => void;
 };
 
+// Component to handle icon fix inside browser context
+function LeafletIconFix() {
+  useEffect(() => {
+    // @ts-ignore
+    delete L.Icon.Default.prototype._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+      iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+      shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+    });
+  }, []);
+  return null;
+}
+
 function DraggableMarker({ lat, lng, onDragEnd }: { lat: number; lng: number, onDragEnd: (lat: number, lng: number) => void }) {
-  const map = useMapEvents({
+  useMapEvents({
     click(e) {
       onDragEnd(e.latlng.lat, e.latlng.lng);
     },
@@ -52,6 +54,11 @@ export default function LocationPicker({ initialLat, initialLng, onLocationSelec
   });
   const [search, setSearch] = useState("");
   const [searching, setSearching] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (initialLat && initialLng) {
@@ -90,6 +97,8 @@ export default function LocationPicker({ initialLat, initialLng, onLocationSelec
     }
   }, [onLocationSelect]);
 
+  if (!isMounted) return <div className="h-[200px] w-full bg-neutral-100 animate-pulse rounded-2xl" />;
+
   return (
     <div className="space-y-3">
       <div className="flex gap-2">
@@ -115,6 +124,7 @@ export default function LocationPicker({ initialLat, initialLng, onLocationSelec
           zoom={15}
           style={{ height: "100%", width: "100%" }}
         >
+          <LeafletIconFix />
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <DraggableMarker lat={position.lat} lng={position.lng} onDragEnd={handleDragEnd} />
         </MapContainer>
