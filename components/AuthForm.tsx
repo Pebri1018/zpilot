@@ -30,15 +30,12 @@ function translateError(msg: string): string {
 
 export function AuthForm({ disabled = false }: Props) {
   const [tab, setTab] = useState<Tab>("masuk");
-  const [step, setStep] = useState<1 | 2>(1); // 1: Auth, 2: Onboarding
+  const [isSuccess, setIsSuccess] = useState(false);
   const [nama, setNama] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [konfirmasi, setKonfirmasi] = useState("");
   const [kota, setKota] = useState("Yogyakarta");
   const [driverId, setDriverId] = useState("");
-  const [platform, setPlatform] = useState("ShopeeFood");
-  const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "error" | "success"; text: string } | null>(null);
   const [showPass, setShowPass] = useState(false);
@@ -75,10 +72,6 @@ export function AuthForm({ disabled = false }: Props) {
   async function handleDaftar(e: React.FormEvent) {
     e.preventDefault();
     if (disabled) return;
-    if (password !== konfirmasi) {
-      setMessage({ type: "error", text: "Password dan konfirmasi tidak cocok." });
-      return;
-    }
     if (password.length < 6) {
       setMessage({ type: "error", text: "Password minimal 6 karakter." });
       return;
@@ -100,34 +93,29 @@ export function AuthForm({ disabled = false }: Props) {
         return;
       }
 
-      // User created successfully, move to onboarding step
-      setUserId(userId);
-      setStep(2);
-      setMessage(null);
-    } catch (err) {
-      setMessage({ type: "error", text: "Terjadi kesalahan. Coba lagi." });
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleOnboarding(e: React.FormEvent) {
-    e.preventDefault();
-    if (!userId) return;
-    
-    setLoading(true);
-    setMessage(null);
-    try {
-      const result = await createUserProfile(userId, { nama, kota, driverId, platform });
-      if (result.error) {
-        setMessage({ type: "error", text: `Akun dibuat tapi profil gagal disimpan: ${result.error}` });
+      const newUserId = data.user?.id;
+      if (!newUserId) {
+        setMessage({ type: "error", text: "Gagal membuat akun. Coba lagi." });
         return;
       }
-      
-      router.push("/");
-      router.refresh();
+
+      // Insert profile immediately (service role bypasses RLS)
+      const result = await createUserProfile(newUserId, { nama, kota, driverId, platform: "ShopeeFood" });
+      if (result.error) {
+        setMessage({ type: "error", text: `Profil gagal disimpan: ${result.error}` });
+        return;
+      }
+
+      // If auto-logged in (no confirm needed), just redirect
+      if (data.session) {
+        router.push("/");
+        router.refresh();
+      } else {
+        // Show confirmation screen
+        setIsSuccess(true);
+      }
     } catch (err) {
-      setMessage({ type: "error", text: "Terjadi kesalahan saat menyimpan profil." });
+      setMessage({ type: "error", text: "Terjadi kesalahan. Coba lagi." });
     } finally {
       setLoading(false);
     }
@@ -136,8 +124,8 @@ export function AuthForm({ disabled = false }: Props) {
 
   return (
     <div className="w-full">
-      {/* Tab Switcher (Only in Step 1) */}
-      {step === 1 && (
+      {/* Tab Switcher */}
+      {!isSuccess && (
         <div className="flex rounded-2xl bg-neutral-100 p-1 mb-8">
           {(["masuk", "daftar"] as Tab[]).map((t) => (
             <button
@@ -233,9 +221,9 @@ export function AuthForm({ disabled = false }: Props) {
         </form>
       )}
 
-      {/* DAFTAR FORM - STEP 1 */}
-      {step === 1 && tab === "daftar" && (
-        <form onSubmit={handleDaftar} className="space-y-4">
+      {/* DAFTAR FORM (Single Flow) */}
+      {tab === "daftar" && !isSuccess && (
+        <form onSubmit={handleDaftar} className="space-y-4 animate-in fade-in duration-300">
           <div>
             <label htmlFor="daftar-email" className="block text-[0.85rem] font-semibold text-neutral-600 mb-1.5">
               Email
@@ -287,46 +275,11 @@ export function AuthForm({ disabled = false }: Props) {
           </div>
 
           <div>
-            <label htmlFor="daftar-konfirmasi" className="block text-[0.85rem] font-semibold text-neutral-600 mb-1.5">
-              Konfirmasi Password
-            </label>
-            <input
-              id="daftar-konfirmasi"
-              type={showPass ? "text" : "password"}
-              required
-              placeholder="Ulangi password"
-              value={konfirmasi}
-              onChange={(e) => setKonfirmasi(e.target.value)}
-              disabled={loading || disabled}
-              className="block w-full rounded-2xl border border-neutral-200 bg-white px-4 py-4 text-[1rem] text-neutral-900 placeholder-neutral-400 focus:border-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-800/10 disabled:opacity-50 transition"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading || disabled || !email || !password || !konfirmasi}
-            className="mt-2 flex w-full items-center justify-center rounded-2xl bg-[#00A651] py-4 text-[1.05rem] font-bold text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
-            style={{ boxShadow: "0 8px 24px -6px rgba(0,166,81,0.35)" }}
-          >
-            {loading ? "Mendaftar..." : "Lanjut ke Step 2"}
-          </button>
-        </form>
-      )}
-
-      {/* DAFTAR FORM - STEP 2 (ONBOARDING) */}
-      {step === 2 && (
-        <form onSubmit={handleOnboarding} className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-          <div className="mb-6">
-            <h2 className="text-xl font-bold">Lengkapi Profil Kamu</h2>
-            <p className="text-sm text-neutral-500 mt-1">Satu langkah lagi untuk masuk ke Dasbor.</p>
-          </div>
-
-          <div>
-            <label htmlFor="onboarding-nama" className="block text-[0.85rem] font-semibold text-neutral-600 mb-1.5">
+            <label htmlFor="daftar-nama" className="block text-[0.85rem] font-semibold text-neutral-600 mb-1.5">
               Nama Panggilan
             </label>
             <input
-              id="onboarding-nama"
+              id="daftar-nama"
               type="text"
               required
               placeholder="cth: Budi"
@@ -337,48 +290,30 @@ export function AuthForm({ disabled = false }: Props) {
             />
           </div>
 
-          <div>
-            <label htmlFor="onboarding-kota" className="block text-[0.85rem] font-semibold text-neutral-600 mb-1.5">
-              Area Narik (Kota)
-            </label>
-            <input
-              id="onboarding-kota"
-              type="text"
-              required
-              placeholder="cth: Yogyakarta"
-              value={kota}
-              onChange={(e) => setKota(e.target.value)}
-              disabled={loading || disabled}
-              className="block w-full rounded-2xl border border-neutral-200 bg-white px-4 py-4 text-[1rem] text-neutral-900 placeholder-neutral-400 focus:border-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-800/10 disabled:opacity-50 transition"
-            />
-          </div>
-
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor="onboarding-platform" className="block text-[0.85rem] font-semibold text-neutral-600 mb-1.5">
-                Aplikator Utama
+              <label htmlFor="daftar-kota" className="block text-[0.85rem] font-semibold text-neutral-600 mb-1.5">
+                Area (Kota)
               </label>
-              <select
-                id="onboarding-platform"
-                value={platform}
-                onChange={(e) => setPlatform(e.target.value)}
+              <input
+                id="daftar-kota"
+                type="text"
+                required
+                placeholder="Yogyakarta"
+                value={kota}
+                onChange={(e) => setKota(e.target.value)}
                 disabled={loading || disabled}
-                className="block w-full rounded-2xl border border-neutral-200 bg-white px-3 py-4 text-[0.95rem] text-neutral-900 focus:border-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-800/10 disabled:opacity-50 transition"
-              >
-                <option value="ShopeeFood">ShopeeFood</option>
-                <option value="GrabFood">GrabFood</option>
-                <option value="GoFood">GoFood</option>
-                <option value="Maxim">Maxim</option>
-              </select>
+                className="block w-full rounded-2xl border border-neutral-200 bg-white px-3 py-4 text-[0.95rem] text-neutral-900 placeholder-neutral-400 focus:border-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-800/10 disabled:opacity-50 transition"
+              />
             </div>
             <div>
-              <label htmlFor="onboarding-driverid" className="block text-[0.85rem] font-semibold text-neutral-600 mb-1.5">
+              <label htmlFor="daftar-driverid" className="block text-[0.85rem] font-semibold text-neutral-600 mb-1.5">
                 ID Driver <span className="text-neutral-400 font-normal">(Opsional)</span>
               </label>
               <input
-                id="onboarding-driverid"
+                id="daftar-driverid"
                 type="text"
-                placeholder="cth: DRV-123"
+                placeholder="DRV-123"
                 value={driverId}
                 onChange={(e) => setDriverId(e.target.value)}
                 disabled={loading || disabled}
@@ -389,12 +324,36 @@ export function AuthForm({ disabled = false }: Props) {
 
           <button
             type="submit"
-            disabled={loading || disabled || !nama || !kota}
-            className="mt-4 flex w-full items-center justify-center rounded-2xl bg-neutral-900 py-4 text-[1.05rem] font-bold text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-50"
+            disabled={loading || disabled || !email || !password || !nama || !kota}
+            className="mt-4 flex w-full items-center justify-center rounded-2xl bg-neutral-900 py-4 text-[1.05rem] font-bold text-white shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 hover:bg-neutral-800"
           >
-            {loading ? "Menyimpan Profil..." : "Selesai & Masuk Aplikasi"}
+            {loading ? "Memproses..." : "Lanjutkan"}
           </button>
         </form>
+      )}
+
+      {/* SUCCESS CONFIRMATION SCREEN */}
+      {isSuccess && (
+        <div className="text-center animate-in zoom-in-95 duration-300 py-6 bg-white rounded-3xl border border-neutral-100 shadow-sm p-8">
+          <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-5">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-[1.5rem] font-bold text-neutral-900 mb-2">Hampir selesai</h2>
+          <p className="text-[0.95rem] text-neutral-500 leading-relaxed mb-8">
+            Silakan cek email <strong className="text-neutral-800">{email}</strong> untuk konfirmasi akun, lalu kembali ke aplikasi.
+          </p>
+          <button
+            onClick={() => {
+              setIsSuccess(false);
+              switchTab("masuk");
+            }}
+            className="w-full flex items-center justify-center rounded-2xl bg-neutral-900 py-4 text-[1.05rem] font-bold text-white shadow-sm transition-all active:scale-[0.98] hover:bg-neutral-800"
+          >
+            Saya Sudah Konfirmasi
+          </button>
+        </div>
       )}
     </div>
   );

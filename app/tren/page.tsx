@@ -26,6 +26,15 @@ function getPulseText(pulse: PulseState) {
   }
 }
 
+function getRecommendation(pulse: PulseState) {
+  switch (pulse) {
+    case "Rising": return "Merapat sekarang, tunggu maksimal 15 menit.";
+    case "Stable": return "Tetap stay, geser sedikit jika 20 menit tidak ada tarikan.";
+    case "Falling": return "Hindari area ini untuk 20 menit ke depan.";
+    case "Analyzing": return "Menunggu data...";
+  }
+}
+
 export default function TrenPage() {
   const { areaName, loading: locLoading } = useLocation();
   const [stats, setStats] = useState<ZoneStatsResult | null>(null);
@@ -104,6 +113,22 @@ export default function TrenPage() {
                   {pulse === "Analyzing" && <p className="text-[0.9rem] font-medium leading-relaxed opacity-90">Mengumpulkan data dari server dan laporan manual...</p>}
                 </div>
               </div>
+
+              {pulse !== "Analyzing" && (
+                <div className="mt-4 bg-white rounded-2xl p-4 border border-neutral-200 shadow-sm flex items-start gap-3">
+                  <div className="mt-0.5 w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-[0.8rem] font-bold uppercase tracking-widest text-neutral-800 mb-0.5">Rekomendasi Aksi</h3>
+                    <p className="text-[0.95rem] font-medium text-neutral-600 leading-snug">
+                      {getRecommendation(pulse)}
+                    </p>
+                  </div>
+                </div>
+              )}
             </section>
 
             {/* Metrik Detail */}
