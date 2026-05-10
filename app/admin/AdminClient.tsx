@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Broadcast, BroadcastType } from "./actions";
 import { createBroadcast, toggleBroadcast, deleteBroadcast } from "./actions";
 import { reportManualDensity, reportMerchantSignal } from "./actions/signals";
+import { saveFounderNote, saveNgetemSpot } from "./actions/notes";
 
 type Props = {
   broadcasts: Broadcast[];
@@ -64,8 +65,10 @@ const TYPE_META: Record<BroadcastType, { label: string; color: string; bg: strin
 };
 
 export function AdminClient({ broadcasts }: Props) {
-  const [activeTab, setActiveTab] = useState<"broadcast" | "density" | "merchant">("broadcast");
+  const [activeTab, setActiveTab] = useState<"broadcast" | "density" | "merchant" | "notes" | "spots">("broadcast");
   const [advancedMode, setAdvancedMode] = useState(false);
+  const notesFormRef = useRef<HTMLFormElement>(null);
+  const spotsFormRef = useRef<HTMLFormElement>(null);
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
   const [area, setArea] = useState<string>("Mengambil lokasi...");
@@ -98,30 +101,11 @@ export function AdminClient({ broadcasts }: Props) {
       {/* Tab Switcher */}
       <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2 -mx-5 px-5 hide-scrollbar">
         <style dangerouslySetInnerHTML={{__html: `::-webkit-scrollbar { display: none; }`}} />
-        <button
-          onClick={() => setActiveTab("broadcast")}
-          className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${
-            activeTab === "broadcast" ? "bg-neutral-900 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200"
-          }`}
-        >
-          Broadcast
-        </button>
-        <button
-          onClick={() => setActiveTab("density")}
-          className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${
-            activeTab === "density" ? "bg-blue-600 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200"
-          }`}
-        >
-          Kepadatan Driver
-        </button>
-        <button
-          onClick={() => setActiveTab("merchant")}
-          className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${
-            activeTab === "merchant" ? "bg-orange-500 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200"
-          }`}
-        >
-          Sinyal Resto
-        </button>
+        <button onClick={() => setActiveTab("broadcast")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "broadcast" ? "bg-neutral-900 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>Broadcast</button>
+        <button onClick={() => setActiveTab("density")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "density" ? "bg-blue-600 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>Kepadatan</button>
+        <button onClick={() => setActiveTab("merchant")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "merchant" ? "bg-orange-500 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>Sinyal Resto</button>
+        <button onClick={() => setActiveTab("spots")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "spots" ? "bg-emerald-600 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>Spot Ngetem</button>
+        <button onClick={() => setActiveTab("notes")} className={`shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${ activeTab === "notes" ? "bg-purple-600 text-white shadow-md" : "bg-white text-neutral-500 border border-neutral-200" }`}>Catatan</button>
       </div>
 
       {/* GPS Status Indicator for forms */}
@@ -336,6 +320,115 @@ export function AdminClient({ broadcasts }: Props) {
 
             <button type="submit" className="w-full rounded-2xl bg-orange-500 py-3.5 text-[0.95rem] font-bold text-white transition active:scale-[0.98] hover:bg-orange-600 mt-2">
               Kirim Info Resto (60 Menit)
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* 4. SPOT NGETEM TAB */}
+      {activeTab === "spots" && (
+        <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-neutral-100 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <h2 className="text-[0.8rem] font-bold uppercase tracking-widest text-emerald-600 mb-4">Tambah Spot Ngetem</h2>
+          <form
+            ref={spotsFormRef}
+            action={async (formData) => {
+              formData.append("lat", String(lat));
+              formData.append("lng", String(lng));
+              const result = await saveNgetemSpot(formData);
+              if (result?.success) {
+                alert("Spot ngetem disimpan!");
+                spotsFormRef.current?.reset();
+              } else {
+                alert(result?.error || "Gagal menyimpan.");
+              }
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Nama Spot</label>
+              <input name="name" required placeholder="cth: Depan Mixue Seturan" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:outline-none focus:border-emerald-400 transition" />
+            </div>
+            <div>
+              <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Area / Zona</label>
+              <input name="area" required placeholder={area} defaultValue={area !== "Mengambil lokasi..." ? area : ""} className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:outline-none focus:border-emerald-400 transition" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Kualitas Spot</label>
+                <select name="quality" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:outline-none focus:border-emerald-400 transition">
+                  <option value="Bagus">✅ Bagus</option>
+                  <option value="Lumayan">🟡 Lumayan</option>
+                  <option value="Jebakan">❌ Jebakan</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Jam Terbaik</label>
+                <input name="best_hours" placeholder="cth: 11:00-13:00" className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-[0.9rem] text-neutral-900 focus:outline-none focus:border-emerald-400 transition" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Catatan Tambahan</label>
+              <textarea name="notes" rows={2} placeholder="cth: Parkir luas, banyak pesanan Gacoan..." className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:border-emerald-400 focus:outline-none transition resize-none"></textarea>
+            </div>
+            <button type="submit" className="w-full rounded-2xl bg-emerald-600 py-3.5 text-[0.95rem] font-bold text-white transition active:scale-[0.98] hover:bg-emerald-700">
+              Simpan Spot Ngetem
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* 5. CATATAN FOUNDER TAB */}
+      {activeTab === "notes" && (
+        <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.05)] border border-neutral-100 mb-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <h2 className="text-[0.8rem] font-bold uppercase tracking-widest text-purple-600 mb-4">Catatan Lapangan</h2>
+          <form
+            ref={notesFormRef}
+            action={async (formData) => {
+              formData.append("lat", String(lat));
+              formData.append("lng", String(lng));
+              formData.append("area", area);
+              const result = await saveFounderNote(formData);
+              if (result?.success) {
+                alert("Catatan disimpan!");
+                notesFormRef.current?.reset();
+              } else {
+                alert(result?.error || "Gagal menyimpan.");
+              }
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Tipe Catatan</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: "spot_bagus", label: "✅ Spot Bagus", color: "emerald" },
+                  { value: "jebakan", label: "❌ Jebakan", color: "red" },
+                  { value: "merchant_ramai", label: "🔥 Merchant Ramai", color: "orange" },
+                  { value: "lainnya", label: "📝 Lainnya", color: "neutral" },
+                ].map(opt => (
+                  <label key={opt.value} className="flex items-center gap-2 p-2.5 border border-neutral-200 rounded-xl cursor-pointer hover:bg-neutral-50 transition">
+                    <input type="radio" name="type" value={opt.value} defaultChecked={opt.value === "spot_bagus"} className="w-4 h-4" />
+                    <span className="text-[0.82rem] font-semibold text-neutral-700">{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-[0.8rem] font-semibold text-neutral-600 mb-1.5">Catatan</label>
+              <textarea
+                name="notes"
+                required
+                rows={3}
+                placeholder="cth: Depan Mixue Seturan pagi ini sangat ramai, 10+ driver ngetem..."
+                className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-[0.95rem] text-neutral-900 focus:border-purple-400 focus:outline-none transition resize-none"
+              ></textarea>
+            </div>
+            <div className="flex items-center gap-2 bg-purple-50 text-purple-700 rounded-xl px-3 py-2 text-[0.75rem] font-medium">
+              <div className={`w-2 h-2 rounded-full ${lat ? 'bg-purple-500' : 'bg-neutral-400'}`} />
+              {lat ? `GPS terkunci: ${area}` : "GPS belum aktif, lokasi tidak akan disimpan"}
+            </div>
+            <button type="submit" className="w-full rounded-2xl bg-purple-600 py-3.5 text-[0.95rem] font-bold text-white transition active:scale-[0.98] hover:bg-purple-700">
+              Simpan Catatan
             </button>
           </form>
         </div>
