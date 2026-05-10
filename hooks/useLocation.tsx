@@ -11,6 +11,8 @@ export type LocationState = {
   error: string | null;
   loading: boolean;
   timestamp: number | null;
+  status: string;
+  setStatus: (status: string) => void;
   refreshLocation: () => void;
 };
 
@@ -24,6 +26,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     error: null,
     loading: true,
     timestamp: null,
+    status: "Cari Spot",
   });
 
   const stateRef = useRef(state);
@@ -101,6 +104,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
               latitude,
               longitude,
               area_name: area,
+              status: currentState.status,
               updated_at: new Date().toISOString(),
             });
           }
@@ -150,6 +154,11 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
 
   const value: LocationState = {
     ...state,
+    setStatus: (newStatus: string) => {
+      setState(s => ({ ...s, status: newStatus }));
+      // Immediately force a sync to update the DB with new status
+      fetchLocation(true);
+    },
     refreshLocation: () => fetchLocation(true),
   };
 

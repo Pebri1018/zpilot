@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useLocation } from "@/hooks/useLocation";
-import { getRecommendationV2, type RecommendationResult } from "@/app/actions/recommendation";
+import { getRecommendationV2, getZoneStats, type RecommendationResult, type ZoneStatsResult } from "@/app/actions/recommendation";
 
 import { getActiveMerchants, type MerchantSignal } from "@/app/admin/actions/signals";
+import { DriverStatusSelector } from "./DriverStatusSelector";
+import { NgetemTimer } from "./NgetemTimer";
 
 export function LiveDashboard() {
   const { areaName, loading, error, timestamp, refreshLocation } = useLocation();
@@ -17,6 +19,11 @@ export function LiveDashboard() {
     color: "#9CA3AF"
   });
   const [merchants, setMerchants] = useState<MerchantSignal[]>([]);
+  const [zoneStats, setZoneStats] = useState<ZoneStatsResult>({
+    orderan: "Data Minim",
+    pesaing: "Data Minim" as any,
+    driverCount: 0
+  });
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 60000); // update every minute
@@ -26,12 +33,14 @@ export function LiveDashboard() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [recResult, merchantsResult] = await Promise.all([
+        const [recResult, merchantsResult, statsResult] = await Promise.all([
           getRecommendationV2(areaName),
-          getActiveMerchants(areaName)
+          getActiveMerchants(areaName),
+          getZoneStats(areaName)
         ]);
         setRecommendation(recResult);
         setMerchants(merchantsResult);
+        setZoneStats(statsResult);
       } catch (e) {
         console.error("Failed to fetch dashboard data", e);
       }
@@ -95,6 +104,9 @@ export function LiveDashboard() {
         </div>
       </header>
 
+      {/* Driver Status Selector */}
+      <DriverStatusSelector />
+
       {/* Grid Dashboard Widget */}
       <section className="mt-2 mb-8">
         <h2 className="text-[0.75rem] font-bold uppercase tracking-[0.15em] text-neutral-400 mb-3 ml-2">
@@ -102,21 +114,28 @@ export function LiveDashboard() {
         </h2>
         <div className="grid grid-cols-3 gap-3">
           {/* Order Card */}
-          <div className="bg-white rounded-[1.25rem] p-4 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-neutral-100 flex flex-col items-center text-center transition-transform active:scale-95">
+          <div className="bg-white rounded-[1.25rem] p-4 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-neutral-100 flex flex-col items-center justify-center text-center transition-transform active:scale-95">
             <span className="text-[0.65rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5">Orderan</span>
-            <span className="text-[1.1rem] font-extrabold text-neutral-800">Normal</span>
+            <span className={`text-[0.95rem] font-extrabold leading-tight ${
+              zoneStats.orderan === "Potensi Tinggi" ? "text-green-600" :
+              zoneStats.orderan === "Potensi Sedang" ? "text-orange-500" : "text-neutral-500"
+            }`}>
+              {zoneStats.orderan.split(" ")[0]}<br/>{zoneStats.orderan.split(" ")[1]}
+            </span>
           </div>
           {/* Driver Card */}
-          <div className="bg-white rounded-[1.25rem] p-4 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-neutral-100 flex flex-col items-center text-center transition-transform active:scale-95 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-orange-50/50 to-transparent"></div>
+          <div className="bg-white rounded-[1.25rem] p-4 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-neutral-100 flex flex-col items-center justify-center text-center transition-transform active:scale-95 relative overflow-hidden">
+            <div className={`absolute inset-0 bg-gradient-to-b ${zoneStats.pesaing === "Padat" ? "from-red-50/50" : zoneStats.pesaing === "Sedang" ? "from-orange-50/50" : "from-green-50/50"} to-transparent`}></div>
             <span className="text-[0.65rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 relative z-10">Pesaing</span>
-            <span className="text-[1.1rem] font-extrabold text-orange-600 relative z-10">Padat</span>
+            <span className={`text-[1.1rem] font-extrabold relative z-10 ${
+              zoneStats.pesaing === "Padat" ? "text-red-600" :
+              zoneStats.pesaing === "Sedang" ? "text-orange-500" : "text-green-600"
+            }`}>
+              {zoneStats.pesaing}
+            </span>
           </div>
-          {/* Wait Time Card */}
-          <div className="bg-white rounded-[1.25rem] p-4 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-neutral-100 flex flex-col items-center text-center transition-transform active:scale-95">
-            <span className="text-[0.65rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5">Ngetem</span>
-            <span className="text-[1.1rem] font-extrabold text-neutral-800 tabular-nums">8<span className="text-[0.8rem] text-neutral-500 font-medium ml-0.5">mnt</span></span>
-          </div>
+          {/* Ngetem Timer Card */}
+          <NgetemTimer />
         </div>
       </section>
 

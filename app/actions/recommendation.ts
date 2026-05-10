@@ -133,3 +133,67 @@ export async function getRecommendationV2(areaName: string | null): Promise<Reco
     color: "#10B981"
   };
 }
+
+export type ZoneStatsResult = {
+  orderan: "Potensi Tinggi" | "Potensi Sedang" | "Data Minim";
+  pesaing: "Padat" | "Sedang" | "Longgar";
+  driverCount: number;
+};
+
+export async function getZoneStats(areaName: string | null): Promise<ZoneStatsResult> {
+  const supabase = await createClient();
+  const hour = new Date().getHours();
+  
+  let driverCountInArea = 0;
+  let pesaing: "Padat" | "Sedang" | "Longgar" = "Data Minim" as any;
+  let orderan: "Potensi Tinggi" | "Potensi Sedang" | "Data Minim" = "Data Minim";
+
+  if (areaName) {
+    // 1. Calculate Pesaing
+    const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const now = new Date().toISOString();
+
+    const { data: manualReport } = await supabase
+      .from("manual_density_reports")
+      .select("driver_count")
+      .eq("area", areaName)
+      .gt("expires_at", now)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (manualReport) {
+      driverCountInArea = manualReport.driver_count;
+    } else {
+      const { count } = await supabase
+        .from("driver_locations")
+        .select("*", { count: 'exact', head: true })
+        .eq("area_name", areaName)
+        .gte("updated_at", fifteenMinsAgo);
+      driverCountInArea = count || 0;
+    }
+
+    if (driverCountInArea >= 5) pesaing = "Padat";
+    else if (driverCountInArea >= 2) pesaing = "Sedang";
+    else pesaing = "Longgar";
+
+    // 2. Calculate Orderan
+    const { count: merchantCount } = await supabase
+      .from("merchant_signals")
+      .select("*", { count: 'exact', head: true })
+      .eq("area", areaName)
+      .gt("expires_at", now);
+
+    const isPeakHour = (hour >= 11 && hour <= 13) || (hour >= 17 && hour <= 20);
+    const hasActiveMerchants = (merchantCount || 0) > 0;
+
+    if (hasActiveMerchants && isPeakHour) orderan = "Potensi Tinggi";
+    else if (hasActiveMerchants || isPeakHour) orderan = "Potensi Sedang";
+    else orderan = "Data Minim";
+  } else {
+    pesaing = "Longgar";
+    orderan = "Data Minim";
+  }
+
+  return { orderan, pesaing, driverCount: driverCountInArea };
+}
