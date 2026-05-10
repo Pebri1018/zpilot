@@ -276,9 +276,21 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
             <div key={u.id} className={`bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm flex flex-col gap-4 ${u.is_disabled ? "opacity-60 grayscale bg-neutral-50" : ""}`}>
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-neutral-100 flex items-center justify-center font-black text-neutral-900 text-lg shadow-inner">{u.nama?.[0] || "?"}</div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="font-black text-[1rem] tracking-tight text-neutral-900 leading-tight">{u.nama || "Unknown"}</p>
                   <p className="text-[0.7rem] text-neutral-400 font-bold uppercase tracking-widest mt-0.5">{u.platform} · {u.kota}</p>
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    {u.ztips_id && (
+                      <span className="inline-flex items-center gap-1 bg-neutral-900 text-white text-[0.65rem] font-black px-2 py-0.5 rounded-lg tracking-widest">
+                        {u.ztips_id}
+                      </span>
+                    )}
+                    {u.driver_id && (
+                      <span className="inline-flex items-center text-[0.65rem] font-bold text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded-lg">
+                        ID: {u.driver_id}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${new Date().getTime() - new Date(u.last_active).getTime() < 300000 ? "bg-emerald-500 animate-pulse" : "bg-neutral-300"}`} />

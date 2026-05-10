@@ -12,9 +12,10 @@ type Props = {
   kota: string | null;
   platform: string;
   driverId: string | null;
+  ztipsId: string | null;
 };
 
-export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
+export function AkunClient({ email, nama, kota, platform, driverId, ztipsId }: Props) {
   const { lang, setLang, t } = useLanguage();
   const router = useRouter();
   const [notif, setNotif] = useState(true);
@@ -23,6 +24,15 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
   const [modal, setModal] = useState<"profile" | "password" | "feedback" | "delete" | null>(null);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  function copyZtipsId() {
+    if (!ztipsId) return;
+    navigator.clipboard.writeText(ztipsId).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -50,6 +60,29 @@ export function AkunClient({ email, nama, kota, platform, driverId }: Props) {
           <button onClick={() => setMsg(null)} className="ml-2 underline opacity-50">{t("cancel")}</button>
         </div>
       )}
+
+      {/* ZTIPS ID CARD */}
+      <div className="bg-neutral-900 rounded-3xl px-5 py-4 flex items-center justify-between">
+        <div>
+          <p className="text-[0.65rem] font-bold text-white/40 uppercase tracking-widest mb-1">ID ZTIPS Pilot</p>
+          <p className="text-[1.15rem] font-black text-white tracking-widest">{ztipsId || "—"}</p>
+        </div>
+        <button
+          onClick={copyZtipsId}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[0.75rem] font-bold transition-all active:scale-90 ${
+            copied
+              ? "bg-green-500 text-white"
+              : "bg-white/10 text-white hover:bg-white/20"
+          }`}
+        >
+          {copied ? (
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+          ) : (
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+          )}
+          {copied ? "Tersalin" : "Salin"}
+        </button>
+      </div>
 
       <div className="bg-white rounded-3xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-neutral-100">
         <div className="bg-neutral-900 px-5 py-5 flex items-center gap-4">

@@ -92,7 +92,21 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        let area = stateRef.current.areaName; 
+        // Update coords immediately — don't wait for reverse geocode
+        setState((s) => ({
+          ...s,
+          latitude,
+          longitude,
+          error: null,
+          loading: false,
+          timestamp: Date.now(),
+        }));
+
+        // Sync location to DB in background (non-blocking)
+        updateDriverStatus(stateRef.current.status, latitude, longitude).catch(() => {});
+
+        // Reverse geocode in background
+        let area = stateRef.current.areaName;
         try {
           const response = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=14`,
@@ -107,24 +121,13 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
           prevAreaRef.current = area;
         }
 
-        try {
-          await updateDriverStatus(stateRef.current.status, latitude, longitude);
-        } catch (syncErr) {}
-
-        setState((s) => ({
-          ...s,
-          latitude,
-          longitude,
-          areaName: area,
-          error: null,
-          loading: false,
-          timestamp: Date.now(),
-        }));
+        // Update area name once we have it
+        setState((s) => ({ ...s, areaName: area }));
       },
       (error) => {
         setState((s) => ({ ...s, error: "GPS Error", loading: false }));
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
     );
   }, []);
 
@@ -146,16 +149,19 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
 
   const value: LocationState = {
     ...state,
-    setStatus: async (newStatus: string) => {
+    setStatus: (newStatus: string) => {
+      // Update local state immediately
       setState(s => ({ ...s, status: newStatus }));
-      // Force sync with server on status change
+
+      // Sync to DB in background (non-blocking — avoids UI freeze)
       const current = stateRef.current;
-      await updateDriverStatus(newStatus, current.latitude || undefined, current.longitude || undefined);
-      
+      updateDriverStatus(newStatus, current.latitude || undefined, current.longitude || undefined)
+        .catch(console.error);
+
       if (newStatus !== "Offline") {
+        // Trigger GPS fetch immediately without waiting for DB
         fetchLocation(true);
       } else {
-        // Clear local cache if offline
         setState(s => ({ ...s, loading: false }));
       }
     },

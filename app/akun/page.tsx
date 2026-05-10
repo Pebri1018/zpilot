@@ -17,7 +17,7 @@ export default async function AkunPage() {
 
   const { data: profile } = await supabase
     .from("users")
-    .select("nama, kota, platform, driver_id")
+    .select("nama, kota, platform, driver_id, ztips_id")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -35,6 +35,7 @@ export default async function AkunPage() {
           kota={profile?.kota ?? null}
           platform={profile?.platform ?? "ShopeeFood"}
           driverId={profile?.driver_id ?? null}
+          ztipsId={profile?.ztips_id ?? null}
         />
       </div>
       <DriverBottomNav />
