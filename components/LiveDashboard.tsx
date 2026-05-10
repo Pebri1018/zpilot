@@ -13,6 +13,7 @@ export function LiveDashboard() {
   const { lang, t } = useLanguage();
   const { status, areaName, loading, error, timestamp, refreshLocation } = useLocation();
   const [time, setTime] = useState(new Date());
+  const [ngetemStartTime, setNgetemStartTime] = useState<number | null>(null);
   const [recommendation, setRecommendation] = useState<RecommendationResult>({
     action: "STAY",
     title: t("loading"),
@@ -32,44 +33,34 @@ export function LiveDashboard() {
   }, []);
 
   useEffect(() => {
-    if (status === "Offline") return; // STOP FETCH IF OFFLINE
+    if (status === "Ngetem") {
+      if (!ngetemStartTime) setNgetemStartTime(Date.now());
+    } else {
+      setNgetemStartTime(null);
+    }
+  }, [status, ngetemStartTime]);
 
+  useEffect(() => {
     async function fetchData() {
       try {
-        const [recResult, merchantsResult, statsResult] = await Promise.all([
-          getRecommendationV2(areaName),
-          getActiveMerchants(areaName),
-          getZoneStats(areaName)
-        ]);
-        setRecommendation(recResult);
+        const idleMinutes = status === "Ngetem" && ngetemStartTime ? Math.floor((Date.now() - ngetemStartTime) / 60000) : 0;
+        
+        const merchantsResult = await getActiveMerchants(areaName);
+        const statsResult = await getZoneStats(areaName);
+        const recResult = await getRecommendationV2(areaName, status, idleMinutes, statsResult.driverCount, merchantsResult.length);
+        
         setMerchants(merchantsResult);
         setZoneStats(statsResult);
+        setRecommendation(recResult);
       } catch (e) {
         console.error("Failed to fetch dashboard data", e);
       }
     }
     fetchData();
-  }, [areaName, time.getHours(), status]);
+  }, [areaName, time.getHours(), status, ngetemStartTime]);
 
   const formattedTime = time.toLocaleTimeString(lang === "ID" ? "id-ID" : "en-US", { hour: '2-digit', minute: '2-digit' });
   const minutesAgo = timestamp ? Math.floor((time.getTime() - timestamp) / 60000) : null;
-
-  if (status === "Offline") {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 px-6 text-center bg-white rounded-[2.5rem] border border-neutral-100 shadow-sm animate-in fade-in zoom-in-95">
-        <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mb-6">
-          <svg className="w-10 h-10 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
-        </div>
-        <h3 className="text-[1.2rem] font-black text-neutral-900 mb-2">{lang === "ID" ? "Mode Offline" : "Offline Mode"}</h3>
-        <p className="text-[0.9rem] text-neutral-500 font-medium leading-relaxed mb-8">
-          {lang === "ID" 
-            ? "Status kamu tidak terlihat di radar dan AI Pilot dinonaktifkan. Ubah status ke Ngetem untuk mulai." 
-            : "Your presence is hidden from the radar and AI Pilot is disabled. Switch to Ngetem to start."}
-        </p>
-        <DriverStatusSelector />
-      </div>
-    );
-  }
 
   return (
     <>
@@ -176,15 +167,24 @@ export function LiveDashboard() {
       <section className="pb-8">
         <div className="rounded-[2rem] px-6 py-7 shadow-[0_12px_40px_rgba(0,0,0,0.06)] border border-neutral-100 bg-white relative overflow-hidden">
           <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="flex h-3 w-3 rounded-full" style={{ backgroundColor: recommendation.color }}></span>
-              <p className="text-[0.75rem] font-bold uppercase tracking-[0.15em] text-neutral-500">{t("ai_pilot_suggest")}</p>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <span className="flex h-3 w-3 rounded-full" style={{ backgroundColor: recommendation.color }}></span>
+                <p className="text-[0.75rem] font-bold uppercase tracking-[0.15em] text-neutral-500">{t("ai_pilot_suggest")}</p>
+              </div>
+              {recommendation.badge && (
+                <span className={`text-[0.6rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-md ${recommendation.badge === 'High' ? 'bg-red-50 text-red-600' : recommendation.badge === 'Medium' ? 'bg-orange-50 text-orange-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                  {recommendation.badge} CONFIDENCE
+                </span>
+              )}
             </div>
             <p className="text-[1.4rem] font-extrabold leading-tight text-neutral-900">{recommendation.title}</p>
             <p className="mt-2 text-[1.05rem] text-neutral-600 font-medium">{recommendation.reason}</p>
-            <Link href="/radar" className="mt-6 flex w-full items-center justify-center rounded-[1.25rem] py-4 text-[1.05rem] font-bold text-white shadow-lg" style={{ backgroundColor: recommendation.color }}>
-              {t("open_radar")}
-            </Link>
+            {recommendation.action !== "OFFLINE" && recommendation.action !== "BUSY" && (
+              <Link href="/radar" className="mt-6 flex w-full items-center justify-center rounded-[1.25rem] py-4 text-[1.05rem] font-bold text-white shadow-lg active:scale-95 transition-all" style={{ backgroundColor: recommendation.color }}>
+                {t("open_radar")}
+              </Link>
+            )}
           </div>
         </div>
       </section>

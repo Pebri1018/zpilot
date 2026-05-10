@@ -3,134 +3,123 @@
 import { createClient } from "@/lib/supabase/server";
 
 export type RecommendationResult = {
-  action: "STAY" | "MOVE";
+  action: "STAY" | "MOVE" | "OFFLINE" | "BUSY";
   title: string;
   reason: string;
   targetZone?: string;
   color: string;
+  badge?: "High" | "Medium" | "Low";
 };
 
-export async function getRecommendationV2(areaName: string | null): Promise<RecommendationResult> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
+export async function getRecommendationV2(
+  areaName: string | null,
+  status: string,
+  idleMinutes: number,
+  driverCount: number,
+  merchantCount: number
+): Promise<RecommendationResult> {
   const hour = new Date().getHours();
   const currentArea = areaName?.toLowerCase() || "";
 
-  let driverCountInArea = 0;
-  let activeMinutes = 0;
-
-  if (user) {
-    // 1. Check Driver Density in the same area
-    if (areaName) {
-      const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-      const now = new Date().toISOString();
-
-      // Check for manual overrides first (Founder Intelligence)
-      const { data: manualReport } = await supabase
-        .from("manual_density_reports")
-        .select("driver_count")
-        .eq("area", areaName)
-        .gt("expires_at", now)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (manualReport) {
-        driverCountInArea = manualReport.driver_count;
-      } else {
-        // Fallback to passive crowdsourced data
-        const { count } = await supabase
-          .from("driver_locations")
-          .select("*", { count: 'exact', head: true })
-          .eq("area_name", areaName)
-          .gte("updated_at", fifteenMinsAgo);
-        
-        driverCountInArea = count || 0;
-      }
-    }
-
-    // 2. Check recent movement (active minutes today)
-    const today = new Date().toISOString().split("T")[0];
-    const { data: session } = await supabase
-      .from("daily_sessions")
-      .select("active_minutes")
-      .eq("user_id", user.id)
-      .eq("date", today)
-      .maybeSingle();
-      
-    activeMinutes = session?.active_minutes || 0;
+  // 1. Status Rules
+  if (status === "Offline") {
+    return {
+      action: "OFFLINE",
+      title: "Pilot Standby",
+      reason: "You're offline. Go online to start scanning hotspot.",
+      color: "#9CA3AF", // Gray
+      badge: "High"
+    };
   }
 
-  // --- LOGIC ENGINE V2 ---
+  if (status === "Antar") {
+    return {
+      action: "BUSY",
+      title: "Delivery in Progress",
+      reason: "Complete delivery first. Next hotspot will be suggested after finish.",
+      color: "#F59E0B", // Orange
+      badge: "High"
+    };
+  }
 
-  // High density + Non-peak hour -> Move
-  if (driverCountInArea >= 5 && !(hour >= 11 && hour <= 13) && !(hour >= 17 && hour <= 20)) {
+  // 2. High Competition Rule
+  if (driverCount >= 5) {
     return {
       action: "MOVE",
-      title: "Pesaing Padat",
-      reason: `Ada ${driverCountInArea} driver di area ini, padahal jam santai. Geser ke area lain untuk hindari rebutan.`,
-      color: "#EF4444" // Red
+      title: "High Competition",
+      reason: "Competition high. Shift 500m away to avoid crowd.",
+      color: "#F59E0B",
+      badge: "High"
     };
   }
 
-  // High active minutes -> Take a break
-  if (activeMinutes > 180 && driverCountInArea < 3) {
-    return {
-      action: "STAY",
-      title: "Waktunya Rehat?",
-      reason: `Kamu sudah aktif ${Math.round(activeMinutes / 60)} jam lebih. Area ini cukup sepi, bisa istirahat sambil nunggu.`,
-      color: "#3B82F6" // Blue
-    };
-  }
+  // 3. Time-based Rules
+  const isLunchPeak = hour >= 11 && hour <= 13;
+  const isDinnerPeak = hour >= 17 && hour <= 20;
 
-  // 11:00 - 13:00 (Lunch time)
-  if (hour >= 11 && hour <= 13) {
-    if (currentArea.includes("kampus") || currentArea.includes("ugm") || currentArea.includes("uny") || currentArea.includes("upn") || currentArea.includes("seturan")) {
-      return {
-        action: "STAY",
-        title: "Tetap di Sini",
-        reason: "Waktu makan siang, orderan area kampus dan kos biasanya tinggi.",
-        color: "#10B981" // Green
-      };
-    } else {
+  if (isLunchPeak) {
+    if (!currentArea.includes("kampus") && !currentArea.includes("seturan") && !currentArea.includes("babarsari")) {
       return {
         action: "MOVE",
-        title: "Geser ke Kampus",
-        reason: "Jam makan siang. Area kampus/kos lebih potensial dari kantoran.",
-        color: "#F59E0B" // Orange
+        title: "Lunch Peak Active",
+        reason: "Prioritize food zones like campus area or Seturan.",
+        color: "#10B981", // Green
+        badge: "Medium"
       };
     }
   }
 
-  // 14:00 - 16:00 (Afternoon slump)
-  if (hour >= 14 && hour <= 16) {
+  // 4. Idle Timer & Density Rules
+  const hasMerchants = merchantCount > 0;
+
+  if (idleMinutes < 8 && hasMerchants) {
     return {
-      action: "MOVE",
-      title: "Cari Snack Sore",
-      reason: "Jam nanggung. Cari spot jajanan/minuman kekinian seperti Mixue atau Gacoan.",
-      color: "#F59E0B"
+      action: "STAY",
+      title: "Good Potential",
+      reason: "Stay 5 more minutes. Area still has active merchants.",
+      color: "#3B82F6", // Blue
+      badge: "High"
     };
   }
 
-  // 17:00 - 20:00 (Dinner time)
-  if (hour >= 17 && hour <= 20) {
-    if (driverCountInArea < 4) {
-      return {
-        action: "STAY",
-        title: "Spot Bagus",
-        reason: "Waktu makan malam dan pesaing sedikit di sini. Standby!",
-        color: "#10B981"
-      };
-    }
+  if (idleMinutes > 15 && !hasMerchants) {
+    return {
+      action: "MOVE",
+      title: "Dead Zone",
+      reason: "No signal here. Move to Seturan / Babarsari or nearby hotspots.",
+      color: "#EF4444", // Red
+      badge: "High"
+    };
+  }
+
+  if (idleMinutes > 30) {
+    return {
+      action: "MOVE",
+      title: "Stuck Too Long",
+      reason: "You've been waiting too long. Shift area to reset algorithm.",
+      color: "#EF4444",
+      badge: "Medium"
+    };
+  }
+
+  // Future Ready / Evening
+  if (hour >= 15 && hour < 17) {
+    return {
+      action: "STAY",
+      title: "Evening Prep",
+      reason: "Demand may rise soon for dinner. Position yourself near restos.",
+      color: "#10B981",
+      badge: "Low"
+    };
   }
 
   // Default Fallback
   return {
     action: "STAY",
-    title: "Tetap Standby",
-    reason: "Menunggu pola orderan terbaru di area ini...",
-    color: "#10B981"
+    title: "Scanning Radar",
+    reason: "Monitoring local signals. Stay alert for sudden orders.",
+    color: "#10B981",
+    badge: "Low"
   };
 }
 

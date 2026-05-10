@@ -39,6 +39,8 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
   const [area, setArea] = useState<string>("");
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterLevel, setFilterLevel] = useState("All");
   const merchantFormRef = useRef<HTMLFormElement>(null);
 
   // Auto-detect admin current location on start
@@ -53,12 +55,12 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
   return (
     <div className="flex flex-col gap-6">
       {/* Admin Nav */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-5 px-5 no-scrollbar">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 px-5 sticky top-[max(1.25rem,env(safe-area-inset-top))] z-40 bg-[#f7f7f8]/95 backdrop-blur-xl pt-2 pb-4 -mx-5 border-b border-neutral-200/50">
         {NAV.map(item => (
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id)}
-            className={`flex items-center gap-2 shrink-0 px-4 py-2.5 rounded-2xl text-[0.85rem] font-bold transition-all ${activeTab === item.id ? "bg-neutral-900 text-white shadow-lg" : "bg-white text-neutral-500 border border-neutral-100"}`}
+            className={`flex items-center justify-center md:justify-start gap-2 shrink-0 px-3 py-3 rounded-2xl text-[0.8rem] md:text-[0.85rem] font-bold transition-all ${activeTab === item.id ? "bg-neutral-900 text-white shadow-lg" : "bg-white text-neutral-500 border border-neutral-100 active:bg-neutral-50"}`}
           >
             {item.icon}
             {item.label}
@@ -159,10 +161,36 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
           </div>
 
           {/* Merchant List */}
-          <div className="space-y-3">
-            <h4 className="text-[0.75rem] font-black uppercase tracking-widest text-neutral-400 ml-2">Active Database</h4>
-            {merchants.map(m => (
-              <div key={m.id} className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm flex flex-col gap-4">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-[0.75rem] font-black uppercase tracking-widest text-neutral-400 ml-2">Active Database</h4>
+            </div>
+            
+            <div className="flex gap-2 mb-4">
+              <input 
+                type="text" 
+                placeholder="Search name or area..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 px-4 py-2.5 rounded-xl bg-white border border-neutral-200 text-[0.85rem] font-semibold outline-none focus:border-neutral-900"
+              />
+              <select 
+                value={filterLevel} 
+                onChange={(e) => setFilterLevel(e.target.value)}
+                className="px-3 py-2.5 rounded-xl bg-white border border-neutral-200 text-[0.85rem] font-semibold outline-none"
+              >
+                <option value="All">All</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
+            </div>
+
+            {merchants
+              .filter(m => filterLevel === "All" || m.busy_level === filterLevel)
+              .filter(m => m.name.toLowerCase().includes(searchQuery.toLowerCase()) || m.area.toLowerCase().includes(searchQuery.toLowerCase()))
+              .map(m => (
+              <div key={m.id} className={`bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm flex flex-col gap-4 ${!m.is_active ? "opacity-60 grayscale" : ""}`}>
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="font-black text-[1.05rem] tracking-tight">{m.name}</p>
@@ -198,6 +226,9 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
                       setMerchants(prev => prev.filter(x => x.id !== m.id));
                     }
                   }} className="flex-1 py-2.5 rounded-xl bg-red-50 text-[0.75rem] font-bold text-red-600 active:scale-95 transition-all">{t("delete")}</button>
+                  <a href={`/radar?lat=${m.lat}&lng=${m.lng}`} className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  </a>
                 </div>
               </div>
             ))}
