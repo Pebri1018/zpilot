@@ -34,6 +34,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
   const [merchantMode, setMerchantMode] = useState<"quick" | "detail">("quick");
   const [merchants, setMerchants] = useState(initialMerchants);
   const [users, setUsers] = useState(initialUsers);
+  const [editingMerchant, setEditingMerchant] = useState<any | null>(null);
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
   const [area, setArea] = useState<string>("");
@@ -216,7 +217,12 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
                 </p>
 
                 <div className="flex gap-2 border-t border-neutral-50 pt-3">
-                  <button onClick={() => alert("Edit mode coming soon - use Quick Mode to update same name+area")} className="flex-1 py-2.5 rounded-xl bg-neutral-100 text-[0.75rem] font-bold text-neutral-600 active:scale-95 transition-all">{t("edit")}</button>
+                  <button 
+                    onClick={() => setEditingMerchant(m)} 
+                    className="flex-1 py-2.5 rounded-xl bg-blue-50 text-[0.75rem] font-bold text-blue-600 active:scale-95 transition-all"
+                  >
+                    {t("edit")}
+                  </button>
                   <button onClick={() => toggleMerchantActive(m.id, !m.is_active)} className={`flex-1 py-2.5 rounded-xl text-[0.75rem] font-bold uppercase tracking-widest transition-all ${m.is_active ? "bg-emerald-50 text-emerald-600" : "bg-neutral-100 text-neutral-400"}`}>
                     {m.is_active ? t("enable") : t("disable")}
                   </button>
@@ -328,15 +334,25 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
           {initialFeedback.length === 0 && <p className="text-center text-neutral-400 py-10 font-bold">No feedback received.</p>}
           {initialFeedback.map(f => (
-            <div key={f.id} className="bg-white p-6 rounded-[2.5rem] border border-neutral-100 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
-              <div className="flex justify-between items-start mb-3 pl-2">
-                <div>
-                  <p className="font-black text-[0.95rem] tracking-tight">{f.users?.nama || "User"}</p>
-                  <p className="text-[0.7rem] text-neutral-400 font-bold uppercase">{new Date(f.created_at).toLocaleDateString()}</p>
+            <div key={f.id} className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500" />
+              <div className="pl-3">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <p className="font-black text-[0.95rem] tracking-tight text-neutral-900">{f.users?.nama || "Unknown"}</p>
+                    <p className="text-[0.7rem] text-blue-500 font-bold mt-0.5">{f.users?.email || "—"}</p>
+                  </div>
+                  <span className="text-[0.65rem] font-bold text-neutral-400 bg-neutral-50 px-2 py-1 rounded-lg">
+                    {new Date(f.created_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                  </span>
                 </div>
+                <p className="text-[0.9rem] text-neutral-700 leading-relaxed font-medium italic mt-2">"{f.message}"</p>
+                {f.status && (
+                  <span className={`inline-block mt-2 text-[0.65rem] font-bold uppercase tracking-widest px-2 py-0.5 rounded-lg ${
+                    f.status === "reviewed" ? "bg-green-50 text-green-600" : f.status === "closed" ? "bg-neutral-100 text-neutral-400" : "bg-orange-50 text-orange-600"
+                  }`}>{f.status}</span>
+                )}
               </div>
-              <p className="text-[0.9rem] text-neutral-700 leading-relaxed font-medium pl-2 italic">"{f.message}"</p>
             </div>
           ))}
         </div>
@@ -373,6 +389,64 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
                 </button>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+      {/* EDIT MERCHANT MODAL */}
+      {editingMerchant && (
+        <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] p-6 shadow-2xl animate-in slide-in-from-bottom-4 duration-200 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-[1.1rem] font-black">Edit Merchant</h3>
+              <button onClick={() => setEditingMerchant(null)} className="w-9 h-9 rounded-xl bg-neutral-100 flex items-center justify-center">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <form action={async (fd) => {
+              setLoading(true);
+              fd.append("lat", String(editingMerchant.lat ?? ""));
+              fd.append("lng", String(editingMerchant.lng ?? ""));
+              fd.append("area", editingMerchant.area);
+              fd.append("address", editingMerchant.address || "");
+              const res = await upsertMerchant(fd);
+              setLoading(false);
+              if (res.success) {
+                const updated = await getAllMerchants();
+                setMerchants(updated);
+                setEditingMerchant(null);
+              } else alert(res.error);
+            }} className="space-y-3">
+              <input name="name" required defaultValue={editingMerchant.name} placeholder="Nama Resto" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold outline-none" />
+              <select name="category" defaultValue={editingMerchant.category} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold">
+                <option value="Makanan">🍱 Food</option>
+                <option value="Minuman">🥤 Drink</option>
+                <option value="Snack">🍟 Snack</option>
+                <option value="Paket">📦 Package</option>
+              </select>
+              <div className="grid grid-cols-2 gap-3">
+                <input name="rating" type="number" step="0.1" defaultValue={editingMerchant.rating ?? ""} placeholder="Rating (e.g. 4.5)" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+                <input name="reviews" type="number" defaultValue={editingMerchant.reviews ?? ""} placeholder="Review Count" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+              </div>
+              <div className="flex gap-4 items-center py-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" name="promo_active" defaultChecked={editingMerchant.promo_active} className="w-5 h-5 rounded-lg" />
+                  <span className="text-[0.85rem] font-bold">Promo</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" name="pickup_fast" defaultChecked={editingMerchant.fast_pickup || editingMerchant.pickup_fast} className="w-5 h-5 rounded-lg" />
+                  <span className="text-[0.85rem] font-bold">Fast Pickup</span>
+                </label>
+              </div>
+              <input name="promo_percent" type="number" defaultValue={editingMerchant.promo_percent ?? ""} placeholder="Promo % (e.g. 20)" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+              <div className="flex gap-2 pt-2">
+                <button type="button" onClick={() => setEditingMerchant(null)} className="flex-1 py-3 rounded-2xl bg-neutral-100 font-bold text-neutral-600">
+                  Batal
+                </button>
+                <button type="submit" disabled={loading} className="flex-1 py-3 rounded-2xl bg-neutral-900 font-bold text-white disabled:opacity-50">
+                  {loading ? "..." : "Simpan"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
