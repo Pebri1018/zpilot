@@ -333,7 +333,7 @@ export default function RadarPage() {
       )}
 
       {/* COMPACT LEGEND — floating left */}
-      <div className="absolute bottom-[calc(9rem+env(safe-area-inset-bottom))] left-3 z-[500] pointer-events-none">
+      <div className="absolute bottom-[calc(11.5rem+env(safe-area-inset-bottom))] left-3 z-[500] pointer-events-none">
         <div className="bg-neutral-950/75 backdrop-blur-md rounded-2xl p-2.5 shadow-xl border border-white/10 space-y-1.5">
           {[
             { color: "#000", border: "border-2 border-white", label: "Kamu" },

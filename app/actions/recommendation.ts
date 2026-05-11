@@ -21,7 +21,8 @@ export async function getRecommendationV2(
   lang: string = "ID",
   hotspots: HotspotZone[] = []
 ): Promise<RecommendationResult> {
-  const hour = new Date().getHours();
+  const jakartaTime = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+  const hour = jakartaTime.getHours();
   const currentArea = areaName?.toLowerCase() || "";
   const isID = lang === "ID";
 
@@ -80,8 +81,9 @@ export async function getRecommendationV2(
 
   // 4. Time-context awareness (informational, not forced move)
   const isLunchPeak = hour >= 11 && hour <= 13;
-  const isDinnerPeak = hour >= 17 && hour <= 20;
-  const isLatNight = hour >= 22 || hour <= 4;
+  const isDinnerPeak = hour >= 17 && hour <= 19;
+  const isNight = hour >= 20 && hour <= 23;
+  const isLatNight = hour >= 0 && hour <= 4;
   const isPeak = isLunchPeak || isDinnerPeak;
 
   // 5. Current zone intelligence
@@ -129,10 +131,22 @@ export async function getRecommendationV2(
       action: "STAY",
       title: isID ? (isLunchPeak ? "Jam Makan Siang" : "Jam Makan Malam") : (isLunchPeak ? "Lunch Rush" : "Dinner Rush"),
       reason: isID
-        ? `${isLunchPeak ? "11–13" : "17–20"} adalah jam sibuk. Ada ${merchantCount} merchant aktif. ${topHotspot.name} sedang panas.`
-        : `${isLunchPeak ? "11–13" : "17–20"} is peak. ${merchantCount} active merchants. ${topHotspot.name} is hot.`,
+        ? `${isLunchPeak ? "11–13" : "17–19"} adalah jam sibuk. Ada ${merchantCount} merchant aktif. ${topHotspot.name} sedang panas.`
+        : `${isLunchPeak ? "11–13" : "17–19"} is peak. ${merchantCount} active merchants. ${topHotspot.name} is hot.`,
       color: "#10B981",
       badge: "Medium"
+    };
+  }
+
+  if (isNight) {
+    return {
+      action: "STAY",
+      title: isID ? "Malam Aktif" : "Active Night",
+      reason: isID
+        ? "Waktu rawan orderan malam (martabak/nasi goreng). Area kos-kosan sangat direkomendasikan."
+        : "Night cravings time. Dorm areas are highly recommended.",
+      color: "#6366F1",
+      badge: "Low"
     };
   }
 

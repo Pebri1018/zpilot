@@ -24,7 +24,7 @@ export default async function Home() {
   const broadcast = await getLatestActiveBroadcast();
 
   return (
-    <div className="min-h-[100dvh] bg-[#f2f2f4] pb-24 text-neutral-900 antialiased">
+    <div className="min-h-[100dvh] bg-[#f2f2f4] dark:bg-neutral-950 pb-24 text-neutral-900 dark:text-neutral-100 antialiased">
       <div className="mx-auto max-w-md px-4 pt-[max(1rem,env(safe-area-inset-top))]">
         {broadcast && <div className="mb-3"><BroadcastCard broadcast={broadcast} /></div>}
         <LiveDashboard />

@@ -9,9 +9,10 @@ import { getHotspots, type HotspotZone } from "@/app/actions/hotspot";
 
 function getTimeContext(hour: number): { label: string; emoji: string; color: string } {
   if (hour >= 11 && hour <= 13) return { label: "Lunch Rush", emoji: "🔥", color: "text-red-600" };
-  if (hour >= 17 && hour <= 20) return { label: "Dinner Rush", emoji: "🔥", color: "text-orange-600" };
+  if (hour >= 17 && hour <= 19) return { label: "Dinner Rush", emoji: "🔥", color: "text-orange-600" };
+  if (hour >= 20 && hour <= 23) return { label: "Malam Aktif", emoji: "🌙", color: "text-indigo-600" };
   if (hour >= 7 && hour <= 10) return { label: "Pagi Aktif", emoji: "☀️", color: "text-amber-600" };
-  if (hour >= 22 || hour <= 4) return { label: "Dini Hari", emoji: "🌙", color: "text-indigo-600" };
+  if (hour >= 0 && hour <= 4) return { label: "Dini Hari", emoji: "🌌", color: "text-purple-600" };
   return { label: "Normal", emoji: "📡", color: "text-blue-600" };
 }
 
@@ -78,10 +79,10 @@ export default function TrenPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-[#f2f2f4] text-neutral-900 antialiased pb-24">
+    <div className="min-h-[100dvh] bg-[#f2f2f4] dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 antialiased pb-24">
 
       {/* STICKY HEADER */}
-      <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3 bg-[#f2f2f4] sticky top-0 z-20">
+      <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3 bg-[#f2f2f4] dark:bg-neutral-950 sticky top-0 z-20">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-[1.3rem] font-black tracking-tight">Intel Pasar</h1>
@@ -92,7 +93,7 @@ export default function TrenPage() {
           </div>
           <div className="text-right">
             <p className="text-[0.62rem] font-bold text-neutral-400 uppercase">Area</p>
-            <p className="text-[0.82rem] font-black text-neutral-800 max-w-[130px] truncate">{areaName || "—"}</p>
+            <p className="text-[0.82rem] font-black text-neutral-800 dark:text-neutral-200 max-w-[130px] truncate">{areaName || "—"}</p>
           </div>
         </div>
       </header>
@@ -130,7 +131,7 @@ export default function TrenPage() {
           </div>
           <div className="flex flex-col gap-1.5">
             {topZones.length === 0 && (
-              <div className="bg-white rounded-2xl p-4 text-center text-[0.85rem] text-neutral-400 border border-neutral-100">
+              <div className="bg-white dark:bg-neutral-900 rounded-2xl p-4 text-center text-[0.85rem] text-neutral-400 border border-neutral-100 dark:border-white/10">
                 Mengumpulkan data zona...
               </div>
             )}
@@ -138,15 +139,15 @@ export default function TrenPage() {
               const zs = ZONE_STYLE[h.label] || ZONE_STYLE.SEPI;
               const mv = getMovement(h);
               return (
-                <div key={h.id} className="bg-white rounded-2xl px-4 py-3 border border-neutral-100 shadow-sm flex items-center justify-between">
+                <div key={h.id} className="bg-white dark:bg-neutral-900 rounded-2xl px-4 py-3 border border-neutral-100 dark:border-white/10 shadow-sm flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="w-7 h-7 rounded-full bg-neutral-100 text-[0.75rem] font-black text-neutral-600 flex items-center justify-center shrink-0">{i+1}</span>
+                    <span className="w-7 h-7 rounded-full bg-neutral-100 dark:bg-neutral-800 text-[0.75rem] font-black text-neutral-600 dark:text-neutral-400 flex items-center justify-center shrink-0">{i+1}</span>
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="text-[0.9rem] font-black text-neutral-900">{h.name}</p>
+                        <p className="text-[0.9rem] font-black text-neutral-900 dark:text-neutral-100">{h.name}</p>
                         <span className={`text-[1rem] font-black ${mv.color}`}>{mv.arrow}</span>
                       </div>
-                      <p className="text-[0.67rem] text-neutral-500 font-medium">{h.ngetem_drivers} ngetem · {h.antar_drivers} antar · {h.merchant_count} resto</p>
+                      <p className="text-[0.67rem] text-neutral-500 dark:text-neutral-400 font-medium">{h.ngetem_drivers} ngetem · {h.antar_drivers} antar · {h.merchant_count} resto</p>
                     </div>
                   </div>
                   <span className={`text-[0.62rem] font-black uppercase px-2 py-1 rounded-lg shrink-0 ${zs.bg} ${zs.text}`}>{zs.label}</span>
@@ -158,19 +159,19 @@ export default function TrenPage() {
 
         {/* MOVEMENT */}
         {(movingUp.length > 0 || movingDown.length > 0) && (
-          <div className="bg-white rounded-2xl p-4 border border-neutral-100 shadow-sm">
+          <div className="bg-white dark:bg-neutral-900 rounded-2xl p-4 border border-neutral-100 dark:border-white/10 shadow-sm">
             <p className="text-[0.65rem] font-black uppercase tracking-widest text-neutral-400 mb-3">Pergerakan Zona</p>
             <div className="flex gap-4">
               {movingUp.length > 0 && (
                 <div className="flex-1">
                   <p className="text-[0.65rem] font-bold text-emerald-600 uppercase mb-1">Naik ↑</p>
-                  {movingUp.map(h => <p key={h.id} className="text-[0.82rem] font-bold text-neutral-800">{h.name}</p>)}
+                  {movingUp.map(h => <p key={h.id} className="text-[0.82rem] font-bold text-neutral-800 dark:text-neutral-200">{h.name}</p>)}
                 </div>
               )}
               {movingDown.length > 0 && (
                 <div className="flex-1">
                   <p className="text-[0.65rem] font-bold text-red-500 uppercase mb-1">Turun ↓</p>
-                  {movingDown.map(h => <p key={h.id} className="text-[0.82rem] font-bold text-neutral-800">{h.name}</p>)}
+                  {movingDown.map(h => <p key={h.id} className="text-[0.82rem] font-bold text-neutral-800 dark:text-neutral-200">{h.name}</p>)}
                 </div>
               )}
             </div>
@@ -184,14 +185,14 @@ export default function TrenPage() {
         </div>
 
         {/* HISTORICAL CONTEXT */}
-        <div className="bg-white rounded-2xl px-4 py-4 border border-neutral-100 shadow-sm">
+        <div className="bg-white dark:bg-neutral-900 rounded-2xl px-4 py-4 border border-neutral-100 dark:border-white/10 shadow-sm">
           <p className="text-[0.65rem] font-black uppercase tracking-widest text-neutral-400 mb-2">Histori Waktu Ini</p>
-          <p className="text-[0.9rem] font-bold text-neutral-900">{historical.label}</p>
+          <p className="text-[0.9rem] font-bold text-neutral-900 dark:text-neutral-100">{historical.label}</p>
           <p className="text-[0.75rem] text-neutral-500 font-mono">{historical.timeRange}</p>
           {historical.recommendedZones.slice(0, 2).map((z, i) => (
             <div key={i} className="flex items-center gap-2 mt-2">
               <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 shrink-0" />
-              <p className="text-[0.8rem] font-semibold text-neutral-700">{z.area} <span className="text-neutral-400 font-normal">— {z.reason}</span></p>
+              <p className="text-[0.8rem] font-semibold text-neutral-700 dark:text-neutral-300">{z.area} <span className="text-neutral-400 font-normal">— {z.reason}</span></p>
             </div>
           ))}
         </div>

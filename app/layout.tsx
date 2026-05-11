@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { LocationProvider } from "@/hooks/useLocation";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { PushSubscriptionManager } from "@/components/PushSubscriptionManager";
@@ -7,7 +7,7 @@ import { InactivityTimer } from "@/components/InactivityTimer";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const plusJakartaSans = Plus_Jakarta_Sans({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "ZTIPS Pilot",
@@ -35,7 +35,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id">
-      <body className={inter.className}>
+      <body className={plusJakartaSans.className}>
         <LanguageProvider>
           <LocationProvider>
             <PushSubscriptionManager />
@@ -46,6 +46,15 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
+              (function() {
+                try {
+                  var hour = new Date().getHours();
+                  if (hour >= 18 || hour < 6) {
+                    document.documentElement.classList.add('dark');
+                  }
+                } catch (e) {}
+              })();
+              
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
                   navigator.serviceWorker.getRegistrations().then(function(registrations) {

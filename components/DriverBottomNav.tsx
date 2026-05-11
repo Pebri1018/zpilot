@@ -50,7 +50,7 @@ export function DriverBottomNav() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-neutral-200/90 bg-white/95 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-neutral-200/90 dark:border-white/10 bg-white/95 dark:bg-neutral-950/95 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md"
       aria-label="Menu utama"
     >
       <div className="mx-auto grid max-w-md grid-cols-4 px-1">
@@ -61,14 +61,14 @@ export function DriverBottomNav() {
               key={href}
               href={href}
               className={`py-2 flex flex-col items-center justify-center transition-colors ${
-                active ? "text-neutral-900" : "text-neutral-400 active:text-neutral-600"
+                active ? "text-neutral-900 dark:text-white" : "text-neutral-400 dark:text-neutral-500 active:text-neutral-600 dark:active:text-neutral-400"
               }`}
             >
               {icon}
               <span className="text-[0.65rem] font-medium leading-tight sm:text-[0.7rem]">{label}</span>
               <span
                 className={`mx-auto mt-1 block h-0.5 w-4 rounded-full transition-colors ${
-                  active ? "bg-neutral-900" : "bg-transparent"
+                  active ? "bg-neutral-900 dark:bg-white" : "bg-transparent"
                 }`}
                 aria-hidden
               />

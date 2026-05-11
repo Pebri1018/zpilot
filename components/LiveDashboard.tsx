@@ -169,7 +169,7 @@ export function LiveDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-[0.72rem] font-black text-neutral-400 uppercase tracking-widest">{formattedTime}</p>
-          <p className="text-[1rem] font-black text-neutral-900 leading-tight mt-0.5 line-clamp-1 max-w-[200px]">
+          <p className="text-[1rem] font-black text-neutral-900 dark:text-neutral-100 leading-tight mt-0.5 line-clamp-1 max-w-[200px]">
             {areaName || (loading ? "Mencari lokasi..." : "—")}
           </p>
         </div>
@@ -230,25 +230,22 @@ export function LiveDashboard() {
 
       {/* STATS PILLS */}
       <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-        <div className="shrink-0 bg-white rounded-xl px-3 py-2 shadow-sm border border-neutral-100 flex flex-col items-center min-w-[80px]">
+        <div className="shrink-0 bg-white dark:bg-neutral-900 rounded-xl px-3 py-2 shadow-sm border border-neutral-100 dark:border-white/10 flex flex-col items-center min-w-[80px]">
           <p className="text-[0.6rem] font-bold uppercase text-neutral-400 tracking-wide">Order</p>
-          <p className={`text-[0.85rem] font-black leading-tight ${zoneStats.orderan.includes("Tinggi") ? "text-emerald-600" : "text-neutral-700"}`}>{zoneStats.orderan.replace("Potensi ", "")}</p>
+          <p className={`text-[0.85rem] font-black leading-tight ${zoneStats.orderan.includes("Tinggi") ? "text-emerald-600 dark:text-emerald-400" : "text-neutral-700 dark:text-neutral-300"}`}>{zoneStats.orderan.replace("Potensi ", "")}</p>
         </div>
-        <div className="shrink-0 bg-white rounded-xl px-3 py-2 shadow-sm border border-neutral-100 flex flex-col items-center min-w-[80px]">
+        <div className="shrink-0 bg-white dark:bg-neutral-900 rounded-xl px-3 py-2 shadow-sm border border-neutral-100 dark:border-white/10 flex flex-col items-center min-w-[80px]">
           <p className="text-[0.6rem] font-bold uppercase text-neutral-400 tracking-wide">Saingan</p>
-          <p className={`text-[0.85rem] font-black leading-tight ${zoneStats.pesaing === "Padat" ? "text-red-600" : "text-neutral-700"}`}>{zoneStats.pesaing}</p>
+          <p className={`text-[0.85rem] font-black leading-tight ${zoneStats.pesaing === "Padat" ? "text-red-600 dark:text-red-400" : "text-neutral-700 dark:text-neutral-300"}`}>{zoneStats.pesaing}</p>
         </div>
-        <div className="shrink-0 bg-white rounded-xl px-3 py-2 shadow-sm border border-neutral-100 flex flex-col items-center min-w-[80px]">
+        <div className="shrink-0 bg-white dark:bg-neutral-900 rounded-xl px-3 py-2 shadow-sm border border-neutral-100 dark:border-white/10 flex flex-col items-center min-w-[80px]">
           <p className="text-[0.6rem] font-bold uppercase text-neutral-400 tracking-wide">Driver</p>
-          <p className="text-[0.85rem] font-black leading-tight text-neutral-700">{zoneStats.driverCount}</p>
+          <p className="text-[0.85rem] font-black leading-tight text-neutral-700 dark:text-neutral-300">{zoneStats.driverCount}</p>
         </div>
-        {status === "Ngetem" && ngetemStartTime && !isIdle && (
-          <div className="shrink-0 bg-indigo-50 rounded-xl px-3 py-2 shadow-sm border border-indigo-100 flex flex-col items-center min-w-[80px]">
-            <p className="text-[0.6rem] font-bold uppercase text-indigo-400 tracking-wide">Ngetem</p>
-            <p className="text-[0.85rem] font-black leading-tight text-indigo-700">{idleMinutes}m</p>
-          </div>
-        )}
       </div>
+
+      {/* NGETEM TIMER COMPONENT */}
+      <NgetemTimer />
 
       {/* TOP ZONES */}
       {topZones.length > 0 && (
@@ -258,12 +255,12 @@ export function LiveDashboard() {
             {topZones.map((z, i) => {
               const zl = zoneLabel[z.label] || { label: z.label, color: "text-neutral-600", bg: "bg-neutral-100" };
               return (
-                <div key={z.id} className="bg-white rounded-2xl px-4 py-3 border border-neutral-100 shadow-sm flex items-center justify-between active:scale-[0.99] transition-all">
+                <div key={z.id} className="bg-white dark:bg-neutral-900 rounded-2xl px-4 py-3 border border-neutral-100 dark:border-white/10 shadow-sm flex items-center justify-between active:scale-[0.99] transition-all">
                   <div className="flex items-center gap-3">
-                    <span className="w-6 h-6 rounded-full bg-neutral-100 text-neutral-500 text-[0.7rem] font-black flex items-center justify-center shrink-0">{i+1}</span>
+                    <span className="w-6 h-6 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 text-[0.7rem] font-black flex items-center justify-center shrink-0">{i+1}</span>
                     <div>
-                      <p className="text-[0.9rem] font-black text-neutral-900 leading-none">{z.name}</p>
-                      <p className="text-[0.68rem] text-neutral-500 font-medium mt-0.5">{z.antar_drivers} antar · {z.ngetem_drivers} ngetem · {z.merchant_count} resto</p>
+                      <p className="text-[0.9rem] font-black text-neutral-900 dark:text-neutral-100 leading-none">{z.name}</p>
+                      <p className="text-[0.68rem] text-neutral-500 dark:text-neutral-400 font-medium mt-0.5">{z.antar_drivers} antar · {z.ngetem_drivers} ngetem · {z.merchant_count} resto</p>
                     </div>
                   </div>
                   <span className={`text-[0.62rem] font-black uppercase px-2 py-1 rounded-lg ${zl.bg} ${zl.color}`}>{zl.label}</span>
@@ -283,15 +280,15 @@ export function LiveDashboard() {
           </div>
           <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-5 px-5 no-scrollbar">
             {merchants.slice(0, 8).map(m => (
-              <div key={m.id} className="shrink-0 w-[110px] bg-white rounded-2xl p-3 border border-neutral-100 shadow-sm">
-                <div className="w-10 h-10 rounded-xl mb-2 flex items-center justify-center bg-orange-50">
+              <div key={m.id} className="shrink-0 w-[110px] bg-white dark:bg-neutral-900 rounded-2xl p-3 border border-neutral-100 dark:border-white/10 shadow-sm">
+                <div className="w-10 h-10 rounded-xl mb-2 flex items-center justify-center bg-orange-50 dark:bg-orange-950/30">
                   <span className="text-[1.2rem] font-black text-orange-500">{m.name.charAt(0)}</span>
                 </div>
-                <p className="text-[0.78rem] font-black text-neutral-900 line-clamp-2 leading-tight">{m.name}</p>
+                <p className="text-[0.78rem] font-black text-neutral-900 dark:text-neutral-100 line-clamp-2 leading-tight">{m.name}</p>
                 <div className="flex flex-wrap gap-1 mt-1.5">
-                  {m.is_flash_sale && <span className="text-[0.55rem] font-black bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded">⚡ FLASH</span>}
-                  {m.promo_active && <span className="text-[0.55rem] font-black bg-red-100 text-red-700 px-1.5 py-0.5 rounded">PROMO</span>}
-                  <span className="text-[0.55rem] font-bold bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded">{m.busy_level}</span>
+                  {m.is_flash_sale && <span className="text-[0.55rem] font-black bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 px-1.5 py-0.5 rounded">⚡ FLASH</span>}
+                  {m.promo_active && <span className="text-[0.55rem] font-black bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-1.5 py-0.5 rounded">PROMO</span>}
+                  <span className="text-[0.55rem] font-bold bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 px-1.5 py-0.5 rounded">{m.busy_level}</span>
                 </div>
               </div>
             ))}

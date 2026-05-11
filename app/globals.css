@@ -8,8 +8,15 @@
   box-sizing: border-box;
 }
 
+@variant dark (&:where(.dark, .dark *));
+
 body {
   margin: 0;
-  background: #f8fafc;
+  background: #f2f2f4;
   color: #0f172a;
+}
+
+.dark body {
+  background: #0a0a0a;
+  color: #f8fafc;
 }
