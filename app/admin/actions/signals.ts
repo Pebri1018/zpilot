@@ -211,7 +211,21 @@ export async function getActiveMerchants(areaName: string | null): Promise<Merch
   }
 
   // Sort: same area first, then by score
-  const result = data || [];
+  let result = data || [];
+  
+  // Filter out closed merchants
+  const jakartaTime = new Date().toLocaleTimeString("en-US", { timeZone: "Asia/Jakarta", hour12: false, hour: "2-digit", minute: "2-digit" });
+  result = result.filter(m => {
+    if (m.is_open_24h) return true;
+    if (m.open_time && m.close_time) {
+      const isOvernight = m.open_time > m.close_time;
+      return isOvernight
+        ? (jakartaTime >= m.open_time || jakartaTime < m.close_time)
+        : (jakartaTime >= m.open_time && jakartaTime < m.close_time);
+    }
+    return true; // if no hours specified, assume open
+  });
+
   if (areaName) {
     result.sort((a, b) => {
       const aLocal = a.area?.toLowerCase().includes(areaName.toLowerCase()) ? 1 : 0;

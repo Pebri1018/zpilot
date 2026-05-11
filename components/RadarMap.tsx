@@ -139,7 +139,7 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
               }
             };
             const size = getPinSize(m.type);
-            const showLabel = !m.type.startsWith("driver_") && m.type !== "merchant_low" && zoom >= 14;
+            const showLabel = !m.type.startsWith("driver_") && zoom >= 14;
 
             const pinIcon = L.divIcon({
             className: "bg-transparent",

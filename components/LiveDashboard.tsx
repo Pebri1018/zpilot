@@ -279,10 +279,18 @@ export function LiveDashboard() {
             <Link href="/radar" className="text-[0.7rem] font-bold text-blue-600">Lihat Peta →</Link>
           </div>
           <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-5 px-5 no-scrollbar">
-            {merchants.slice(0, 8).map(m => (
+            {merchants.slice(0, 8).map(m => {
+              const getIcon = (cat: string) => {
+                const c = (cat || "").toLowerCase();
+                if (c.includes("minum") || c.includes("kopi") || c.includes("coffee") || c.includes("cafe")) return "🥤";
+                if (c.includes("snack") || c.includes("roti") || c.includes("bakery") || c.includes("martabak")) return "🥨";
+                if (c.includes("ayam") || c.includes("fast")) return "🍗";
+                return "🍽️";
+              };
+              return (
               <div key={m.id} className="shrink-0 w-[110px] bg-white dark:bg-neutral-900 rounded-2xl p-3 border border-neutral-100 dark:border-white/10 shadow-sm">
                 <div className="w-10 h-10 rounded-xl mb-2 flex items-center justify-center bg-orange-50 dark:bg-orange-950/30">
-                  <span className="text-[1.2rem] font-black text-orange-500">{m.name.charAt(0)}</span>
+                  <span className="text-[1.2rem] font-black">{getIcon(m.category)}</span>
                 </div>
                 <p className="text-[0.78rem] font-black text-neutral-900 dark:text-neutral-100 line-clamp-2 leading-tight">{m.name}</p>
                 <div className="flex flex-wrap gap-1 mt-1.5">
@@ -291,7 +299,8 @@ export function LiveDashboard() {
                   <span className="text-[0.55rem] font-bold bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 px-1.5 py-0.5 rounded">{m.busy_level}</span>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
       )}
