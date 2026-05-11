@@ -224,8 +224,8 @@ export default function RadarPage() {
         <p className="text-[0.6rem] font-bold uppercase tracking-widest text-neutral-400 mb-2">{t("legend")}</p>
         <div className="flex flex-wrap gap-x-4 gap-y-1.5 mb-2 pb-2 border-b border-neutral-100">
           <LegendItem color="bg-black" label={lang === "ID" ? "Kamu" : "You"} />
-          <LegendItem color="bg-blue-500" label={t("ngetem")} />
-          <LegendItem color="bg-neutral-400" label={t("antar")} />
+          <LegendItem color="bg-blue-500" label={lang === "ID" ? "Driver Ngetem" : "Driver Ngetem"} />
+          <LegendItem color="bg-neutral-400" label={lang === "ID" ? "Driver Antar" : "Driver Antar"} />
           <LegendItem color="bg-purple-500" label={lang === "ID" ? "Spot Mangkal" : "Spot"} />
           <LegendItem color="bg-red-500" label={lang === "ID" ? "Resto Ramai" : "Busy"} />
           <LegendItem color="bg-orange-400" label={lang === "ID" ? "Resto Sedang" : "Med"} />

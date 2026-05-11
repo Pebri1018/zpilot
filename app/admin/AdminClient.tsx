@@ -401,11 +401,13 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
             <form action={async (fd) => {
               setLoading(true);
               const supabase = (await import("@/lib/supabase/client")).createClient();
+              const expires_at = new Date(Date.now() + 10 * 60000).toISOString();
               const { error } = await supabase.from("admin_manual_signals").insert({
                 lat: lat,
                 lng: lng,
                 type: String(fd.get("type") || "driver_ngetem"),
-                count: Number(fd.get("count") || 1)
+                count: Number(fd.get("count") || 1),
+                expires_at: expires_at
               });
               setLoading(false);
               if (error) alert(error.message);
