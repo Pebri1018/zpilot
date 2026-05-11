@@ -119,14 +119,16 @@ export default function RadarPage() {
           }
         });
 
-        console.log("Radar data fetched", { 
-          drivers: drivers?.length || 0, 
-          merchants: merchantsData.length, 
-          spots: spots?.length || 0 
-        });
+        const hotspotData = await getHotspots();
 
         setMarkers(newMarkers);
         setHotspots(hotspotData);
+        console.log("Radar data fetched", { 
+          drivers: drivers?.length || 0, 
+          merchants: merchantsData.length, 
+          spots: spots?.length || 0,
+          hotspots: hotspotData.length
+        });
       } catch (err) {
         console.error("Radar fetch error", err);
       } finally {
