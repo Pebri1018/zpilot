@@ -41,6 +41,9 @@ export default function RadarPage() {
         const now = new Date();
         const activeLimit = new Date(now.getTime() - 60 * 60000).toISOString(); // 60 min window
 
+        const { data: sessionData } = await supabase.auth.getSession();
+        const currentUserId = sessionData?.session?.user?.id;
+
         // 1. Fetch active (non-Offline) drivers from users table
         const { data: drivers, error: dErr } = await supabase
           .from("users")
@@ -102,6 +105,7 @@ export default function RadarPage() {
 
         drivers?.forEach(d => {
           if (d.status === "Offline") return;
+          if (currentUserId && d.id === currentUserId) return; // Skip current user so it doesn't overlap with selfIcon
           newMarkers.push({
             id: d.id,
             lat: d.last_lat,

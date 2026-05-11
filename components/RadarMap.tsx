@@ -119,7 +119,7 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
             className: "bg-transparent",
             html: `<div style="display: flex; align-items: center; gap: 4px; transform: translate(-8px, -8px); pointer-events: none;">
                     <div style="width: 12px; height: 12px; background-color: ${colors.fill}; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
-                    <span style="background-color: rgba(255,255,255,0.8); padding: 0px 4px; border-radius: 4px; font-size: 10px; font-weight: 700; color: #111; white-space: nowrap; text-shadow: 0 1px 2px #fff; pointer-events: auto;">${m.label}</span>
+                    ${!m.type.startsWith("driver_") ? `<span style="background-color: rgba(255,255,255,0.8); padding: 0px 4px; border-radius: 4px; font-size: 10px; font-weight: 700; color: #111; white-space: nowrap; text-shadow: 0 1px 2px #fff; pointer-events: auto;">${m.label}</span>` : ''}
                   </div>`,
             iconSize: [0, 0],
             iconAnchor: [0, 0],

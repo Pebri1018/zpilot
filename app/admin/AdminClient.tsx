@@ -62,14 +62,20 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
       {/* Top Bar */}
       <div className="flex justify-between items-center -mb-2 animate-in fade-in slide-in-from-top-2">
         {activeTab === "dashboard" ? (
-          <a href="/akun" className="flex items-center gap-2 text-[0.8rem] font-bold text-neutral-500 bg-white px-4 py-2.5 rounded-xl shadow-sm border border-neutral-100 active:scale-95 transition-all">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-            Kembali ke App
-          </a>
+          <div className="flex w-full gap-2">
+            <a href="/akun" className="flex-1 flex justify-center items-center gap-2 text-[0.8rem] font-bold text-neutral-500 bg-white px-4 py-3 rounded-xl shadow-sm border border-neutral-100 active:scale-95 transition-all">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+              Ke App
+            </a>
+            <button onClick={() => setActiveTab("menu")} className="flex-1 flex justify-center items-center gap-2 text-[0.85rem] font-black text-white bg-neutral-900 px-4 py-3 rounded-xl shadow-lg active:scale-95 transition-all">
+              Menu Admin
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 6h16M4 12h16M4 18h16" /></svg>
+            </button>
+          </div>
         ) : (
           <button onClick={() => setActiveTab("dashboard")} className="flex items-center gap-2 text-[0.8rem] font-bold text-neutral-500 bg-white px-4 py-2.5 rounded-xl shadow-sm border border-neutral-100 active:scale-95 transition-all">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-            Menu Admin
+            Kembali
           </button>
         )}
       </div>
@@ -104,14 +110,21 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
               <p className="text-[1.5rem] font-black text-purple-900">{stats.spots}</p>
             </div>
           </div>
+        </div>
+      )}
 
+      {/* 1.5 MENU ADMIN */}
+      {activeTab === "menu" && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
           {/* Menu List */}
-          <div className="bg-white rounded-3xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-neutral-100">
-            <div className="px-5 pt-4 pb-2"><p className="text-[0.7rem] font-bold uppercase tracking-widest text-neutral-400">Admin Menu</p></div>
+          <div className="bg-white rounded-[2rem] overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-neutral-100">
+            <div className="px-5 pt-4 pb-2 flex justify-between items-center">
+              <p className="text-[0.8rem] font-black uppercase tracking-widest text-neutral-900">Menu Utama</p>
+            </div>
             <div className="divide-y divide-neutral-100">
               {NAV.filter(n => n.id !== "dashboard").map(item => (
-                <button key={item.id} onClick={() => setActiveTab(item.id)} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
-                  <div className="w-8 h-8 rounded-xl bg-neutral-100 text-neutral-600 flex items-center justify-center">
+                <button key={item.id} onClick={() => setActiveTab(item.id)} className="w-full flex items-center gap-3 px-5 py-4.5 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
+                  <div className="w-10 h-10 rounded-2xl bg-neutral-100 text-neutral-600 flex items-center justify-center">
                     {item.icon}
                   </div>
                   <span className="text-[0.95rem] font-semibold">{item.label}</span>
