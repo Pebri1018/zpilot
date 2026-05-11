@@ -55,8 +55,10 @@ export async function upsertMerchant(formData: FormData) {
   const promo_active = formData.get("promo_active") === "on";
   const promo_percent = formData.get("promo_percent") ? Number(formData.get("promo_percent")) : 0;
   const pickup_fast = formData.get("pickup_fast") === "on";
-  const lat = formData.get("lat") ? Number(formData.get("lat")) : null;
-  const lng = formData.get("lng") ? Number(formData.get("lng")) : null;
+  const latStr = String(formData.get("lat"));
+  const lngStr = String(formData.get("lng"));
+  const lat = latStr && latStr !== "null" ? Number(latStr) : null;
+  const lng = lngStr && lngStr !== "null" ? Number(lngStr) : null;
   const area = String(formData.get("area") || "").trim();
   const address = String(formData.get("address") || "").trim();
   const rating = formData.get("rating") ? Number(formData.get("rating")) : 0;

@@ -54,12 +54,15 @@ export default function RadarPage() {
           const { data: merchants, error: mErr } = await supabase
             .from("merchant_signals")
             .select("*")
+            .eq("is_active", true)
+            .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
             .not("lat", "is", null);
 
           if (mErr) {
             console.error("RADAR DEBUG: Merchant fetch error:", mErr.message);
           } else {
             merchantsData = merchants || [];
+            console.log("RADAR DEBUG: Fetched merchants count:", merchantsData.length);
           }
         } catch (e) {
           console.error("RADAR DEBUG: Merchant fetch crash:", e);
