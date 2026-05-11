@@ -66,8 +66,9 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
         style={{ height: "100%", width: "100%", zIndex: 0 }}
       >
         <TileLayer
-          attribution='&copy; CARTO'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/">CARTO</a>'
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png"
+          maxZoom={20}
         />
 
         {/* Render Hotspot Zones behind markers */}
@@ -118,15 +119,26 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
                   </div>
                   
                   {isMerchant && (
-                    <a 
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${m.lat},${m.lng}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full py-2 bg-neutral-900 text-white rounded-xl text-[0.7rem] font-bold active:scale-95 transition-all shadow-md"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                      {t("navigate")}
-                    </a>
+                    <div className="flex flex-col gap-1.5 mt-2">
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${m.lat},${m.lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2 w-full py-2.5 bg-neutral-900 text-white rounded-xl text-[0.72rem] font-bold active:scale-95 transition-all shadow-md"
+                      >
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                        Google Maps
+                      </a>
+                      <a
+                        href={`https://waze.com/ul?ll=${m.lat},${m.lng}&navigate=yes`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#05C8F7] text-white rounded-xl text-[0.72rem] font-bold active:scale-95 transition-all shadow-md"
+                      >
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm1 14.93V15a1 1 0 00-2 0v1.93A8.001 8.001 0 014.07 9H6a1 1 0 000-2H4.07A8.001 8.001 0 0111 3.07V5a1 1 0 002 0V3.07A8.001 8.001 0 0119.93 9H18a1 1 0 000 2h1.93A8.001 8.001 0 0113 16.93z"/></svg>
+                        Waze
+                      </a>
+                    </div>
                   )}
                 </div>
               </Popup>
