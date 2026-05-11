@@ -24,6 +24,25 @@ function RecenterAutomatically({ lat, lng }: { lat: number; lng: number }) {
   return null;
 }
 
+function MyLocationButton({ lat, lng }: { lat: number | null; lng: number | null }) {
+  const map = useMap();
+  if (!lat || !lng) return null;
+  
+  return (
+    <button 
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        map.flyTo([lat, lng], 16);
+      }}
+      className="absolute bottom-6 right-6 z-[1000] bg-white text-blue-600 p-3 rounded-full shadow-lg active:scale-90 transition-transform border border-neutral-100 flex items-center justify-center"
+      aria-label="My Location"
+    >
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+    </button>
+  );
+}
+
 export default function RadarMap({ latitude, longitude, markers = [], hotspots = [] }: RadarMapProps) {
   const { t } = useLanguage();
   const [mounted, setMounted] = useState(false);
@@ -96,17 +115,25 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
           const colors = getMarkerColor(m.type);
           const isMerchant = m.type.startsWith("merchant");
           
+          const pinSize = isMerchant ? 32 : 24;
+          const pinIcon = L.divIcon({
+            className: "bg-transparent",
+            html: `<div style="position: relative; display: flex; align-items: center; justify-content: center;">
+                    <svg viewBox="0 0 24 24" fill="${colors.fill}" stroke="#fff" stroke-width="1.5" style="width: ${pinSize}px; height: ${pinSize}px; filter: drop-shadow(0px 4px 4px rgba(0,0,0,0.25));">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 21.5S4.5 13.5 4.5 9a7.5 7.5 0 0 1 15 0c0 4.5-7.5 12.5-7.5 12.5z"/>
+                      <circle cx="12" cy="9" r="3.5" fill="#fff" stroke="none"/>
+                    </svg>
+                  </div>`,
+            iconSize: [pinSize, pinSize],
+            iconAnchor: [pinSize / 2, pinSize],
+            popupAnchor: [0, -pinSize + 4]
+          });
+          
           return (
-            <CircleMarker
+            <Marker
               key={m.id}
-              center={[m.lat, m.lng]}
-              radius={isMerchant ? 12 : 7}
-              pathOptions={{ 
-                color: colors.color, 
-                fillColor: colors.fill, 
-                fillOpacity: 0.9, 
-                weight: isMerchant ? 4 : 2 
-              }}
+              position={[m.lat, m.lng]}
+              icon={pinIcon}
             >
               <Popup className="radar-popup">
                 <div className="min-w-[140px] p-1">
@@ -141,7 +168,7 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
                   )}
                 </div>
               </Popup>
-            </CircleMarker>
+            </Marker>
           );
         })}
 
@@ -153,6 +180,7 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
             <RecenterAutomatically lat={latitude} lng={longitude} />
           </>
         )}
+        <MyLocationButton lat={latitude} lng={longitude} />
       </MapContainer>
 
       <style jsx global>{`

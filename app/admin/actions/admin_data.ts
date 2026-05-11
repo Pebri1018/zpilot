@@ -32,7 +32,15 @@ export async function getFeedbackList() {
   }
   if (!feedbackRows || feedbackRows.length === 0) return [];
 
-  // Step 2: fetch user info for all unique user_ids
+  // Step 2: fetch user info via Admin API to guarantee email/metadata visibility
+  const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+  
+  let authMap: Record<string, any> = {};
+  if (!authError && authUsers?.users) {
+    authMap = Object.fromEntries(authUsers.users.map(u => [u.id, u]));
+  }
+
+  // Also try to get names from public.users
   const userIds = [...new Set(feedbackRows.map((f: any) => f.user_id).filter(Boolean))];
   const { data: userRows } = await supabase
     .from("users")
@@ -42,10 +50,17 @@ export async function getFeedbackList() {
   const userMap = Object.fromEntries((userRows || []).map((u: any) => [u.id, u]));
 
   // Step 3: merge
-  return feedbackRows.map((f: any) => ({
-    ...f,
-    users: userMap[f.user_id] || null,
-  }));
+  return feedbackRows.map((f: any) => {
+    const pubUser = userMap[f.user_id];
+    const authUser = authMap[f.user_id];
+    return {
+      ...f,
+      users: {
+        nama: pubUser?.nama || authUser?.user_metadata?.full_name || "Unknown",
+        email: authUser?.email || pubUser?.email || "No Email"
+      }
+    };
+  });
 }
 
 export async function getUserList() {

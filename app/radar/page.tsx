@@ -73,6 +73,18 @@ export default function RadarPage() {
 
         if (sErr) console.error("RADAR DEBUG: Spots fetch error:", sErr.message);
 
+        // 4. Fetch Admin Manual Signals
+        let manualSignals: any[] = [];
+        try {
+          const { data: mSigs } = await supabase
+            .from("admin_manual_signals")
+            .select("*")
+            .gt("expires_at", new Date().toISOString());
+          manualSignals = mSigs || [];
+        } catch (e) {
+          console.warn("RADAR DEBUG: No manual signals table found.");
+        }
+
         const newMarkers: RadarMarker[] = [];
 
         drivers?.forEach(d => {
@@ -110,6 +122,24 @@ export default function RadarPage() {
               lng: s.lng,
               type: "spot",
               label: s.name
+            });
+          }
+        });
+
+        // Add manual signals (can be multiple per coordinate based on count)
+        manualSignals.forEach((ms, idx) => {
+          if (!ms.lat || !ms.lng) return;
+          const total = ms.count || 1;
+          for (let i = 0; i < total; i++) {
+            // slight random offset if multiple
+            const offsetLat = i === 0 ? 0 : (Math.random() - 0.5) * 0.0005;
+            const offsetLng = i === 0 ? 0 : (Math.random() - 0.5) * 0.0005;
+            newMarkers.push({
+              id: `manual_${ms.id}_${i}`,
+              lat: ms.lat + offsetLat,
+              lng: ms.lng + offsetLng,
+              type: ms.type === "driver_ngetem" ? "driver_ngetem" : "spot",
+              label: ms.type === "driver_ngetem" ? "Driver (Sistem)" : "Spot (Sistem)"
             });
           }
         });

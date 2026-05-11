@@ -26,6 +26,22 @@ type SearchResult = {
   };
 };
 
+function MyLocationButton({ onLocate }: { onLocate: () => void }) {
+  return (
+    <button 
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onLocate();
+      }}
+      className="absolute bottom-4 right-4 z-[1000] bg-white text-blue-600 p-2.5 rounded-full shadow-lg active:scale-90 transition-transform border border-neutral-100 flex items-center justify-center"
+      aria-label="My Location"
+    >
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+    </button>
+  );
+}
+
 function LeafletIconFix() {
   useEffect(() => {
     // @ts-ignore
@@ -194,8 +210,7 @@ export default function LocationPicker({ initialLat, initialLng, onLocationSelec
           </div>
         )}
       </div>
-
-      {/* Map */}
+        {/* Map */}
       <div className="h-[280px] w-full rounded-[2rem] overflow-hidden border border-neutral-100 relative z-0">
         <MapContainer
           center={[position.lat, position.lng]}
@@ -211,6 +226,13 @@ export default function LocationPicker({ initialLat, initialLng, onLocationSelec
             maxZoom={19}
           />
           <DraggableMarker lat={position.lat} lng={position.lng} onDragEnd={handleLocationUpdate} />
+          <MyLocationButton onLocate={() => {
+            if (navigator.geolocation) {
+              navigator.geolocation.getCurrentPosition((pos) => {
+                handleLocationUpdate(pos.coords.latitude, pos.coords.longitude);
+              });
+            }
+          }} />
         </MapContainer>
       </div>
 

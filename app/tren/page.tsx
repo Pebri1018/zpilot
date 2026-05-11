@@ -5,7 +5,7 @@ import { DriverBottomNav } from "@/components/DriverBottomNav";
 import { useLocation } from "@/hooks/useLocation";
 import { getZoneStats, type ZoneStatsResult } from "@/app/actions/recommendation";
 import { getActiveMerchants, type MerchantSignal } from "@/app/admin/actions/signals";
-import { jogjaTrends, getCurrentTimeSlot, type TimeSlot } from "@/lib/trendData";
+import { getJogjaTrends, getCurrentTimeSlot, type TimeSlot } from "@/lib/trendData";
 import { getHotspots, type HotspotZone } from "@/app/actions/hotspot";
 import { getDailyPerformance, type DailyPerformance } from "@/app/actions/feedback";
 
@@ -115,7 +115,8 @@ export default function TrenPage() {
 
   if (!mounted) return null;
 
-  const historical = jogjaTrends[currentSlot];
+  const trendsData = getJogjaTrends(new Date());
+  const historical = trendsData[currentSlot];
   const pulseStyle = getPulseStyle(pulse);
 
   return (

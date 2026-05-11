@@ -21,7 +21,9 @@ type Props = {
 
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg> },
-  { id: "merchants", label: "Merchants", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg> },
+  { id: "merchants", label: "Data Resto/Seller", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg> },
+  { id: "add_merchant", label: "Tambah Data", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg> },
+  { id: "manual_signal", label: "Input Sinyal", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
   { id: "radar", label: "Radar Spots", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
   { id: "users", label: "Users", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg> },
   { id: "feedback", label: "Feedback", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg> },
@@ -93,8 +95,8 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
         </div>
       )}
 
-      {/* 2. MERCHANTS */}
-      {activeTab === "merchants" && (
+      {/* 2. ADD MERCHANT */}
+      {activeTab === "add_merchant" && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
           <div className="bg-white p-6 rounded-[2.5rem] border border-neutral-100 shadow-sm">
             <div className="flex items-center justify-between mb-6">
@@ -126,7 +128,8 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
               {merchantMode === "detail" && (
                 <>
                   <select name="category" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold">
-                    <option value="Makanan">🍱 Food</option>
+                    <option value="Makanan">🍱 Food / Resto</option>
+                    <option value="Toko/Seller">🏪 Toko / Seller</option>
                     <option value="Minuman">🥤 Drink</option>
                     <option value="Snack">🍟 Snack</option>
                     <option value="Paket">📦 Package</option>
@@ -161,10 +164,16 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
                     <span className="text-[0.85rem] font-bold text-neutral-600 group-hover:text-neutral-900 transition-colors">{t("promo")}</span>
                   </label>
                   {merchantMode === "detail" && (
-                    <label className="flex items-center gap-2 cursor-pointer group">
-                      <input type="checkbox" name="pickup_fast" className="w-5 h-5 rounded-lg border-neutral-300 text-neutral-900 focus:ring-0" />
-                      <span className="text-[0.85rem] font-bold text-neutral-600 group-hover:text-neutral-900 transition-colors">{t("fast_pickup")}</span>
-                    </label>
+                    <>
+                      <label className="flex items-center gap-2 cursor-pointer group">
+                        <input type="checkbox" name="pickup_fast" className="w-5 h-5 rounded-lg border-neutral-300 text-neutral-900 focus:ring-0" />
+                        <span className="text-[0.85rem] font-bold text-neutral-600 group-hover:text-neutral-900 transition-colors">{t("fast_pickup")}</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer group">
+                        <input type="checkbox" name="free_shipping" className="w-5 h-5 rounded-lg border-neutral-300 text-neutral-900 focus:ring-0" />
+                        <span className="text-[0.85rem] font-bold text-neutral-600 group-hover:text-neutral-900 transition-colors">Diskon Ongkir</span>
+                      </label>
+                    </>
                   )}
                 </div>
                 <div id="promo_percent_container" style={{ display: "none" }}>
@@ -177,8 +186,12 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
               </button>
             </form>
           </div>
+        </div>
+      )}
 
-          {/* Merchant List */}
+      {/* 3. MERCHANTS LIST */}
+      {activeTab === "merchants" && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
           <div className="space-y-4">
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-[0.75rem] font-black uppercase tracking-widest text-neutral-400 ml-2">Active Database</h4>
@@ -225,8 +238,11 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
                     <p className="text-[0.85rem] font-black text-neutral-800">⭐ {m.rating || "-"} <span className="text-neutral-400 font-semibold">({m.reviews || 0})</span></p>
                   </div>
                   <div className="bg-neutral-50 rounded-xl p-2.5">
-                    <p className="text-[0.65rem] font-bold text-neutral-400 uppercase tracking-widest mb-1">Promo</p>
-                    <p className="text-[0.85rem] font-black text-neutral-800">{m.promo_active ? (m.promo_percent ? `${m.promo_percent}% OFF` : "Active") : "None"}</p>
+                    <p className="text-[0.65rem] font-bold text-neutral-400 uppercase tracking-widest mb-1">Promo / Ongkir</p>
+                    <p className="text-[0.85rem] font-black text-neutral-800">
+                      {m.promo_active ? (m.promo_percent ? `${m.promo_percent}% OFF` : "Promo Aktif") : "No Promo"}
+                      {m.free_shipping && <span className="ml-1 text-[0.7rem] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-md">Gratis Ongkir</span>}
+                    </p>
                   </div>
                 </div>
                 {(m.open_time || m.close_time) && (
@@ -261,6 +277,46 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* 4. MANUAL SIGNALS */}
+      {activeTab === "manual_signal" && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
+          <div className="bg-white p-6 rounded-[2.5rem] border border-neutral-100 shadow-sm">
+            <h3 className="text-[1.1rem] font-black tracking-tight mb-6">Input Sinyal Manual</h3>
+            <p className="text-[0.85rem] text-neutral-500 mb-4 leading-relaxed">
+              Tambahkan driver bayangan (fake drivers) atau spot khusus ke radar secara manual agar tampil di semua aplikasi driver.
+            </p>
+            <form action={async (fd) => {
+              setLoading(true);
+              const supabase = (await import("@/lib/supabase/client")).createClient();
+              const { error } = await supabase.from("admin_manual_signals").insert({
+                lat: lat,
+                lng: lng,
+                type: String(fd.get("type") || "driver_ngetem"),
+                count: Number(fd.get("count") || 1)
+              });
+              setLoading(false);
+              if (error) alert(error.message);
+              else alert("Sinyal berhasil ditambahkan!");
+            }} className="space-y-4">
+              <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng) => {
+                setLat(newLat); setLng(newLng);
+              }} />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <select name="type" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold">
+                  <option value="driver_ngetem">🛵 Driver Ngetem</option>
+                  <option value="spot">📍 Spot Mangkal</option>
+                </select>
+                <input name="count" type="number" defaultValue="1" min="1" placeholder="Jumlah Driver" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold" />
+              </div>
+              <button disabled={loading} className="w-full py-4 bg-neutral-900 text-white font-black rounded-2xl shadow-lg active:scale-95 transition-all disabled:opacity-50 text-[1.05rem]">
+                {loading ? "..." : "Tambahkan Sinyal"}
+              </button>
+            </form>
           </div>
         </div>
       )}

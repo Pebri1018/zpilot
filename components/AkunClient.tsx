@@ -13,10 +13,11 @@ type Props = {
   platform: string;
   driverId: string | null;
   ztipsId: string | null;
+  role: string;
   feedback?: any[];
 };
 
-export function AkunClient({ email, nama, kota, platform, driverId, ztipsId, feedback = [] }: Props) {
+export function AkunClient({ email, nama, kota, platform, driverId, ztipsId, role, feedback = [] }: Props) {
   const { lang, setLang, t } = useLanguage();
   const router = useRouter();
   const [notif, setNotif] = useState(true);
@@ -84,6 +85,24 @@ export function AkunClient({ email, nama, kota, platform, driverId, ztipsId, fee
           {copied ? "Tersalin" : "Salin"}
         </button>
       </div>
+
+      {role === "admin" && (
+        <a 
+          href="/admin" 
+          className="flex items-center justify-between bg-[#1E293B] text-white px-5 py-4 rounded-3xl shadow-lg active:scale-95 transition-transform border border-slate-700"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center shadow-inner">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            </div>
+            <div>
+              <p className="font-black text-[1rem]">Admin Panel</p>
+              <p className="text-[0.75rem] text-slate-300 font-medium leading-tight">Kelola ZTIPS & Data Resto</p>
+            </div>
+          </div>
+          <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+        </a>
+      )}
 
       <div className="bg-white rounded-3xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-neutral-100">
         <div className="bg-neutral-900 px-5 py-5 flex items-center gap-4">

@@ -63,6 +63,7 @@ export async function upsertMerchant(formData: FormData) {
   const reviews = formData.get("reviews") ? Number(formData.get("reviews")) : 0;
   const open_time = String(formData.get("open_time") || "").trim() || null;
   const close_time = String(formData.get("close_time") || "").trim() || null;
+  const free_shipping = formData.get("free_shipping") === "on";
 
   if (!name || !area) return { error: "Nama resto dan area wajib diisi" };
 
@@ -78,6 +79,7 @@ export async function upsertMerchant(formData: FormData) {
     }
   }
   if (pickup_fast) score += 15;
+  if (free_shipping) score += 10; // Bonus score for free shipping
 
   // Map to 1-5 busy_score for backward compat and Low/Med/High label
   const busy_score = Math.max(1, Math.min(5, Math.floor(score / 20)));
@@ -94,6 +96,7 @@ export async function upsertMerchant(formData: FormData) {
       promo_percent,
       pickup_fast,
       fast_pickup: pickup_fast,
+      free_shipping,
       is_active: true,
       lat: lat && !isNaN(lat) ? lat : null,
       lng: lng && !isNaN(lng) ? lng : null,

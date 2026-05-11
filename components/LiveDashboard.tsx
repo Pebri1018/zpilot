@@ -95,9 +95,29 @@ export function LiveDashboard() {
         });
       }
     }
-    // Always run fetchData, even if areaName is null — engine still works without location
+        // Always run fetchData, even if areaName is null — engine still works without location
     fetchData();
   }, [areaName, time.getHours(), status, ngetemStartTime, latitude, longitude, lang]);
+
+  // Real-time merchant listener
+  useEffect(() => {
+    const supabase = (require("@/lib/supabase/client")).createClient();
+    const channel = supabase.channel("merchant-updates")
+      .on("postgres_changes", { event: "*", schema: "public", table: "merchant_signals" }, async (payload: any) => {
+        // Just re-fetch actively to ensure stats are in sync
+        const [merchantsResult, statsResult] = await Promise.all([
+          getActiveMerchants(areaName),
+          getZoneStats(areaName)
+        ]);
+        setMerchants(merchantsResult);
+        setZoneStats(statsResult);
+      })
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [areaName]);
 
   const formattedTime = time.toLocaleTimeString(lang === "ID" ? "id-ID" : "en-GB", { hour: '2-digit', minute: '2-digit', hour12: false });
   const minutesAgo = timestamp ? Math.floor((time.getTime() - timestamp) / 60000) : null;
