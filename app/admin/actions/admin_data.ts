@@ -23,7 +23,7 @@ export async function getFeedbackList() {
   // Step 1: fetch all feedback
   const { data: feedbackRows, error } = await supabase
     .from("feedback")
-    .select("id, message, status, created_at, user_id")
+    .select("id, message, status, created_at, user_id, admin_reply")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -113,6 +113,25 @@ export async function deleteUserAccount(userId: string) {
   
   if (authError) return { error: authError.message };
 
+  revalidatePath("/admin");
+  return { success: true };
+}
+
+export async function replyFeedback(feedbackId: string, message: string, status: string = 'replied') {
+  const isAdmin = await verifyAdmin();
+  if (!isAdmin) return { error: "Unauthorized" };
+
+  const supabase = getServiceClient();
+  const { error } = await supabase
+    .from("feedback")
+    .update({ 
+      admin_reply: message, 
+      status, 
+      replied_at: new Date().toISOString() 
+    })
+    .eq("id", feedbackId);
+
+  if (error) return { error: error.message };
   revalidatePath("/admin");
   return { success: true };
 }

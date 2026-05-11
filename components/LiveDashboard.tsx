@@ -99,7 +99,7 @@ export function LiveDashboard() {
     fetchData();
   }, [areaName, time.getHours(), status, ngetemStartTime, latitude, longitude, lang]);
 
-  const formattedTime = time.toLocaleTimeString(lang === "ID" ? "id-ID" : "en-US", { hour: '2-digit', minute: '2-digit' });
+  const formattedTime = time.toLocaleTimeString(lang === "ID" ? "id-ID" : "en-GB", { hour: '2-digit', minute: '2-digit', hour12: false });
   const minutesAgo = timestamp ? Math.floor((time.getTime() - timestamp) / 60000) : null;
 
   return (

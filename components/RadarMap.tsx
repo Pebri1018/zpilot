@@ -100,22 +100,21 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
             <CircleMarker
               key={m.id}
               center={[m.lat, m.lng]}
-              radius={isMerchant ? 9 : 5}
+              radius={isMerchant ? 12 : 7}
               pathOptions={{ 
                 color: colors.color, 
                 fillColor: colors.fill, 
-                fillOpacity: 0.8, 
-                weight: isMerchant ? 3 : 2 
+                fillOpacity: 0.9, 
+                weight: isMerchant ? 4 : 2 
               }}
             >
               <Popup className="radar-popup">
-                <div className="min-w-[120px] p-1">
-                  <p className="text-[0.9rem] font-black text-neutral-900 leading-tight mb-1">{m.label}</p>
-                  <div className="flex items-center gap-1.5 mb-3">
-                    <div className={`w-2 h-2 rounded-full ${colors.color.replace("#", "bg-[#") + "]"}`} style={{ backgroundColor: colors.color }} />
-                    <span className="text-[0.65rem] font-bold text-neutral-400 uppercase tracking-wider">
+                <div className="min-w-[140px] p-1">
+                  <p className="text-[0.95rem] font-black text-neutral-900 leading-tight mb-1.5">{m.label}</p>
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <div className="px-2 py-0.5 rounded-md text-[0.6rem] font-black uppercase tracking-wider text-white" style={{ backgroundColor: colors.color }}>
                       {m.type.replace("merchant_", "").replace("driver_", "").replace("_", " ")}
-                    </span>
+                    </div>
                   </div>
                   
                   {isMerchant && (

@@ -60,7 +60,7 @@ export default function RadarPage() {
 
         if (mErr) {
           console.error("Radar merchant fetch error:", mErr.message);
-          // Fallback: fetch all merchants without is_active filter
+          // Fallback: fetch all merchants without is_active filter AND without is_active in select
           const { data: fallbackMerchants } = await supabase
             .from("merchant_signals")
             .select("id, lat, lng, name, busy_score")
@@ -119,7 +119,11 @@ export default function RadarPage() {
           }
         });
 
-        const hotspotData = await getHotspots();
+        console.log("Radar data fetched", { 
+          drivers: drivers?.length || 0, 
+          merchants: merchantsData.length, 
+          spots: spots?.length || 0 
+        });
 
         setMarkers(newMarkers);
         setHotspots(hotspotData);
@@ -148,12 +152,12 @@ export default function RadarPage() {
         </div>
       </header>
 
-      <div className="relative flex-1 mx-4 mb-2 overflow-hidden rounded-[2.5rem] shadow-2xl border-4 border-white">
+      <div className="relative flex-[2] mx-4 mb-2 overflow-hidden rounded-[2.5rem] shadow-2xl border-4 border-white min-h-[60vh]">
         <RadarMap latitude={latitude} longitude={longitude} markers={markers} hotspots={hotspots} />
       </div>
 
       {/* Legend — below map, horizontal scroll */}
-      <div className="mx-4 mb-3 bg-white rounded-2xl border border-neutral-100 shadow-sm px-4 py-3">
+      <div className="mx-4 mb-6 bg-white rounded-2xl border border-neutral-100 shadow-sm px-4 py-3">
         <p className="text-[0.6rem] font-bold uppercase tracking-widest text-neutral-400 mb-2">{t("legend")}</p>
         <div className="flex flex-wrap gap-x-4 gap-y-1.5 mb-2 pb-2 border-b border-neutral-100">
           <LegendItem color="bg-black" label={lang === "ID" ? "Kamu" : "You"} />

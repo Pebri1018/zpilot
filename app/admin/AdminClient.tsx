@@ -35,6 +35,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
   const [merchants, setMerchants] = useState(initialMerchants);
   const [users, setUsers] = useState(initialUsers);
   const [editingMerchant, setEditingMerchant] = useState<any | null>(null);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
   const [area, setArea] = useState<string>("");
@@ -230,7 +231,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
                   </div>
                 )}
                 <p className="text-[0.65rem] text-neutral-400 font-semibold italic text-center -mt-1">
-                  Updated: {new Date(m.updated_at || m.created_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                  Updated: {new Date(m.updated_at || m.created_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false })}
                 </p>
 
                 <div className="flex gap-2 border-t border-neutral-50 pt-3">
@@ -360,14 +361,72 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
                     <p className="text-[0.7rem] text-blue-500 font-bold mt-0.5">{f.users?.email || "—"}</p>
                   </div>
                   <span className="text-[0.65rem] font-bold text-neutral-400 bg-neutral-50 px-2 py-1 rounded-lg">
-                    {new Date(f.created_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    {new Date(f.created_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false })}
                   </span>
                 </div>
                 <p className="text-[0.9rem] text-neutral-700 leading-relaxed font-medium italic mt-2">"{f.message}"</p>
-                {f.status && (
-                  <span className={`inline-block mt-2 text-[0.65rem] font-bold uppercase tracking-widest px-2 py-0.5 rounded-lg ${
-                    f.status === "reviewed" ? "bg-green-50 text-green-600" : f.status === "closed" ? "bg-neutral-100 text-neutral-400" : "bg-orange-50 text-orange-600"
-                  }`}>{f.status}</span>
+                
+                {f.admin_reply && (
+                  <div className="mt-3 bg-blue-50/50 p-3 rounded-2xl border border-blue-100">
+                    <p className="text-[0.65rem] font-black text-blue-600 uppercase tracking-widest mb-1">Reply Admin</p>
+                    <p className="text-[0.85rem] text-neutral-800 font-medium italic">"{f.admin_reply}"</p>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 mt-4">
+                  <button 
+                    onClick={() => setReplyingTo(replyingTo === f.id ? null : f.id)}
+                    className="px-3 py-1.5 rounded-xl bg-neutral-100 text-[0.7rem] font-bold text-neutral-600 hover:bg-neutral-200 transition-colors"
+                  >
+                    {f.admin_reply ? "Ubah Reply" : "Reply"}
+                  </button>
+                  {f.status !== "closed" && (
+                    <button 
+                      onClick={async () => {
+                        if (confirm("Selesaikan masukan ini?")) {
+                          await replyFeedback(f.id, f.admin_reply || "", "closed");
+                          alert("Status diperbarui!");
+                          window.location.reload();
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-green-50 text-[0.7rem] font-bold text-green-600 hover:bg-green-100 transition-colors"
+                    >
+                      Selesaikan
+                    </button>
+                  )}
+                  {f.status && (
+                    <span className={`text-[0.65rem] font-bold uppercase tracking-widest px-2 py-0.5 rounded-lg ml-auto ${
+                      f.status === "reviewed" ? "bg-green-50 text-green-600" : f.status === "closed" ? "bg-neutral-100 text-neutral-400" : "bg-orange-50 text-orange-600"
+                    }`}>{f.status}</span>
+                  )}
+                </div>
+
+                {replyingTo === f.id && (
+                  <form action={async (fd) => {
+                    const msg = String(fd.get("reply") || "");
+                    if (!msg.trim()) return;
+                    setLoading(true);
+                    const res = await replyFeedback(f.id, msg, "replied");
+                    setLoading(false);
+                    if (res.success) {
+                      setReplyingTo(null);
+                      alert("Balasan terkirim!");
+                      window.location.reload();
+                    } else alert(res.error);
+                  }} className="mt-4 space-y-2 animate-in slide-in-from-top-2">
+                    <textarea 
+                      name="reply" 
+                      defaultValue={f.admin_reply || ""} 
+                      placeholder="Tulis balasan..." 
+                      className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.85rem] font-medium focus:outline-none focus:border-neutral-400 resize-none" 
+                      rows={2} 
+                      required 
+                    />
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setReplyingTo(null)} className="flex-1 py-2 rounded-xl bg-neutral-100 text-[0.75rem] font-bold">Batal</button>
+                      <button type="submit" disabled={loading} className="flex-1 py-2 rounded-xl bg-blue-600 text-[0.75rem] font-bold text-white disabled:opacity-50">Kirim</button>
+                    </div>
+                  </form>
                 )}
               </div>
             </div>
