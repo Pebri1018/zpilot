@@ -50,18 +50,33 @@ export default function RadarPage() {
 
         if (dErr) console.error("Radar driver fetch error:", dErr.message);
 
-        // 2. Fetch Active Merchants
+        // 2. Fetch Active Merchants (fallback if is_active column doesn't exist yet)
+        let merchantsData: any[] = [];
         const { data: merchants, error: mErr } = await supabase
           .from("merchant_signals")
-          .select("id, lat, lng, name, busy_score")
-          .eq("is_active", true);
+          .select("id, lat, lng, name, busy_score, is_active")
+          .eq("is_active", true)
+          .not("lat", "is", null);
 
-        if (mErr) console.error("Radar merchant fetch error:", mErr.message);
+        if (mErr) {
+          console.error("Radar merchant fetch error:", mErr.message);
+          // Fallback: fetch all merchants without is_active filter
+          const { data: fallbackMerchants } = await supabase
+            .from("merchant_signals")
+            .select("id, lat, lng, name, busy_score")
+            .not("lat", "is", null);
+          merchantsData = fallbackMerchants || [];
+        } else {
+          merchantsData = merchants || [];
+        }
 
-        // 3. Fetch Hangout Spots
-        const { data: spots } = await supabase
+        // 3. Fetch Hangout Spots (active only)
+        const { data: spots, error: sErr } = await supabase
           .from("ngetem_spots")
-          .select("id, lat, lng, name");
+          .select("id, lat, lng, name")
+          .not("lat", "is", null);
+
+        if (sErr) console.error("Radar spots fetch error:", sErr.message);
 
         const newMarkers: RadarMarker[] = [];
 
@@ -76,7 +91,7 @@ export default function RadarPage() {
           });
         });
 
-        merchants?.forEach(m => {
+        merchantsData.forEach(m => {
           if (m.lat && m.lng) {
             let type: RadarMarker["type"] = "merchant_low";
             if (m.busy_score >= 4) type = "merchant_high";
@@ -133,26 +148,25 @@ export default function RadarPage() {
         </div>
       </header>
 
-      <div className="relative flex-1 mx-4 mb-4 overflow-hidden rounded-[2.5rem] shadow-2xl border-4 border-white">
+      <div className="relative flex-1 mx-4 mb-2 overflow-hidden rounded-[2.5rem] shadow-2xl border-4 border-white">
         <RadarMap latitude={latitude} longitude={longitude} markers={markers} hotspots={hotspots} />
-        
-        {/* Legend */}
-        <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md p-4 rounded-[1.5rem] shadow-lg z-[1000] border border-white/50 max-h-[30vh] overflow-y-auto">
-          <p className="text-[0.65rem] font-bold uppercase tracking-widest text-neutral-400 mb-2">{t("legend")}</p>
-          <div className="grid grid-cols-2 gap-y-2 gap-x-4 mb-3 pb-3 border-b border-neutral-100">
-            <LegendItem color="bg-black" label={lang === "ID" ? "Kamu" : "You"} />
-            <LegendItem color="bg-blue-500" label={t("ngetem")} />
-            <LegendItem color="bg-neutral-400" label={t("antar")} />
-            <LegendItem color="bg-purple-500" label={lang === "ID" ? "Spot Mangkal" : "Hangout Spot"} />
-            <LegendItem color="bg-red-500" label={lang === "ID" ? "Resto Ramai" : "Busy Merch"} />
-            <LegendItem color="bg-orange-400" label={lang === "ID" ? "Resto Sedang" : "Med Merch"} />
-          </div>
-          <p className="text-[0.65rem] font-bold uppercase tracking-widest text-neutral-400 mb-2">Zona Hotspot</p>
-          <div className="grid grid-cols-3 gap-y-2 gap-x-2">
-            <LegendItem color="bg-red-500/30 border-2 border-red-500" label="Ramai" />
-            <LegendItem color="bg-orange-500/30 border-2 border-orange-500" label="Menarik" />
-            <LegendItem color="bg-neutral-500/20 border-2 border-neutral-400" label="Sepi" />
-          </div>
+      </div>
+
+      {/* Legend — below map, horizontal scroll */}
+      <div className="mx-4 mb-3 bg-white rounded-2xl border border-neutral-100 shadow-sm px-4 py-3">
+        <p className="text-[0.6rem] font-bold uppercase tracking-widest text-neutral-400 mb-2">{t("legend")}</p>
+        <div className="flex flex-wrap gap-x-4 gap-y-1.5 mb-2 pb-2 border-b border-neutral-100">
+          <LegendItem color="bg-black" label={lang === "ID" ? "Kamu" : "You"} />
+          <LegendItem color="bg-blue-500" label={t("ngetem")} />
+          <LegendItem color="bg-neutral-400" label={t("antar")} />
+          <LegendItem color="bg-purple-500" label={lang === "ID" ? "Spot Mangkal" : "Spot"} />
+          <LegendItem color="bg-red-500" label={lang === "ID" ? "Resto Ramai" : "Busy"} />
+          <LegendItem color="bg-orange-400" label={lang === "ID" ? "Resto Sedang" : "Med"} />
+        </div>
+        <div className="flex gap-3 flex-wrap">
+          <LegendItem color="bg-red-500/30 border border-red-400" label="Hotspot Ramai" />
+          <LegendItem color="bg-orange-500/30 border border-orange-400" label="Hotspot Menarik" />
+          <LegendItem color="bg-neutral-500/20 border border-neutral-300" label="Hotspot Sepi" />
         </div>
       </div>
 
@@ -164,9 +178,9 @@ export default function RadarPage() {
 
 function LegendItem({ color, label }: { color: string; label: string }) {
   return (
-    <div className="flex items-center gap-2">
-      <div className={`w-2.5 h-2.5 rounded-full ${color}`} />
-      <span className="text-[0.75rem] font-semibold text-neutral-700">{label}</span>
+    <div className="flex items-center gap-1.5">
+      <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${color}`} />
+      <span className="text-[0.72rem] font-semibold text-neutral-700 whitespace-nowrap">{label}</span>
     </div>
   );
 }

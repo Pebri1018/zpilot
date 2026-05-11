@@ -134,6 +134,17 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
                 <input name="reviews" type="number" placeholder={t("reviews")} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Buka</p>
+                  <input name="open_time" type="time" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+                </div>
+                <div>
+                  <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Tutup</p>
+                  <input name="close_time" type="time" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+                </div>
+              </div>
+
               <div className="flex flex-col gap-3 pt-2">
                 <div className="flex gap-5">
                   <label className="flex items-center gap-2 cursor-pointer group">
@@ -212,8 +223,14 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
                     <p className="text-[0.85rem] font-black text-neutral-800">{m.promo_active ? (m.promo_percent ? `${m.promo_percent}% OFF` : "Active") : "None"}</p>
                   </div>
                 </div>
+                {(m.open_time || m.close_time) && (
+                  <div className="bg-neutral-50 rounded-xl px-3 py-2 flex items-center gap-2">
+                    <span className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest">Jam</span>
+                    <span className="text-[0.82rem] font-black text-neutral-800">{m.open_time || "?"} – {m.close_time || "?"}</span>
+                  </div>
+                )}
                 <p className="text-[0.65rem] text-neutral-400 font-semibold italic text-center -mt-1">
-                  Updated: {new Date(m.updated_at || m.created_at).toLocaleString()}
+                  Updated: {new Date(m.updated_at || m.created_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                 </p>
 
                 <div className="flex gap-2 border-t border-neutral-50 pt-3">
@@ -438,6 +455,16 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
                 </label>
               </div>
               <input name="promo_percent" type="number" defaultValue={editingMerchant.promo_percent ?? ""} placeholder="Promo % (e.g. 20)" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1 pl-1">Buka</p>
+                  <input name="open_time" type="time" defaultValue={editingMerchant.open_time ?? ""} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+                </div>
+                <div>
+                  <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1 pl-1">Tutup</p>
+                  <input name="close_time" type="time" defaultValue={editingMerchant.close_time ?? ""} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+                </div>
+              </div>
               <div className="flex gap-2 pt-2">
                 <button type="button" onClick={() => setEditingMerchant(null)} className="flex-1 py-3 rounded-2xl bg-neutral-100 font-bold text-neutral-600">
                   Batal

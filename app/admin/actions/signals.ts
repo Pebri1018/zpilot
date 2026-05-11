@@ -61,6 +61,8 @@ export async function upsertMerchant(formData: FormData) {
   const address = String(formData.get("address") || "").trim();
   const rating = formData.get("rating") ? Number(formData.get("rating")) : 0;
   const reviews = formData.get("reviews") ? Number(formData.get("reviews")) : 0;
+  const open_time = String(formData.get("open_time") || "").trim() || null;
+  const close_time = String(formData.get("close_time") || "").trim() || null;
 
   if (!name || !area) return { error: "Nama resto dan area wajib diisi" };
 
@@ -99,6 +101,8 @@ export async function upsertMerchant(formData: FormData) {
       address,
       rating,
       reviews,
+      open_time,
+      close_time,
       popularity_score: score,
       updated_at: new Date().toISOString(),
       expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
@@ -171,6 +175,8 @@ export type MerchantSignal = {
   notes?: string | null;
   updated_at?: string;
   created_at: string;
+  open_time?: string | null;
+  close_time?: string | null;
 };
 
 // Primary query for Home page — persistent active merchants sorted by busy_score

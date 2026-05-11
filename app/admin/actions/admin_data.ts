@@ -18,15 +18,34 @@ export async function getFeedbackList() {
   const isAdmin = await verifyAdmin();
   if (!isAdmin) return [];
 
-  // Use service role to bypass RLS — admin needs to see all feedback
   const supabase = getServiceClient();
-  const { data, error } = await supabase
+
+  // Step 1: fetch all feedback
+  const { data: feedbackRows, error } = await supabase
     .from("feedback")
-    .select("id, message, status, created_at, user_id, users(nama, email)")
+    .select("id, message, status, created_at, user_id")
     .order("created_at", { ascending: false });
 
-  if (error) console.error("getFeedbackList error:", error.message);
-  return data || [];
+  if (error) {
+    console.error("getFeedbackList error:", error.message);
+    return [];
+  }
+  if (!feedbackRows || feedbackRows.length === 0) return [];
+
+  // Step 2: fetch user info for all unique user_ids
+  const userIds = [...new Set(feedbackRows.map((f: any) => f.user_id).filter(Boolean))];
+  const { data: userRows } = await supabase
+    .from("users")
+    .select("id, nama, email")
+    .in("id", userIds.length > 0 ? userIds : ["00000000-0000-0000-0000-000000000000"]);
+
+  const userMap = Object.fromEntries((userRows || []).map((u: any) => [u.id, u]));
+
+  // Step 3: merge
+  return feedbackRows.map((f: any) => ({
+    ...f,
+    users: userMap[f.user_id] || null,
+  }));
 }
 
 export async function getUserList() {
