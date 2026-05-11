@@ -11,6 +11,26 @@ import { NgetemTimer } from "./NgetemTimer";
 import { useLanguage } from "@/context/LanguageContext";
 import { AIFeedback } from "./AIFeedback";
 
+const MERCHANT_CACHE_KEY = "ztips_merchants_cache";
+const MERCHANT_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
+function loadCachedMerchants(): MerchantSignal[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(MERCHANT_CACHE_KEY);
+    if (!raw) return [];
+    const { data, ts } = JSON.parse(raw);
+    if (Date.now() - ts > MERCHANT_CACHE_TTL) return [];
+    return data;
+  } catch { return []; }
+}
+
+function saveMerchantsCache(data: MerchantSignal[]) {
+  try {
+    localStorage.setItem(MERCHANT_CACHE_KEY, JSON.stringify({ data, ts: Date.now() }));
+  } catch {}
+}
+
 export function LiveDashboard() {
   const { lang, t } = useLanguage();
   const { status, areaName, loading, error, timestamp, refreshLocation, latitude, longitude } = useLocation();
@@ -22,7 +42,7 @@ export function LiveDashboard() {
     reason: lang === "ID" ? "Memuat data..." : "Loading...",
     color: status === "Offline" ? "#9CA3AF" : "#10B981"
   }));
-  const [merchants, setMerchants] = useState<MerchantSignal[]>([]);
+  const [merchants, setMerchants] = useState<MerchantSignal[]>(() => loadCachedMerchants());
   const [nearestHotspot, setNearestHotspot] = useState<(HotspotZone & { dist: number }) | null>(null);
   const [zoneStats, setZoneStats] = useState<ZoneStatsResult>({
     orderan: "Data Minim",
@@ -62,7 +82,14 @@ export function LiveDashboard() {
           lang, hotspotResult
         );
         
-        setMerchants(merchantsResult);
+        setMerchants(prev => {
+          // Merge: new merchants at front, keeping unique by id
+          const prevIds = new Set(prev.map((m: MerchantSignal) => m.id));
+          const freshOnly = merchantsResult.filter((m: MerchantSignal) => !prevIds.has(m.id));
+          const merged = [...freshOnly, ...merchantsResult.filter((m: MerchantSignal) => prevIds.has(m.id))];
+          saveMerchantsCache(merged);
+          return merged;
+        });
         setZoneStats(statsResult);
         setRecommendation(recResult);
 

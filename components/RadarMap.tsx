@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import "leaflet/dist/leaflet.css";
-import { MapContainer, TileLayer, Marker, Popup, useMap, CircleMarker, Circle } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Circle } from "react-leaflet";
 import L from "leaflet";
 import { RadarMarker } from "@/app/radar/page";
 import { useLanguage } from "@/context/LanguageContext";
@@ -46,6 +46,14 @@ function MyLocationButton({ lat, lng }: { lat: number | null; lng: number | null
 export default function RadarMap({ latitude, longitude, markers = [], hotspots = [] }: RadarMapProps) {
   const { t } = useLanguage();
   const [mounted, setMounted] = useState(false);
+  const [zoom, setZoom] = useState(16);
+
+  function ZoomTracker() {
+    useMapEvents({
+      zoomend: (e) => setZoom(e.target.getZoom()),
+    });
+    return null;
+  }
 
   useEffect(() => {
     setMounted(true);
@@ -90,6 +98,8 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
           maxZoom={19}
         />
 
+        <ZoomTracker />
+
         {/* Render Hotspot Zones behind markers */}
         {hotspots.map((h) => {
           let color = "#9CA3AF"; // Gray (Sepi)
@@ -120,8 +130,8 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
             const pinIcon = L.divIcon({
             className: "bg-transparent",
             html: `<div style="display: flex; align-items: center; gap: 4px; transform: translate(-8px, -8px); pointer-events: none;">
-                    <div style="width: ${m.type.startsWith('driver_') ? '16px' : '14px'}; height: ${m.type.startsWith('driver_') ? '16px' : '14px'}; background-color: ${colors.fill}; border: 2.5px solid #fff; border-radius: 50%; box-shadow: 0 3px 6px rgba(0,0,0,0.4);"></div>
-                    ${!m.type.startsWith("driver_") && m.type !== "merchant_low" ? `<span style="background-color: ${colors.fill}; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: 800; color: #fff; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.3); pointer-events: auto; text-shadow: 0 1px 2px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.3);">${m.label}</span>` : ''}
+                    <div style="width: ${m.type.startsWith('driver_') ? '18px' : '14px'}; height: ${m.type.startsWith('driver_') ? '18px' : '14px'}; background-color: ${colors.fill}; border: 2.5px solid white; border-radius: 50%; box-shadow: 0 3px 8px rgba(0,0,0,0.5), 0 0 0 1px ${colors.fill};"></div>
+                    ${!m.type.startsWith("driver_") && m.type !== "merchant_low" && zoom >= 14 ? `<span style="background-color: ${colors.fill}; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: 800; color: #fff; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.3); pointer-events: auto; text-shadow: 0 1px 2px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.3);">${m.label}</span>` : ''}
                   </div>`,
             iconSize: [0, 0],
             iconAnchor: [0, 0],

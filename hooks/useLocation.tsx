@@ -115,12 +115,19 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
         let area = stateRef.current.areaName;
         try {
           const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=16`,
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
             { headers: { "Accept-Language": "id" } }
           );
           const data = await response.json();
           const addr = data.address || {};
-          area = addr.road || addr.neighbourhood || addr.suburb || addr.village || "Unknown Area";
+          // Build a specific label: Road + neighbourhood
+          const street = addr.road || addr.pedestrian || addr.path || addr.footway || null;
+          const sub = addr.neighbourhood || addr.hamlet || addr.suburb || addr.village || null;
+          if (street && sub) {
+            area = `${street}, ${sub}`;
+          } else {
+            area = street || sub || addr.county || "Unknown Area";
+          }
         } catch (err) {}
 
         if (area && area !== prevAreaRef.current) {
