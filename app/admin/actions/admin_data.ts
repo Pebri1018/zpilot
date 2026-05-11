@@ -18,12 +18,14 @@ export async function getFeedbackList() {
   const isAdmin = await verifyAdmin();
   if (!isAdmin) return [];
 
-  const supabase = await createClient();
-  const { data } = await supabase
+  // Use service role to bypass RLS — admin needs to see all feedback
+  const supabase = getServiceClient();
+  const { data, error } = await supabase
     .from("feedback")
-    .select("*, users(nama, email)")
+    .select("id, message, status, created_at, user_id, users(nama, email)")
     .order("created_at", { ascending: false });
 
+  if (error) console.error("getFeedbackList error:", error.message);
   return data || [];
 }
 

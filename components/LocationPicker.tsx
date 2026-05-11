@@ -206,9 +206,9 @@ export default function LocationPicker({ initialLat, initialLng, onLocationSelec
           <LeafletIconFix />
           <RecenterMap lat={position.lat} lng={position.lng} />
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png"
-            maxZoom={20}
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+            maxZoom={19}
           />
           <DraggableMarker lat={position.lat} lng={position.lng} onDragEnd={handleLocationUpdate} />
         </MapContainer>

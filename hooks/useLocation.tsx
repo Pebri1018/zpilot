@@ -33,6 +33,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   const stateRef = useRef(state);
   const prevAreaRef = useRef<string | null>(null);
   const sessionOpenedRef = useRef(false);
+  const fetchLocationRef = useRef<(force?: boolean) => Promise<void>>(() => Promise.resolve());
 
   useEffect(() => {
     stateRef.current = state;
@@ -49,8 +50,13 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const { data } = await supabase.from('users').select('status').eq('id', user.id).maybeSingle();
-          if (data && data.status) {
+          if (data?.status && data.status !== "Offline") {
+            // Restore status AND immediately trigger GPS via ref (avoids forward-reference)
             setState(s => ({ ...s, status: data.status }));
+            stateRef.current = { ...stateRef.current, status: data.status };
+            setTimeout(() => fetchLocationRef.current(true), 100);
+          } else if (data?.status === "Offline") {
+            setState(s => ({ ...s, status: "Offline", loading: false }));
           }
         }
       }
@@ -130,6 +136,11 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
     );
   }, []);
+
+  // Keep ref in sync with the latest fetchLocation
+  useEffect(() => {
+    fetchLocationRef.current = fetchLocation;
+  }, [fetchLocation]);
 
   useEffect(() => {
     fetchLocation();
