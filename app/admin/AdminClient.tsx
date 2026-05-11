@@ -21,10 +21,11 @@ type Props = {
 
 const NAV = [
   { id: "dashboard", label: "Dashboard", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg> },
-  { id: "merchants", label: "Data Resto/Seller", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg> },
-  { id: "add_merchant", label: "Tambah Data", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg> },
+  { id: "merchants", label: "Kelola Data", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg> },
+  { id: "add_merchant", label: "Tambah Resto", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg> },
+  { id: "add_seller", label: "Tambah Seller", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg> },
   { id: "manual_signal", label: "Input Sinyal", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
-  { id: "radar", label: "Radar Spots", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
+  { id: "radar", label: "Radar", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
   { id: "users", label: "Users", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg> },
   { id: "feedback", label: "Feedback", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg> },
   { id: "broadcast", label: "Broadcast", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg> },
@@ -66,12 +67,12 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
         </a>
       </div>
       {/* Admin Nav */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 px-5 sticky top-[max(1.25rem,env(safe-area-inset-top))] z-40 bg-[#f7f7f8]/95 backdrop-blur-xl pt-2 pb-4 -mx-5 border-b border-neutral-200/50">
+      <div className="flex gap-3 px-5 sticky top-[max(1.25rem,env(safe-area-inset-top))] z-40 bg-[#f7f7f8]/95 backdrop-blur-xl pt-2 pb-4 -mx-5 border-b border-neutral-200/50 overflow-x-auto no-scrollbar">
         {NAV.map(item => (
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id)}
-            className={`flex items-center justify-center md:justify-start gap-2 shrink-0 px-3 py-3 rounded-2xl text-[0.8rem] md:text-[0.85rem] font-bold transition-all relative ${activeTab === item.id ? "bg-neutral-900 text-white shadow-lg" : "bg-white text-neutral-500 border border-neutral-100 active:bg-neutral-50"}`}
+            className={`flex items-center gap-2 shrink-0 px-4 py-3 rounded-full text-[0.85rem] font-bold transition-all relative whitespace-nowrap ${activeTab === item.id ? "bg-neutral-900 text-white shadow-lg" : "bg-white text-neutral-500 border border-neutral-100 active:bg-neutral-50"}`}
           >
             {item.icon}
             {item.label}
@@ -148,10 +149,8 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
                 <>
                   <select name="category" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold">
                     <option value="Makanan">🍱 Food / Resto</option>
-                    <option value="Toko/Seller">🏪 Toko / Seller</option>
                     <option value="Minuman">🥤 Drink</option>
                     <option value="Snack">🍟 Snack</option>
-                    <option value="Paket">📦 Package</option>
                   </select>
                   <textarea name="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t("address")} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] resize-none" rows={2} />
                 </>
@@ -202,6 +201,75 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
 
               <button disabled={loading} className="w-full py-4 bg-neutral-900 text-white font-black rounded-2xl shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 text-[1.05rem]">
                 {loading ? "..." : "Simpan Data"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 2.1 ADD SELLER */}
+      {activeTab === "add_seller" && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
+          <div className="bg-white p-6 rounded-[2.5rem] border border-neutral-100 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-[1.1rem] font-black tracking-tight">Tambah Seller / Paket</h3>
+            </div>
+
+            <form action={async (fd) => {
+              setLoading(true);
+              fd.append("lat", String(lat)); fd.append("lng", String(lng)); fd.append("area", area); fd.append("address", address);
+              // Force category logic based on name or user selection
+              const res = await upsertMerchant(fd);
+              setLoading(false);
+              if (res.success) { 
+                const updated = await getAllMerchants(); 
+                setMerchants(updated);
+                alert("Saved!");
+              } else alert(res.error);
+            }} className="space-y-4">
+              <input name="name" required placeholder="Nama Toko Seller / Ekspedisi" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold focus:border-neutral-900 focus:bg-white transition-all outline-none" />
+              
+              <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, addr, ar) => {
+                setLat(newLat); setLng(newLng); setAddress(addr); setArea(ar);
+              }} />
+
+              <select name="category" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold">
+                <option value="Paket">📦 Paket Ekspedisi (SPX, JNT, dll)</option>
+                <option value="Toko/Seller">🏪 Toko Retail / Konter</option>
+              </select>
+              <textarea name="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t("address")} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] resize-none" rows={2} />
+
+              <div className="grid grid-cols-2 gap-4">
+                <input name="rating" type="number" step="0.1" placeholder={t("rating")} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+                <input name="reviews" type="number" placeholder={t("reviews")} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Buka</p>
+                  <input name="open_time" type="time" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+                </div>
+                <div>
+                  <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Tutup</p>
+                  <input name="close_time" type="time" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 pt-2">
+                <div className="flex gap-5">
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" name="pickup_fast" defaultChecked={false} className="w-5 h-5 rounded-lg border-2 border-neutral-300 text-neutral-900 focus:ring-neutral-900 focus:ring-offset-2 transition-colors cursor-pointer" />
+                    <span className="text-[0.85rem] font-bold text-neutral-700 group-hover:text-neutral-900">Pickup Cepat (Sistem)</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" name="free_shipping" defaultChecked={false} className="w-5 h-5 rounded-lg border-2 border-neutral-300 text-neutral-900 focus:ring-neutral-900 focus:ring-offset-2 transition-colors cursor-pointer" />
+                    <span className="text-[0.85rem] font-bold text-neutral-700 group-hover:text-neutral-900">Gratis Ongkir</span>
+                  </label>
+                </div>
+              </div>
+
+              <button disabled={loading} className="w-full mt-4 bg-neutral-900 text-white font-black py-4 rounded-2xl shadow-[0_4px_14px_rgba(0,0,0,0.15)] active:scale-[0.98] transition-all disabled:opacity-50 tracking-wide">
+                {loading ? "Menyimpan..." : "Simpan Seller / Paket"}
               </button>
             </form>
           </div>
