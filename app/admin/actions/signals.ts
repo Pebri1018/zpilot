@@ -66,26 +66,26 @@ export async function upsertMerchant(formData: FormData) {
   const open_time = String(formData.get("open_time") || "").trim() || null;
   const close_time = String(formData.get("close_time") || "").trim() || null;
   const free_shipping = formData.get("free_shipping") === "on";
+  const is_open_24h = formData.get("is_open_24h") === "on";
 
   if (!name || !area) return { error: "Nama resto dan area wajib diisi" };
 
-  // --- AUTO SCORE LOGIC ---
+  // --- AUTO SCORE LOGIC (Strict) ---
   // Score 0-100 base
   let score = 0;
-  score += rating * 10; // Max 50
-  score += Math.min(20, (reviews / 50) * 10); // Max 20 (cap at 100 reviews)
+  score += rating * 10;                                   // Max 50 (5 * 10)
+  score += Math.min(15, (reviews / 100) * 15);            // Max 15 (capped at 100 reviews)
   if (promo_active) {
-    score += 10;
-    if (promo_percent > 0) {
-      score += Math.min(15, promo_percent / 4); // Up to 15 bonus points for big promos
-    }
+    score += 15;
+    if (promo_percent >= 30) score += 10;                  // Big promo bonus
+    else if (promo_percent > 0) score += 5;
   }
-  if (pickup_fast) score += 15;
-  if (free_shipping) score += 10; // Bonus score for free shipping
+  if (pickup_fast) score += 10;
+  if (free_shipping) score += 8;
 
-  // Map to 1-5 busy_score for backward compat and Low/Med/High label
-  const busy_score = Math.max(1, Math.min(5, Math.floor(score / 20)));
-  const busy_level = busy_score >= 4 ? "High" : busy_score >= 2 ? "Medium" : "Low";
+  // Strict mapping: High requires really good score (>= 60), Med requires >= 35
+  const busy_score = score >= 60 ? 5 : score >= 35 ? 3 : 1;
+  const busy_level = busy_score >= 5 ? "High" : busy_score >= 3 ? "Medium" : "Low";
 
   const supabase = getServiceClient();
   const { error } = await supabase.from("merchant_signals").upsert(
@@ -100,14 +100,15 @@ export async function upsertMerchant(formData: FormData) {
       fast_pickup: pickup_fast,
       free_shipping,
       is_active: true,
+      is_open_24h: is_open_24h || false,
+      open_time: is_open_24h ? null : open_time,
+      close_time: is_open_24h ? null : close_time,
       lat: lat && !isNaN(lat) ? lat : null,
       lng: lng && !isNaN(lng) ? lng : null,
       area,
       address,
       rating,
       reviews,
-      open_time,
-      close_time,
       popularity_score: score,
       updated_at: new Date().toISOString(),
       expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
@@ -169,6 +170,7 @@ export type MerchantSignal = {
   pickup_fast?: boolean;
   is_active?: boolean;
   is_flash_sale?: boolean;
+  is_open_24h?: boolean;
   area: string;
   lat?: number | null;
   lng?: number | null;
@@ -238,15 +240,9 @@ export async function toggleFlashSale(id: string, isFlashSale: boolean) {
 
   const supabase = getServiceClient();
   
-  // If it's a flash sale, boost busy_score to 5 to make it RAMAI (High).
-  // Otherwise, fallback to 2 (Medium) or we could calculate it but for simplicity just set to 2.
-  const busy_score = isFlashSale ? 5 : 2;
-  const busy_level = isFlashSale ? "High" : "Medium";
-  
+  // Flash sale = informational tag only. Do NOT change busy_score.
   const { error } = await supabase.from("merchant_signals").update({
     is_flash_sale: isFlashSale,
-    busy_score,
-    busy_level
   }).eq("id", id);
 
   if (error) {

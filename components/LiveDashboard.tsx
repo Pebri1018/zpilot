@@ -42,7 +42,7 @@ export function LiveDashboard() {
     reason: lang === "ID" ? "Memuat data..." : "Loading...",
     color: status === "Offline" ? "#9CA3AF" : "#10B981"
   }));
-  const [merchants, setMerchants] = useState<MerchantSignal[]>(() => loadCachedMerchants());
+  const [merchants, setMerchants] = useState<MerchantSignal[]>([]);
   const [nearestHotspot, setNearestHotspot] = useState<(HotspotZone & { dist: number }) | null>(null);
   const [zoneStats, setZoneStats] = useState<ZoneStatsResult>({
     orderan: "Data Minim",
@@ -53,6 +53,12 @@ export function LiveDashboard() {
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 60000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Load merchant cache from localStorage on mount (only runs on client)
+  useEffect(() => {
+    const cached = loadCachedMerchants();
+    if (cached.length > 0) setMerchants(cached);
   }, []);
 
   useEffect(() => {

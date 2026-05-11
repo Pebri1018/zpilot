@@ -137,16 +137,28 @@ export default function RadarPage() {
 
         merchantsData.forEach(m => {
           if (m.lat && m.lng) {
+            // --- OPEN/CLOSED FILTER ---
+            if (!m.is_open_24h && m.open_time && m.close_time) {
+              const nowHHMM = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false });
+              // Handle overnight: e.g. open 22:00, close 04:00
+              const isOvernight = m.open_time > m.close_time;
+              const isOpen = isOvernight
+                ? (nowHHMM >= m.open_time || nowHHMM < m.close_time)
+                : (nowHHMM >= m.open_time && nowHHMM < m.close_time);
+              if (!isOpen) return; // Skip closed merchants
+            }
+
             let type: RadarMarker["type"] = "merchant_low";
-            if (m.busy_score >= 4) type = "merchant_high";
-            else if (m.busy_score >= 2) type = "merchant_med";
+            if (m.busy_score >= 5) type = "merchant_high";
+            else if (m.busy_score >= 3) type = "merchant_med";
             
+            const flashTag = m.is_flash_sale ? " ⚡" : "";
             newMarkers.push({
               id: m.id,
               lat: m.lat,
               lng: m.lng,
               type,
-              label: m.name
+              label: m.name + flashTag
             });
           }
         });

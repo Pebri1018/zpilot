@@ -129,9 +129,9 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
           
             const pinIcon = L.divIcon({
             className: "bg-transparent",
-            html: `<div style="display: flex; align-items: center; gap: 4px; transform: translate(-8px, -8px); pointer-events: none;">
-                    <div style="width: ${m.type.startsWith('driver_') ? '18px' : '14px'}; height: ${m.type.startsWith('driver_') ? '18px' : '14px'}; background-color: ${colors.fill}; border: 2.5px solid white; border-radius: 50%; box-shadow: 0 3px 8px rgba(0,0,0,0.5), 0 0 0 1px ${colors.fill};"></div>
-                    ${!m.type.startsWith("driver_") && m.type !== "merchant_low" && zoom >= 14 ? `<span style="background-color: ${colors.fill}; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: 800; color: #fff; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.3); pointer-events: auto; text-shadow: 0 1px 2px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.3);">${m.label}</span>` : ''}
+            html: `<div style="display: flex; align-items: center; gap: 5px; transform: translate(-9px, -9px); pointer-events: none;">
+                    <div style="width: ${m.type.startsWith('driver_') ? '18px' : '14px'}; height: ${m.type.startsWith('driver_') ? '18px' : '14px'}; background-color: ${colors.fill}; border: 3px solid rgba(255,255,255,0.95); border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.45), 0 0 0 1.5px ${colors.fill}; flex-shrink:0;"></div>
+                    ${!m.type.startsWith("driver_") && m.type !== "merchant_low" && zoom >= 16 ? `<span style="font-size: 9.5px; font-weight: 900; color: #111; white-space: nowrap; max-width: 90px; overflow: hidden; text-overflow: ellipsis; pointer-events: auto; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff; letter-spacing: 0.01em;">${m.label.length > 18 ? m.label.slice(0, 17) + '…' : m.label}</span>` : ''}
                   </div>`,
             iconSize: [0, 0],
             iconAnchor: [0, 0],

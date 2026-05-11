@@ -184,14 +184,29 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
                 <input name="reviews" type="number" placeholder={t("reviews")} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Buka</p>
-                  <input name="open_time" type="time" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
-                </div>
-                <div>
-                  <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Tutup</p>
-                  <input name="close_time" type="time" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+              <div className="flex flex-col gap-3">
+                <label className="flex items-center gap-3 bg-neutral-50 rounded-2xl px-4 py-3 border border-neutral-200 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    name="is_open_24h" 
+                    id="is_open_24h_resto"
+                    className="w-5 h-5 rounded-lg accent-neutral-900"
+                    onChange={(e) => {
+                      const grid = document.getElementById("time_grid_resto");
+                      if (grid) grid.style.display = e.target.checked ? "none" : "grid";
+                    }}
+                  />
+                  <span className="text-[0.85rem] font-bold text-neutral-700">Buka 24 Jam</span>
+                </label>
+                <div id="time_grid_resto" className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Buka</p>
+                    <input name="open_time" type="time" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+                  </div>
+                  <div>
+                    <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Tutup</p>
+                    <input name="close_time" type="time" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+                  </div>
                 </div>
               </div>
 
