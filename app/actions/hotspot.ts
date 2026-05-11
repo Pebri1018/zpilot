@@ -24,7 +24,7 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   return R * c; 
 }
 
-export const PREDEFINED_ZONES = [
+const PREDEFINED_ZONES = [
   { id: "seturan", name: "Seturan", lat: -7.7661, lng: 110.4079 },
   { id: "babarsari", name: "Babarsari", lat: -7.7770, lng: 110.4140 },
   { id: "gejayan", name: "Gejayan", lat: -7.7665, lng: 110.3955 },
