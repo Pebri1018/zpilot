@@ -21,6 +21,12 @@ export default async function AkunPage() {
     .eq("id", user.id)
     .maybeSingle();
 
+  const { data: feedback } = await supabase
+    .from("feedback")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
   return (
     <div className="min-h-[100dvh] bg-[#f7f7f8] pb-24 text-neutral-900 antialiased">
       <div className="mx-auto max-w-md px-5 pt-[max(1.25rem,env(safe-area-inset-top))]">
@@ -36,6 +42,7 @@ export default async function AkunPage() {
           platform={profile?.platform ?? "ShopeeFood"}
           driverId={profile?.driver_id ?? null}
           ztipsId={profile?.ztips_id ?? null}
+          feedback={feedback ?? []}
         />
       </div>
       <DriverBottomNav />

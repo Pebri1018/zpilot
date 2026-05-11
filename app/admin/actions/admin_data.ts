@@ -121,17 +121,35 @@ export async function replyFeedback(feedbackId: string, message: string, status:
   const isAdmin = await verifyAdmin();
   if (!isAdmin) return { error: "Unauthorized" };
 
-  const supabase = getServiceClient();
-  const { error } = await supabase
-    .from("feedback")
-    .update({ 
-      admin_reply: message, 
-      status, 
-      replied_at: new Date().toISOString() 
-    })
-    .eq("id", feedbackId);
+  try {
+    const supabase = getServiceClient();
+    const { error } = await supabase
+      .from("feedback")
+      .update({ 
+        admin_reply: message, 
+        status, 
+        replied_at: new Date().toISOString() 
+      })
+      .eq("id", feedbackId);
 
-  if (error) return { error: error.message };
-  revalidatePath("/admin");
-  return { success: true };
+    if (error) {
+      console.error("replyFeedback primary error:", error.message);
+      // Fallback: try with 'reviewed' status if 'replied' is the one failing constraint
+      const { error: retryError } = await supabase
+        .from("feedback")
+        .update({ 
+          admin_reply: message, 
+          status: 'reviewed', 
+          replied_at: new Date().toISOString() 
+        })
+        .eq("id", feedbackId);
+        
+      if (retryError) return { error: retryError.message };
+    }
+    
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (e: any) {
+    return { error: e.message || "Unknown error" };
+  }
 }

@@ -44,39 +44,34 @@ export default function RadarPage() {
         const { data: drivers, error: dErr } = await supabase
           .from("users")
           .select("id, last_lat, last_lng, status, nama")
-          .neq("status", "Offline")
-          .not("last_lat", "is", null)
-          .gte("last_active", activeLimit);
+          .not("last_lat", "is", null);
 
-        if (dErr) console.error("Radar driver fetch error:", dErr.message);
+        if (dErr) console.error("RADAR DEBUG: Driver fetch error:", dErr.message);
 
-        // 2. Fetch Active Merchants (fallback if is_active column doesn't exist yet)
+        // 2. Fetch Active Merchants
         let merchantsData: any[] = [];
-        const { data: merchants, error: mErr } = await supabase
-          .from("merchant_signals")
-          .select("id, lat, lng, name, busy_score, is_active")
-          .eq("is_active", true)
-          .not("lat", "is", null);
-
-        if (mErr) {
-          console.error("Radar merchant fetch error:", mErr.message);
-          // Fallback: fetch all merchants without is_active filter AND without is_active in select
-          const { data: fallbackMerchants } = await supabase
+        try {
+          const { data: merchants, error: mErr } = await supabase
             .from("merchant_signals")
-            .select("id, lat, lng, name, busy_score")
+            .select("*")
             .not("lat", "is", null);
-          merchantsData = fallbackMerchants || [];
-        } else {
-          merchantsData = merchants || [];
+
+          if (mErr) {
+            console.error("RADAR DEBUG: Merchant fetch error:", mErr.message);
+          } else {
+            merchantsData = merchants || [];
+          }
+        } catch (e) {
+          console.error("RADAR DEBUG: Merchant fetch crash:", e);
         }
 
-        // 3. Fetch Hangout Spots (active only)
+        // 3. Fetch Hangout Spots
         const { data: spots, error: sErr } = await supabase
           .from("ngetem_spots")
-          .select("id, lat, lng, name")
+          .select("*")
           .not("lat", "is", null);
 
-        if (sErr) console.error("Radar spots fetch error:", sErr.message);
+        if (sErr) console.error("RADAR DEBUG: Spots fetch error:", sErr.message);
 
         const newMarkers: RadarMarker[] = [];
 
@@ -123,14 +118,14 @@ export default function RadarPage() {
 
         setMarkers(newMarkers);
         setHotspots(hotspotData);
-        console.log("Radar data fetched", { 
-          drivers: drivers?.length || 0, 
-          merchants: merchantsData.length, 
-          spots: spots?.length || 0,
-          hotspots: hotspotData.length
+        console.log("RADAR DEBUG: Final markers", { 
+          total: newMarkers.length,
+          drivers: drivers?.length || 0,
+          merchants: merchantsData.length,
+          spots: spots?.length || 0
         });
       } catch (err) {
-        console.error("Radar fetch error", err);
+        console.error("RADAR DEBUG: Fetch error", err);
       } finally {
         setFetching(false);
       }

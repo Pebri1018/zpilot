@@ -62,10 +62,15 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id)}
-            className={`flex items-center justify-center md:justify-start gap-2 shrink-0 px-3 py-3 rounded-2xl text-[0.8rem] md:text-[0.85rem] font-bold transition-all ${activeTab === item.id ? "bg-neutral-900 text-white shadow-lg" : "bg-white text-neutral-500 border border-neutral-100 active:bg-neutral-50"}`}
+            className={`flex items-center justify-center md:justify-start gap-2 shrink-0 px-3 py-3 rounded-2xl text-[0.8rem] md:text-[0.85rem] font-bold transition-all relative ${activeTab === item.id ? "bg-neutral-900 text-white shadow-lg" : "bg-white text-neutral-500 border border-neutral-100 active:bg-neutral-50"}`}
           >
             {item.icon}
             {item.label}
+            {item.id === "feedback" && stats.feedback > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[0.6rem] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg animate-bounce">
+                +{stats.feedback}
+              </span>
+            )}
           </button>
         ))}
       </div>

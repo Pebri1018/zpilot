@@ -13,15 +13,16 @@ type Props = {
   platform: string;
   driverId: string | null;
   ztipsId: string | null;
+  feedback?: any[];
 };
 
-export function AkunClient({ email, nama, kota, platform, driverId, ztipsId }: Props) {
+export function AkunClient({ email, nama, kota, platform, driverId, ztipsId, feedback = [] }: Props) {
   const { lang, setLang, t } = useLanguage();
   const router = useRouter();
   const [notif, setNotif] = useState(true);
   const [batterySaver, setBatterySaver] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const [modal, setModal] = useState<"profile" | "password" | "feedback" | "delete" | null>(null);
+  const [modal, setModal] = useState<"profile" | "password" | "feedback" | "delete" | "history" | null>(null);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -207,6 +208,16 @@ export function AkunClient({ email, nama, kota, platform, driverId, ztipsId }: P
             <span className="text-[0.9rem] font-semibold">{t("kirim_masukan")}</span>
             <svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
           </button>
+          <button onClick={() => setModal("history")} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
+            <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <span className="text-[0.9rem] font-semibold">{lang === "ID" ? "Riwayat Masukan" : "Feedback History"}</span>
+            {feedback.some(f => f.admin_reply && f.status !== "closed") && (
+              <span className="bg-red-500 w-2 h-2 rounded-full ml-1" />
+            )}
+            <svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+          </button>
           <button 
             onClick={() => alert("Halaman Tips Gacor akan segera hadir!")} 
             className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition"
@@ -304,6 +315,33 @@ export function AkunClient({ email, nama, kota, platform, driverId, ztipsId }: P
                   }} disabled={loading} className="w-full py-3 rounded-2xl bg-red-600 font-bold text-white disabled:opacity-50">{lang === "ID" ? "Ya, Hapus" : "Yes, Delete"}</button>
                   <button onClick={() => setModal(null)} className="w-full py-3 rounded-2xl bg-neutral-100 font-bold text-neutral-600">{t("cancel")}</button>
                 </div>
+              </div>
+            )}
+            {modal === "history" && (
+              <div className="space-y-4 max-h-[70vh] flex flex-col">
+                <h3 className="text-[1.1rem] font-bold px-1">{lang === "ID" ? "Riwayat Masukan" : "Feedback History"}</h3>
+                <div className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-thin">
+                  {feedback.length === 0 ? (
+                    <p className="text-center py-10 text-neutral-400 font-medium">Belum ada riwayat.</p>
+                  ) : (
+                    feedback.map((f) => (
+                      <div key={f.id} className="bg-neutral-50 p-4 rounded-2xl border border-neutral-100">
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-widest">{new Date(f.created_at).toLocaleDateString()}</span>
+                          <span className={`text-[0.6rem] font-black uppercase px-2 py-0.5 rounded-md ${f.status === 'closed' ? 'bg-neutral-200 text-neutral-500' : 'bg-orange-100 text-orange-600'}`}>{f.status}</span>
+                        </div>
+                        <p className="text-[0.85rem] font-medium text-neutral-800 italic">"{f.message}"</p>
+                        {f.admin_reply && (
+                          <div className="mt-3 bg-white p-3 rounded-xl border border-blue-100">
+                            <p className="text-[0.65rem] font-black text-blue-600 uppercase mb-1">Balasan Admin</p>
+                            <p className="text-[0.82rem] font-bold text-neutral-700 italic">"{f.admin_reply}"</p>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+                <button onClick={() => setModal(null)} className="w-full py-3 rounded-2xl bg-neutral-900 font-bold text-white mt-2">Tutup</button>
               </div>
             )}
           </div>
