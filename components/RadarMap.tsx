@@ -58,8 +58,8 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
 
   const getMarkerColor = (type: RadarMarker["type"]) => {
     switch (type) {
-      case "driver_ngetem": return { color: "#3B82F6", fill: "#3B82F6" }; 
-      case "driver_antar": return { color: "#9CA3AF", fill: "#9CA3AF" };  
+      case "driver_ngetem": return { color: "#4F46E5", fill: "#4F46E5" }; // Indigo 600
+      case "driver_antar": return { color: "#EC4899", fill: "#EC4899" };  // Pink 500
       case "merchant_high": return { color: "#EF4444", fill: "#EF4444" }; 
       case "merchant_med": return { color: "#F97316", fill: "#F97316" };  
       case "merchant_low": return { color: "#10B981", fill: "#10B981" };  
@@ -118,8 +118,8 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
           const pinIcon = L.divIcon({
             className: "bg-transparent",
             html: `<div style="display: flex; align-items: center; gap: 4px; transform: translate(-8px, -8px); pointer-events: none;">
-                    <div style="width: 12px; height: 12px; background-color: ${colors.fill}; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
-                    ${!m.type.startsWith("driver_") ? `<span style="background-color: rgba(255,255,255,0.8); padding: 0px 4px; border-radius: 4px; font-size: 10px; font-weight: 700; color: #111; white-space: nowrap; text-shadow: 0 1px 2px #fff; pointer-events: auto;">${m.label}</span>` : ''}
+                    <div style="width: ${m.type.startsWith('driver_') ? '16px' : '14px'}; height: ${m.type.startsWith('driver_') ? '16px' : '14px'}; background-color: ${colors.fill}; border: 2.5px solid #fff; border-radius: 50%; box-shadow: 0 3px 6px rgba(0,0,0,0.4);"></div>
+                    ${!m.type.startsWith("driver_") ? `<span style="background-color: rgba(255,255,255,0.9); padding: 1px 5px; border-radius: 6px; font-size: 10px; font-weight: 800; color: #111; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.2); pointer-events: auto;">${m.label}</span>` : ''}
                   </div>`,
             iconSize: [0, 0],
             iconAnchor: [0, 0],

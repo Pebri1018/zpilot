@@ -34,12 +34,12 @@ export default function RadarPage() {
   const [fetching, setFetching] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const supabase = createClient();
-        const now = new Date();
-        const activeLimit = new Date(now.getTime() - 60 * 60000).toISOString(); // 60 min window
+  const fetchData = async () => {
+    setFetching(true);
+    try {
+      const supabase = createClient();
+      const now = new Date();
+      const activeLimit = new Date(now.getTime() - 60 * 60000).toISOString(); // 60 min window
 
         const { data: sessionData } = await supabase.auth.getSession();
         const currentUserId = sessionData?.session?.user?.id;
@@ -177,10 +177,11 @@ export default function RadarPage() {
       } finally {
         setFetching(false);
       }
-    }
+  };
 
+  useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 60000);
+    const interval = setInterval(fetchData, 10000); // 10 seconds refresh
     return () => clearInterval(interval);
   }, []);
 
@@ -197,10 +198,17 @@ export default function RadarPage() {
               <p className="text-[0.7rem] font-bold text-neutral-500 uppercase tracking-wider">{areaName || "Area Tidak Diketahui"}</p>
             </div>
             
-            <div className="bg-[#f7f7f8]/90 backdrop-blur-xl px-4 py-2.5 rounded-2xl shadow-sm border border-neutral-200 flex flex-col items-end">
-              <span className="text-[1.1rem] font-black">{markers.length}</span>
+            <button 
+              onClick={fetchData}
+              disabled={fetching}
+              className="bg-[#f7f7f8]/90 backdrop-blur-xl px-4 py-2.5 rounded-2xl shadow-sm border border-neutral-200 flex flex-col items-end active:scale-95 transition-all disabled:opacity-80"
+            >
+              <div className="flex items-center gap-1.5">
+                {fetching && <svg className="w-3.5 h-3.5 text-neutral-400 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
+                <span className="text-[1.1rem] font-black">{markers.length}</span>
+              </div>
               <span className="text-[0.65rem] font-bold text-neutral-500 uppercase tracking-widest">Sinyal</span>
-            </div>
+            </button>
           </div>
 
           {/* ERROR BANNER */}
@@ -224,8 +232,8 @@ export default function RadarPage() {
         <p className="text-[0.6rem] font-bold uppercase tracking-widest text-neutral-400 mb-2">{t("legend")}</p>
         <div className="flex flex-wrap gap-x-4 gap-y-1.5 mb-2 pb-2 border-b border-neutral-100">
           <LegendItem color="bg-black" label={lang === "ID" ? "Kamu" : "You"} />
-          <LegendItem color="bg-blue-500" label={lang === "ID" ? "Driver Ngetem" : "Driver Ngetem"} />
-          <LegendItem color="bg-neutral-400" label={lang === "ID" ? "Driver Antar" : "Driver Antar"} />
+          <LegendItem color="bg-indigo-600" label={lang === "ID" ? "Driver Ngetem" : "Driver Ngetem"} />
+          <LegendItem color="bg-pink-500" label={lang === "ID" ? "Driver Antar" : "Driver Antar"} />
           <LegendItem color="bg-purple-500" label={lang === "ID" ? "Spot Mangkal" : "Spot"} />
           <LegendItem color="bg-red-500" label={lang === "ID" ? "Resto Ramai" : "Busy"} />
           <LegendItem color="bg-orange-400" label={lang === "ID" ? "Resto Sedang" : "Med"} />

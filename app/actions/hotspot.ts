@@ -71,6 +71,14 @@ export async function getHotspots(): Promise<HotspotZone[]> {
 
     if (mErr) console.error("hotspot merchants error:", mErr.message);
 
+    // 2.5 Fetch manual signals
+    const { data: manualSignals, error: msErr } = await supabase
+      .from("admin_manual_signals")
+      .select("lat, lng, count, type")
+      .gt("expires_at", new Date().toISOString());
+
+    if (msErr) console.error("hotspot manual signals error:", msErr.message);
+
     // 3. Process each zone
     const hotspots: HotspotZone[] = PREDEFINED_ZONES.map(zone => {
       let antarCount = 0;
@@ -84,6 +92,15 @@ export async function getHotspots(): Promise<HotspotZone[]> {
         if (dist <= ZONE_RADIUS_KM) {
           if (d.status === "Antar") antarCount++;
           else if (d.status === "Ngetem") ngetemCount++;
+        }
+      });
+
+      // Count manual signals in zone
+      manualSignals?.forEach(ms => {
+        if (!ms.lat || !ms.lng) return;
+        const dist = getDistance(zone.lat, zone.lng, ms.lat, ms.lng);
+        if (dist <= ZONE_RADIUS_KM) {
+          if (ms.type === "driver_ngetem") ngetemCount += (ms.count || 1);
         }
       });
 
