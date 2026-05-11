@@ -61,56 +61,65 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
     <div className="flex flex-col gap-6">
       {/* Top Bar */}
       <div className="flex justify-between items-center -mb-2 animate-in fade-in slide-in-from-top-2">
-        <a href="/akun" className="flex items-center gap-2 text-[0.8rem] font-bold text-neutral-500 bg-white px-4 py-2.5 rounded-xl shadow-sm border border-neutral-100 active:scale-95 transition-all">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-          Kembali ke App
-        </a>
-      </div>
-      {/* Admin Nav */}
-      <div className="flex gap-3 px-5 sticky top-[max(1.25rem,env(safe-area-inset-top))] z-40 bg-[#f7f7f8]/95 backdrop-blur-xl pt-2 pb-4 -mx-5 border-b border-neutral-200/50 overflow-x-auto no-scrollbar">
-        {NAV.map(item => (
-          <button
-            key={item.id}
-            onClick={() => setActiveTab(item.id)}
-            className={`flex items-center gap-2 shrink-0 px-4 py-3 rounded-full text-[0.85rem] font-bold transition-all relative whitespace-nowrap ${activeTab === item.id ? "bg-neutral-900 text-white shadow-lg" : "bg-white text-neutral-500 border border-neutral-100 active:bg-neutral-50"}`}
-          >
-            {item.icon}
-            {item.label}
-            {item.id === "feedback" && stats.feedback > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[0.6rem] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg animate-bounce">
-                +{stats.feedback}
-              </span>
-            )}
+        {activeTab === "dashboard" ? (
+          <a href="/akun" className="flex items-center gap-2 text-[0.8rem] font-bold text-neutral-500 bg-white px-4 py-2.5 rounded-xl shadow-sm border border-neutral-100 active:scale-95 transition-all">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            Kembali ke App
+          </a>
+        ) : (
+          <button onClick={() => setActiveTab("dashboard")} className="flex items-center gap-2 text-[0.8rem] font-bold text-neutral-500 bg-white px-4 py-2.5 rounded-xl shadow-sm border border-neutral-100 active:scale-95 transition-all">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            Menu Admin
           </button>
-        ))}
+        )}
       </div>
 
-      {/* 1. DASHBOARD */}
+      {/* 1. DASHBOARD & MENU */}
       {activeTab === "dashboard" && (
-        <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-2">
-          <div className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm">
-            <p className="text-[0.7rem] font-bold uppercase text-neutral-400 mb-1">Users</p>
-            <p className="text-[1.8rem] font-black">{stats.users}</p>
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm">
+              <p className="text-[0.7rem] font-bold uppercase text-neutral-400 mb-1">Users</p>
+              <p className="text-[1.8rem] font-black">{stats.users}</p>
+            </div>
+            <div className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm">
+              <p className="text-[0.7rem] font-bold uppercase text-neutral-400 mb-1">Pending Feedback</p>
+              <p className="text-[1.8rem] font-black">{stats.feedback}</p>
+            </div>
+            <div className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm col-span-2">
+              <p className="text-[0.7rem] font-bold uppercase text-neutral-400 mb-1">Total Active Signals</p>
+              <p className="text-[1.8rem] font-black">{stats.signals + stats.spots}</p>
+            </div>
+            <div className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm bg-blue-50/50">
+              <p className="text-[0.7rem] font-bold uppercase text-blue-400 mb-1">Total Resto</p>
+              <p className="text-[1.5rem] font-black text-blue-900">{stats.resto}</p>
+            </div>
+            <div className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm bg-orange-50/50">
+              <p className="text-[0.7rem] font-bold uppercase text-orange-400 mb-1">Total Seller</p>
+              <p className="text-[1.5rem] font-black text-orange-900">{stats.seller}</p>
+            </div>
+            <div className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm col-span-2 bg-purple-50/50">
+              <p className="text-[0.7rem] font-bold uppercase text-purple-400 mb-1">Manual Spots Admin</p>
+              <p className="text-[1.5rem] font-black text-purple-900">{stats.spots}</p>
+            </div>
           </div>
-          <div className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm">
-            <p className="text-[0.7rem] font-bold uppercase text-neutral-400 mb-1">Pending Feedback</p>
-            <p className="text-[1.8rem] font-black">{stats.feedback}</p>
-          </div>
-          <div className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm col-span-2">
-            <p className="text-[0.7rem] font-bold uppercase text-neutral-400 mb-1">Total Active Signals</p>
-            <p className="text-[1.8rem] font-black">{stats.signals + stats.spots}</p>
-          </div>
-          <div className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm bg-blue-50/50">
-            <p className="text-[0.7rem] font-bold uppercase text-blue-400 mb-1">Total Resto</p>
-            <p className="text-[1.5rem] font-black text-blue-900">{stats.resto}</p>
-          </div>
-          <div className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm bg-orange-50/50">
-            <p className="text-[0.7rem] font-bold uppercase text-orange-400 mb-1">Total Seller</p>
-            <p className="text-[1.5rem] font-black text-orange-900">{stats.seller}</p>
-          </div>
-          <div className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm col-span-2 bg-purple-50/50">
-            <p className="text-[0.7rem] font-bold uppercase text-purple-400 mb-1">Manual Spots Admin</p>
-            <p className="text-[1.5rem] font-black text-purple-900">{stats.spots}</p>
+
+          {/* Menu List */}
+          <div className="bg-white rounded-3xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-neutral-100">
+            <div className="px-5 pt-4 pb-2"><p className="text-[0.7rem] font-bold uppercase tracking-widest text-neutral-400">Admin Menu</p></div>
+            <div className="divide-y divide-neutral-100">
+              {NAV.filter(n => n.id !== "dashboard").map(item => (
+                <button key={item.id} onClick={() => setActiveTab(item.id)} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
+                  <div className="w-8 h-8 rounded-xl bg-neutral-100 text-neutral-600 flex items-center justify-center">
+                    {item.icon}
+                  </div>
+                  <span className="text-[0.95rem] font-semibold">{item.label}</span>
+                  {item.id === "feedback" && stats.feedback > 0 && <span className="bg-red-500 w-2 h-2 rounded-full ml-1" />}
+                  <svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}

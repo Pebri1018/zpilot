@@ -48,11 +48,10 @@ export type HotspotZone = {
 };
 
 export async function getHotspots(): Promise<HotspotZone[]> {
-  const supabase = getServiceClient();
-  const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-  const now = new Date().toISOString();
-
   try {
+    const supabase = getServiceClient();
+    const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const now = new Date().toISOString();
     // 1. Fetch active drivers (last 60 min, not Offline)
     const { data: drivers, error: dErr } = await supabase
       .from("users")
