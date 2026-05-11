@@ -629,7 +629,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
                 <div>
                   <p className="font-black text-[0.95rem] tracking-tight">{b.title}</p>
                   <p className="text-[0.65rem] text-neutral-400 font-bold uppercase tracking-widest mt-1">
-                    {b.expires_at ? `Exp: ${new Date(b.expires_at).toLocaleTimeString()}` : "Permanent"}
+                    {b.expires_at ? `Exp: ${new Date(b.expires_at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false })}` : "Permanent"}
                   </p>
                 </div>
                 <button onClick={() => deleteBroadcast(b.id)} className="w-10 h-10 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition-colors">
