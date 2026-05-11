@@ -7,11 +7,8 @@ import { redirect } from "next/navigation";
 
 export default async function Home() {
   const supabase = await createClient();
-  
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    redirect("/login");
-  }
+  if (!user) redirect("/login");
 
   const { data: profile } = await supabase
     .from("users")
@@ -24,21 +21,14 @@ export default async function Home() {
     redirect("/login?error=blocked");
   }
 
-  const nama = profile?.nama || "Driver";
-  const kota = profile?.kota || "Yogyakarta";
   const broadcast = await getLatestActiveBroadcast();
 
   return (
-    <div className="min-h-[100dvh] bg-[#f7f7f8] pb-24 text-neutral-900 antialiased">
-      <div className="mx-auto max-w-md px-5 pt-[max(1.25rem,env(safe-area-inset-top))]">
-        <h1 className="text-[1.8rem] font-bold tracking-[-0.02em] mb-1">Halo {nama}</h1>
-        <p className="text-[1.05rem] text-neutral-500 mb-6">{kota}</p>
-
-        {broadcast && <BroadcastCard broadcast={broadcast} />}
-
+    <div className="min-h-[100dvh] bg-[#f2f2f4] pb-24 text-neutral-900 antialiased">
+      <div className="mx-auto max-w-md px-4 pt-[max(1rem,env(safe-area-inset-top))]">
+        {broadcast && <div className="mb-3"><BroadcastCard broadcast={broadcast} /></div>}
         <LiveDashboard />
       </div>
-
       <DriverBottomNav />
     </div>
   );

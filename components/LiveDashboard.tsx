@@ -9,10 +9,9 @@ import { getHotspots, type HotspotZone } from "@/app/actions/hotspot";
 import { DriverStatusSelector } from "./DriverStatusSelector";
 import { NgetemTimer } from "./NgetemTimer";
 import { useLanguage } from "@/context/LanguageContext";
-import { AIFeedback } from "./AIFeedback";
 
 const MERCHANT_CACHE_KEY = "ztips_merchants_cache";
-const MERCHANT_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+const MERCHANT_CACHE_TTL = 30 * 60 * 1000;
 
 function loadCachedMerchants(): MerchantSignal[] {
   if (typeof window === "undefined") return [];
@@ -31,31 +30,42 @@ function saveMerchantsCache(data: MerchantSignal[]) {
   } catch {}
 }
 
+function getActionColors(action: string, color: string) {
+  if (action === "MOVE") return { bg: "bg-red-600", text: "text-white", border: "border-red-500", pill: "bg-red-700", accent: "#DC2626" };
+  if (action === "OFFLINE") return { bg: "bg-neutral-700", text: "text-white", border: "border-neutral-600", pill: "bg-neutral-800", accent: "#374151" };
+  if (action === "BUSY") return { bg: "bg-amber-500", text: "text-white", border: "border-amber-400", pill: "bg-amber-600", accent: "#D97706" };
+  // STAY — use green
+  return { bg: "bg-emerald-600", text: "text-white", border: "border-emerald-500", pill: "bg-emerald-700", accent: "#059669" };
+}
+
 export function LiveDashboard() {
   const { lang, t } = useLanguage();
   const { status, areaName, loading, error, timestamp, refreshLocation, latitude, longitude } = useLocation();
   const [time, setTime] = useState(new Date());
   const [ngetemStartTime, setNgetemStartTime] = useState<number | null>(null);
-  const [recommendation, setRecommendation] = useState<RecommendationResult>(() => ({
+  const [recommendation, setRecommendation] = useState<RecommendationResult>({
     action: "STAY" as const,
-    title: status === "Offline" ? (lang === "ID" ? "Pilot Siaga" : "Pilot Standby") : "Standby",
-    reason: lang === "ID" ? "Memuat data..." : "Loading...",
-    color: status === "Offline" ? "#9CA3AF" : "#10B981"
-  }));
+    title: "Standby",
+    reason: "Memuat data...",
+    color: "#10B981"
+  });
   const [merchants, setMerchants] = useState<MerchantSignal[]>([]);
   const [nearestHotspot, setNearestHotspot] = useState<(HotspotZone & { dist: number }) | null>(null);
+  const [topZones, setTopZones] = useState<HotspotZone[]>([]);
   const [zoneStats, setZoneStats] = useState<ZoneStatsResult>({
     orderan: "Data Minim",
     pesaing: "Longgar" as any,
     driverCount: 0
   });
 
+  const lastAnalysisRef = useRef<{ area: string|null; status: string; ts: number }>({ area: null, status: "", ts: 0 });
+
   useEffect(() => {
-    const timer = setInterval(() => setTime(new Date()), 60000);
+    const timer = setInterval(() => setTime(new Date()), 30000);
     return () => clearInterval(timer);
   }, []);
 
-  // Load merchant cache from localStorage on mount (only runs on client)
+  // Load merchant cache on mount
   useEffect(() => {
     const cached = loadCachedMerchants();
     if (cached.length > 0) setMerchants(cached);
@@ -67,10 +77,7 @@ export function LiveDashboard() {
     } else {
       setNgetemStartTime(null);
     }
-  }, [status, ngetemStartTime]);
-
-  // Throttle: only re-analyze if >5 mins since last OR status/area changed
-  const lastAnalysisRef = useRef<{ area: string|null; status: string; ts: number }>({ area: null, status: "", ts: 0 });
+  }, [status]);
 
   useEffect(() => {
     async function fetchData() {
@@ -78,31 +85,25 @@ export function LiveDashboard() {
       const last = lastAnalysisRef.current;
       const areaChanged = last.area !== areaName;
       const statusChanged = last.status !== status;
-      const stale = now - last.ts > 5 * 60 * 1000; // 5 minutes
-
-      // Skip if nothing meaningful changed AND not stale
+      const stale = now - last.ts > 5 * 60 * 1000;
       if (!areaChanged && !statusChanged && !stale) return;
       lastAnalysisRef.current = { area: areaName, status, ts: now };
 
       try {
         const idleMinutes = status === "Ngetem" && ngetemStartTime ? Math.floor((now - ngetemStartTime) / 60000) : 0;
-        
-        // Run ALL fetches in parallel — no sequential awaits
         const [merchantsResult, statsResult, hotspotResult] = await Promise.all([
           getActiveMerchants(areaName),
           getZoneStats(areaName),
           getHotspots()
         ]);
 
-        // Pass hotspots directly — no extra fetch inside getRecommendationV2
         const recResult = await getRecommendationV2(
           areaName, status, idleMinutes,
           statsResult.driverCount, merchantsResult.length,
           lang, hotspotResult
         );
-        
+
         setMerchants(prev => {
-          // Merge: new merchants at front, keeping unique by id
           const prevIds = new Set(prev.map((m: MerchantSignal) => m.id));
           const freshOnly = merchantsResult.filter((m: MerchantSignal) => !prevIds.has(m.id));
           const merged = [...freshOnly, ...merchantsResult.filter((m: MerchantSignal) => prevIds.has(m.id))];
@@ -111,18 +112,17 @@ export function LiveDashboard() {
         });
         setZoneStats(statsResult);
         setRecommendation(recResult);
+        setTopZones(hotspotResult.slice(0, 3));
 
-        // Find nearest hotspot
         if (hotspotResult.length > 0 && latitude && longitude) {
           const getDist = (lat1: number, lon1: number, lat2: number, lon2: number) => {
             const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2)**2;
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
           };
-          let closest = hotspotResult[0];
-          let minDist = getDist(latitude, longitude, closest.lat, closest.lng);
+          let closest = hotspotResult[0], minDist = getDist(latitude, longitude, closest.lat, closest.lng);
           for (let i = 1; i < hotspotResult.length; i++) {
             const d = getDist(latitude, longitude, hotspotResult[i].lat, hotspotResult[i].lng);
             if (d < minDist) { minDist = d; closest = hotspotResult[i]; }
@@ -130,14 +130,7 @@ export function LiveDashboard() {
           setNearestHotspot({ ...closest, dist: minDist });
         }
       } catch (e) {
-        console.error("Failed to fetch dashboard data", e);
-        setRecommendation({
-          action: "STAY",
-          title: "Standby",
-          reason: lang === "ID" ? "Memantau sinyal. Tetap waspada." : "Monitoring signals. Stay alert.",
-          color: "#10B981",
-          badge: "Low"
-        });
+        console.error("Dashboard fetch failed", e);
       }
     }
     fetchData();
@@ -147,173 +140,164 @@ export function LiveDashboard() {
   useEffect(() => {
     const supabase = (require("@/lib/supabase/client")).createClient();
     const channel = supabase.channel("merchant-updates")
-      .on("postgres_changes", { event: "*", schema: "public", table: "merchant_signals" }, async (payload: any) => {
-        // Just re-fetch actively to ensure stats are in sync
-        const [merchantsResult, statsResult] = await Promise.all([
-          getActiveMerchants(areaName),
-          getZoneStats(areaName)
-        ]);
+      .on("postgres_changes", { event: "*", schema: "public", table: "merchant_signals" }, async () => {
+        const merchantsResult = await getActiveMerchants(areaName);
         setMerchants(merchantsResult);
-        setZoneStats(statsResult);
+        saveMerchantsCache(merchantsResult);
       })
       .subscribe();
-      
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [areaName]);
 
-  const formattedTime = time.toLocaleTimeString(lang === "ID" ? "id-ID" : "en-GB", { hour: '2-digit', minute: '2-digit', hour12: false });
-  const minutesAgo = timestamp ? Math.floor((time.getTime() - timestamp) / 60000) : null;
+  const formattedTime = time.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false });
+  const idleMinutes = ngetemStartTime ? Math.floor((Date.now() - ngetemStartTime) / 60000) : 0;
+  const actionColors = getActionColors(recommendation.action, recommendation.color);
+  const isIdle = idleMinutes >= 15 && status === "Ngetem";
+
+  const zoneLabel: Record<string, { label: string; color: string; bg: string }> = {
+    "PELUANG":    { label: "Peluang", color: "text-emerald-700", bg: "bg-emerald-100" },
+    "MENARIK":    { label: "Menarik", color: "text-orange-700",  bg: "bg-orange-100"  },
+    "RAMAI":      { label: "Padat",   color: "text-red-700",     bg: "bg-red-100"     },
+    "KOMPETISI":  { label: "Hindari", color: "text-rose-800",    bg: "bg-rose-100"    },
+    "SEPI":       { label: "Sepi",    color: "text-neutral-500", bg: "bg-neutral-100" },
+  };
 
   return (
-    <>
-      <header className="pb-4">
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-[0.95rem] font-bold text-neutral-400 uppercase tracking-widest">
-            {formattedTime}
-          </p>
-          <button 
-            onClick={() => refreshLocation()}
-            disabled={loading}
-            className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[0.75rem] font-bold text-[#00A651] shadow-sm border border-neutral-100 transition-all active:scale-90 disabled:opacity-50 hover:shadow-md"
-          >
-            <svg className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg> 
-            {t("refresh")}
-          </button>
-        </div>
+    <div className="flex flex-col gap-4">
 
-        <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-neutral-100 relative overflow-hidden">
-          <div className="absolute -right-6 -top-6 w-24 h-24 bg-green-100 rounded-full blur-2xl opacity-60"></div>
-          
-          <p className="text-[0.75rem] font-bold uppercase tracking-wider text-neutral-400 mb-1">
-            {t("current_loc")}
-          </p>
-          <div className="mt-1 text-[1.25rem] font-bold text-neutral-800 flex items-center gap-2">
-            {loading && !areaName ? (
-              <span className="animate-pulse">{t("searching_loc")}</span>
-            ) : error ? (
-              <span className="text-red-500 text-sm">{error}</span>
-            ) : (
-              <>
-                <svg className="w-5 h-5 text-[#00A651] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span className="line-clamp-1">{areaName}</span>
-              </>
-            )}
-          </div>
-          <p className="text-[0.75rem] font-medium text-neutral-400 mt-3 flex items-center gap-1.5">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-            </span>
-            {minutesAgo !== null ? (lang === "ID" ? `Akurat (${minutesAgo} menit lalu)` : `Accurate (${minutesAgo}m ago)`) : "..."}
+      {/* TOP BAR */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[0.72rem] font-black text-neutral-400 uppercase tracking-widest">{formattedTime}</p>
+          <p className="text-[1rem] font-black text-neutral-900 leading-tight mt-0.5 line-clamp-1 max-w-[200px]">
+            {areaName || (loading ? "Mencari lokasi..." : "—")}
           </p>
         </div>
-      </header>
-
-      <DriverStatusSelector />
-
-      <section className="mt-2 mb-8">
-        <h2 className="text-[0.75rem] font-bold uppercase tracking-[0.15em] text-neutral-400 mb-3 ml-2">
-          {t("zone_status")}
-        </h2>
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white rounded-[1.25rem] p-4 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-neutral-100 flex flex-col items-center justify-center text-center transition-transform active:scale-95">
-            <span className="text-[0.65rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5">{t("order_potential")}</span>
-            <span className={`text-[0.95rem] font-extrabold leading-tight ${zoneStats.orderan.includes("Tinggi") ? "text-green-600" : "text-neutral-500"}`}>
-              {zoneStats.orderan}
-            </span>
-          </div>
-          <div className="bg-white rounded-[1.25rem] p-4 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-neutral-100 flex flex-col items-center justify-center text-center transition-transform active:scale-95 relative overflow-hidden">
-            <span className="text-[0.65rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 relative z-10">{t("rivals")}</span>
-            <span className={`text-[1.1rem] font-extrabold relative z-10 ${zoneStats.pesaing === "Padat" ? "text-red-600" : "text-green-600"}`}>
-              {zoneStats.pesaing}
-            </span>
-          </div>
-          <NgetemTimer />
+        <div className="flex items-center gap-2">
+          <DriverStatusSelector />
         </div>
-      </section>
+      </div>
 
-      <section className="mb-8">
-        <div className="flex items-center justify-between mb-3 ml-2 mr-1">
-          <h2 className="text-[0.75rem] font-bold uppercase tracking-[0.15em] text-neutral-400">
-            {t("active_merchants")}
-          </h2>
-          <Link href="/radar" className="text-[0.7rem] font-bold text-blue-600">{lang === "ID" ? "Lihat Peta" : "Open Map"}</Link>
+      {/* IDLE ALERT */}
+      {isIdle && (
+        <div className="bg-red-600 rounded-2xl px-4 py-3 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+          <div>
+            <p className="text-[0.7rem] font-black text-red-200 uppercase tracking-widest">⏱ IDLE {idleMinutes} MENIT</p>
+            <p className="text-[1rem] font-black text-white">Pindah Spot Sekarang!</p>
+          </div>
+          <Link href="/radar" className="bg-white text-red-600 text-[0.75rem] font-black px-3 py-2 rounded-xl active:scale-95 transition-all shrink-0">
+            Buka Radar
+          </Link>
         </div>
-        
-        <div className="flex overflow-x-auto pb-4 -mx-5 px-5 gap-3 no-scrollbar">
-          {merchants.length === 0 ? (
-            <div className="w-full text-center py-6 bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
-              <p className="text-[0.85rem] text-neutral-400 font-medium">{lang === "ID" ? "Belum ada sinyal resto." : "No merchant signals yet."}</p>
-            </div>
-          ) : (
-            merchants.map((resto) => (
-              <div key={resto.id} className="shrink-0 w-[140px] bg-white rounded-3xl p-3 shadow-[0_8px_24px_rgb(0,0,0,0.04)] border border-neutral-100 active:scale-95 transition-all">
-                <div className="h-[4.5rem] rounded-[1.1rem] mb-3 flex items-center justify-center relative overflow-hidden bg-orange-50">
-                  <span className="text-[1.5rem] font-extrabold text-orange-500">{resto.name.charAt(0)}</span>
-                </div>
-                <h3 className="text-[0.85rem] font-bold text-neutral-800 line-clamp-1 mb-1.5">{resto.name}</h3>
-                <div className="flex flex-col gap-1">
-                  {resto.promo_active && <span className="text-[0.6rem] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-md w-max">PROMO</span>}
-                  <span className="text-[0.6rem] font-bold text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded-md w-max uppercase">{resto.category}</span>
-                </div>
-              </div>
-            ))
+      )}
+
+      {/* HERO ACTION CARD */}
+      <div className={`${actionColors.bg} rounded-3xl p-5 shadow-lg`}>
+        <div className="flex items-start justify-between mb-3">
+          <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/60">
+            {recommendation.action === "MOVE" ? "⚡ GERAK SEKARANG" : recommendation.action === "OFFLINE" ? "😴 OFFLINE" : recommendation.action === "BUSY" ? "🚀 SEDANG ANTAR" : "✅ REKOMENDASI"}
+          </p>
+          {recommendation.badge && (
+            <span className={`text-[0.6rem] font-black uppercase px-2 py-0.5 rounded-lg ${recommendation.badge === "High" ? "bg-white/20 text-white" : "bg-white/10 text-white/70"}`}>
+              {recommendation.badge}
+            </span>
           )}
         </div>
-      </section>
+        <p className="text-[1.6rem] font-black text-white leading-tight tracking-tight">{recommendation.title}</p>
+        {nearestHotspot && recommendation.action !== "OFFLINE" && (
+          <p className="text-[0.9rem] font-bold text-white/80 mt-1">{nearestHotspot.name} • {nearestHotspot.dist.toFixed(1)} km</p>
+        )}
+        <p className="text-[0.82rem] font-medium text-white/70 mt-2 leading-snug">{recommendation.reason}</p>
 
-      <section className="pb-8">
-        <div className="rounded-[2rem] px-6 py-7 shadow-[0_12px_40px_rgba(0,0,0,0.06)] border border-neutral-100 bg-white relative overflow-hidden">
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span className="flex h-3 w-3 rounded-full" style={{ backgroundColor: recommendation.color }}></span>
-                <p className="text-[0.75rem] font-bold uppercase tracking-[0.15em] text-neutral-500">{t("ai_pilot_suggest")}</p>
-              </div>
-              {recommendation.badge && (
-                <span className={`text-[0.6rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-md ${recommendation.badge === 'High' ? 'bg-red-50 text-red-600' : recommendation.badge === 'Medium' ? 'bg-orange-50 text-orange-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                  {recommendation.badge} CONFIDENCE
-                </span>
-              )}
-            </div>
-            <p className="text-[1.4rem] font-extrabold leading-tight text-neutral-900">{recommendation.title}</p>
-            <p className="mt-2 text-[1.05rem] text-neutral-600 font-medium">{recommendation.reason}</p>
-            
-            {nearestHotspot && recommendation.action !== "OFFLINE" && (
-              <div className="mt-5 bg-neutral-50 rounded-[1.25rem] p-4 border border-neutral-100 flex items-center justify-between">
-                <div>
-                  <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1">{lang === "ID" ? "Hotspot Terdekat" : "Nearest Hotspot"}</p>
-                  <p className="text-[1rem] font-black text-neutral-800">{nearestHotspot.name} <span className="text-neutral-500 font-bold text-[0.85rem]">({nearestHotspot.dist.toFixed(1)} km)</span></p>
+        {recommendation.action !== "OFFLINE" && (
+          <div className="flex gap-2 mt-4">
+            {nearestHotspot && (
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${nearestHotspot.lat},${nearestHotspot.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 bg-white text-neutral-900 text-[0.8rem] font-black py-3 rounded-2xl text-center active:scale-95 transition-all shadow"
+              >
+                Mulai Navigasi
+              </a>
+            )}
+            <Link href="/radar" className="flex-1 bg-white/20 text-white text-[0.8rem] font-black py-3 rounded-2xl text-center active:scale-95 transition-all">
+              Buka Radar
+            </Link>
+          </div>
+        )}
+      </div>
+
+      {/* STATS PILLS */}
+      <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+        <div className="shrink-0 bg-white rounded-xl px-3 py-2 shadow-sm border border-neutral-100 flex flex-col items-center min-w-[80px]">
+          <p className="text-[0.6rem] font-bold uppercase text-neutral-400 tracking-wide">Order</p>
+          <p className={`text-[0.85rem] font-black leading-tight ${zoneStats.orderan.includes("Tinggi") ? "text-emerald-600" : "text-neutral-700"}`}>{zoneStats.orderan.replace("Potensi ", "")}</p>
+        </div>
+        <div className="shrink-0 bg-white rounded-xl px-3 py-2 shadow-sm border border-neutral-100 flex flex-col items-center min-w-[80px]">
+          <p className="text-[0.6rem] font-bold uppercase text-neutral-400 tracking-wide">Saingan</p>
+          <p className={`text-[0.85rem] font-black leading-tight ${zoneStats.pesaing === "Padat" ? "text-red-600" : "text-neutral-700"}`}>{zoneStats.pesaing}</p>
+        </div>
+        <div className="shrink-0 bg-white rounded-xl px-3 py-2 shadow-sm border border-neutral-100 flex flex-col items-center min-w-[80px]">
+          <p className="text-[0.6rem] font-bold uppercase text-neutral-400 tracking-wide">Driver</p>
+          <p className="text-[0.85rem] font-black leading-tight text-neutral-700">{zoneStats.driverCount}</p>
+        </div>
+        {status === "Ngetem" && ngetemStartTime && !isIdle && (
+          <div className="shrink-0 bg-indigo-50 rounded-xl px-3 py-2 shadow-sm border border-indigo-100 flex flex-col items-center min-w-[80px]">
+            <p className="text-[0.6rem] font-bold uppercase text-indigo-400 tracking-wide">Ngetem</p>
+            <p className="text-[0.85rem] font-black leading-tight text-indigo-700">{idleMinutes}m</p>
+          </div>
+        )}
+      </div>
+
+      {/* TOP ZONES */}
+      {topZones.length > 0 && (
+        <div>
+          <p className="text-[0.65rem] font-black uppercase tracking-widest text-neutral-400 mb-2 px-1">Top Zona Sekarang</p>
+          <div className="flex flex-col gap-1.5">
+            {topZones.map((z, i) => {
+              const zl = zoneLabel[z.label] || { label: z.label, color: "text-neutral-600", bg: "bg-neutral-100" };
+              return (
+                <div key={z.id} className="bg-white rounded-2xl px-4 py-3 border border-neutral-100 shadow-sm flex items-center justify-between active:scale-[0.99] transition-all">
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 h-6 rounded-full bg-neutral-100 text-neutral-500 text-[0.7rem] font-black flex items-center justify-center shrink-0">{i+1}</span>
+                    <div>
+                      <p className="text-[0.9rem] font-black text-neutral-900 leading-none">{z.name}</p>
+                      <p className="text-[0.68rem] text-neutral-500 font-medium mt-0.5">{z.antar_drivers} antar · {z.ngetem_drivers} ngetem · {z.merchant_count} resto</p>
+                    </div>
+                  </div>
+                  <span className={`text-[0.62rem] font-black uppercase px-2 py-1 rounded-lg ${zl.bg} ${zl.color}`}>{zl.label}</span>
                 </div>
-                <span className={`text-[0.7rem] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg ${nearestHotspot.label === 'RAMAI' ? 'bg-red-100 text-red-600' : nearestHotspot.label === 'MENARIK' ? 'bg-orange-100 text-orange-600' : 'bg-neutral-200 text-neutral-600'}`}>
-                  {nearestHotspot.label}
-                </span>
-              </div>
-            )}
-
-            {recommendation.action !== "OFFLINE" && recommendation.action !== "BUSY" && (
-              <>
-                <Link href="/radar" className="mt-6 flex w-full items-center justify-center rounded-[1.25rem] py-4 text-[1.05rem] font-bold text-white shadow-lg active:scale-95 transition-all" style={{ backgroundColor: recommendation.color }}>
-                  {t("open_radar")}
-                </Link>
-                
-                <AIFeedback 
-                  title={recommendation.title} 
-                  zone={areaName || "Unknown"} 
-                  idleMinutes={status === "Ngetem" && ngetemStartTime ? Math.floor((Date.now() - ngetemStartTime) / 60000) : 0} 
-                  lang={lang} 
-                />
-              </>
-            )}
+              );
+            })}
           </div>
         </div>
-      </section>
-    </>
+      )}
+
+      {/* ACTIVE MERCHANTS */}
+      {merchants.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-2 px-1">
+            <p className="text-[0.65rem] font-black uppercase tracking-widest text-neutral-400">Resto Aktif</p>
+            <Link href="/radar" className="text-[0.7rem] font-bold text-blue-600">Lihat Peta →</Link>
+          </div>
+          <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-5 px-5 no-scrollbar">
+            {merchants.slice(0, 8).map(m => (
+              <div key={m.id} className="shrink-0 w-[110px] bg-white rounded-2xl p-3 border border-neutral-100 shadow-sm">
+                <div className="w-10 h-10 rounded-xl mb-2 flex items-center justify-center bg-orange-50">
+                  <span className="text-[1.2rem] font-black text-orange-500">{m.name.charAt(0)}</span>
+                </div>
+                <p className="text-[0.78rem] font-black text-neutral-900 line-clamp-2 leading-tight">{m.name}</p>
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {m.is_flash_sale && <span className="text-[0.55rem] font-black bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded">⚡ FLASH</span>}
+                  {m.promo_active && <span className="text-[0.55rem] font-black bg-red-100 text-red-700 px-1.5 py-0.5 rounded">PROMO</span>}
+                  <span className="text-[0.55rem] font-bold bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded">{m.busy_level}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

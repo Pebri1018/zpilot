@@ -273,93 +273,127 @@ export default function RadarPage() {
     };
   }, []);
 
+  const bestHotspot = hotspots.length > 0 ? hotspots[0] : null;
+  const ZONE_COLOR: Record<string, string> = { PELUANG: "#059669", MENARIK: "#EA580C", RAMAI: "#DC2626", KOMPETISI: "#BE123C", SEPI: "#9CA3AF" };
+  const bestColor = bestHotspot ? ZONE_COLOR[bestHotspot.label] || "#6B7280" : "#6B7280";
+
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-[#f7f7f8] text-neutral-900 antialiased">
-      <div className="relative z-10 p-5 h-full flex flex-col pointer-events-none">
-          {/* HEADER */}
-          <div className="flex justify-between items-start pointer-events-auto">
-            <div className="bg-[#f7f7f8]/90 backdrop-blur-xl px-4 py-2.5 rounded-2xl shadow-sm border border-neutral-200">
-              <h1 className="text-[1.1rem] font-black tracking-tight flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
-                Radar Intel
-              </h1>
-              <p className="text-[0.7rem] font-bold text-neutral-500 uppercase tracking-wider">{areaName || "Area Tidak Diketahui"}</p>
-            </div>
-            
-            <button 
-              onClick={fetchData}
-              disabled={fetching}
-              className="bg-[#f7f7f8]/90 backdrop-blur-xl px-4 py-2.5 rounded-2xl shadow-sm border border-neutral-200 flex flex-col items-end active:scale-95 transition-all disabled:opacity-80"
-            >
-              <div className="flex items-center gap-1.5">
-                {fetching && <svg className="w-3.5 h-3.5 text-neutral-400 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
-                <span className="text-[1.1rem] font-black">{driverCount}</span>
-              </div>
-              <span className="text-[0.65rem] font-bold text-neutral-500 uppercase tracking-widest">Driver</span>
-            </button>
-          </div>
+    <div className="relative w-full bg-neutral-950" style={{ height: "100dvh" }}>
 
-          {/* ERROR BANNER */}
-          {fetchError && (
-            <div className="mt-4 bg-red-500/90 backdrop-blur-md text-white px-4 py-3 rounded-2xl shadow-lg border border-red-400 pointer-events-auto animate-in fade-in slide-in-from-top-2">
-              <p className="text-[0.8rem] font-bold uppercase tracking-wider mb-0.5 flex items-center gap-1.5">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                Radar data failed to load
-              </p>
-              <p className="text-[0.85rem] font-medium leading-tight">{fetchError}</p>
-            </div>
-          )}
-
-          {/* MOVE SUGGESTION BANNER (AI DECISION) */}
-          {showMoveSuggest && (
-            <div className="mt-4 bg-[#4F46E5]/90 backdrop-blur-md text-white px-4 py-3 rounded-2xl shadow-lg border border-indigo-400 pointer-events-auto animate-in fade-in slide-in-from-top-2 flex items-start gap-3">
-              <div className="bg-white/20 p-2 rounded-xl shrink-0">
-                <svg className="w-5 h-5 text-white animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
-              </div>
-              <div className="flex-1">
-                <p className="text-[0.8rem] font-black uppercase tracking-wider mb-0.5">Saran Pindah Lokasi</p>
-                <p className="text-[0.8rem] font-medium leading-snug opacity-90">Kamu sudah diam lebih dari 15 menit. Coba cari Zona Peluang hijau terdekat.</p>
-              </div>
-              <button onClick={() => setShowMoveSuggest(false)} className="shrink-0 text-white/50 hover:text-white p-1">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-          )}
-      </div>
-
-      <div className="relative flex-[2] mx-4 mb-2 overflow-hidden rounded-[2.5rem] shadow-2xl border-4 border-white min-h-[60vh]">
+      {/* MAP — takes full screen */}
+      <div className="absolute inset-0">
         <RadarMap latitude={latitude} longitude={longitude} markers={markers} hotspots={hotspots} />
       </div>
 
-      {/* Legend — below map, horizontal scroll */}
-      <div className="mx-4 mb-6 bg-white rounded-2xl border border-neutral-100 shadow-sm px-4 py-3">
-        <p className="text-[0.6rem] font-bold uppercase tracking-widest text-neutral-400 mb-2">{t("legend")}</p>
-        <div className="flex flex-wrap gap-x-4 gap-y-1.5 mb-2 pb-2 border-b border-neutral-100">
-          <LegendItem color="bg-black" label={lang === "ID" ? "Kamu" : "You"} />
-          <LegendItem color="bg-indigo-600" label={lang === "ID" ? "Driver Ngetem" : "Driver Ngetem"} />
-          <LegendItem color="bg-pink-500" label={lang === "ID" ? "Driver Antar" : "Driver Antar"} />
-          <LegendItem color="bg-purple-500" label={lang === "ID" ? "Spot Mangkal" : "Spot"} />
-          <LegendItem color="bg-red-500" label={lang === "ID" ? "Resto Ramai" : "Busy"} />
-          <LegendItem color="bg-orange-400" label={lang === "ID" ? "Resto Sedang" : "Med"} />
-        </div>
-        <div className="flex gap-3 flex-wrap">
-          <LegendItem color="bg-red-500/30 border border-red-400" label="Hotspot Ramai" />
-          <LegendItem color="bg-orange-500/30 border border-orange-400" label="Hotspot Menarik" />
-          <LegendItem color="bg-neutral-500/20 border border-neutral-300" label="Hotspot Sepi" />
+      {/* TOP LEFT — Zone pill */}
+      <div className="absolute top-[max(1rem,env(safe-area-inset-top))] left-3 z-[500] pointer-events-none">
+        <div className="bg-neutral-950/80 backdrop-blur-md rounded-2xl px-3 py-2 shadow-xl border border-white/10">
+          <p className="text-[0.55rem] font-black uppercase tracking-widest text-white/40">Zona</p>
+          <p className="text-[0.85rem] font-black text-white leading-none">{areaName || "—"}</p>
         </div>
       </div>
 
-      <div className="pb-[calc(5rem+env(safe-area-inset-bottom))]" />
-      <DriverBottomNav />
-    </div>
-  );
-}
+      {/* TOP RIGHT — Driver count + refresh */}
+      <div className="absolute top-[max(1rem,env(safe-area-inset-top))] right-3 z-[500]">
+        <button
+          onClick={fetchData}
+          disabled={fetching}
+          className="bg-neutral-950/80 backdrop-blur-md rounded-2xl px-3 py-2 shadow-xl border border-white/10 flex flex-col items-center active:scale-95 transition-all"
+        >
+          <div className="flex items-center gap-1.5">
+            {fetching
+              ? <svg className="w-3.5 h-3.5 text-white/40 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
+              : <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            }
+            <span className="text-[1rem] font-black text-white">{driverCount}</span>
+          </div>
+          <span className="text-[0.52rem] font-black uppercase tracking-widest text-white/40">Driver</span>
+        </button>
+      </div>
 
-function LegendItem({ color, label }: { color: string; label: string }) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${color}`} />
-      <span className="text-[0.72rem] font-semibold text-neutral-700 whitespace-nowrap">{label}</span>
+      {/* ERROR / IDLE BANNER */}
+      {(fetchError || showMoveSuggest) && (
+        <div className="absolute top-[calc(max(1rem,env(safe-area-inset-top))+4rem)] left-3 right-3 z-[500] space-y-2">
+          {fetchError && (
+            <div className="bg-red-600/90 backdrop-blur-md text-white px-4 py-3 rounded-2xl flex items-center gap-2 shadow-xl">
+              <span className="text-[0.75rem] font-bold">{fetchError}</span>
+            </div>
+          )}
+          {showMoveSuggest && (
+            <div className="bg-indigo-600/90 backdrop-blur-md text-white px-4 py-3 rounded-2xl flex items-center gap-3 shadow-xl">
+              <svg className="w-5 h-5 animate-bounce shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+              <div className="flex-1">
+                <p className="text-[0.78rem] font-black">Idle 15 menit — Pindah Spot!</p>
+                <p className="text-[0.68rem] text-white/70">Cari zona hijau terdekat di peta.</p>
+              </div>
+              <button onClick={() => setShowMoveSuggest(false)} className="shrink-0 text-white/50 p-1">✕</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* COMPACT LEGEND — floating left */}
+      <div className="absolute bottom-[calc(9rem+env(safe-area-inset-bottom))] left-3 z-[500] pointer-events-none">
+        <div className="bg-neutral-950/75 backdrop-blur-md rounded-2xl p-2.5 shadow-xl border border-white/10 space-y-1.5">
+          {[
+            { color: "#000", border: "border-2 border-white", label: "Kamu" },
+            { color: "#4F46E5", label: "Ngetem" },
+            { color: "#EC4899", label: "Antar" },
+            { color: "#EF4444", label: "Resto Ramai" },
+            { color: "#F97316", label: "Resto Sedang" },
+            { color: "#8B5CF6", label: "Spot" },
+          ].map(({ color, border, label }) => (
+            <div key={label} className="flex items-center gap-2">
+              <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${border || ""}`} style={{ backgroundColor: color }} />
+              <span className="text-[0.62rem] font-bold text-white/80 whitespace-nowrap">{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* BOTTOM PANEL — best zone + navigation */}
+      <div className="absolute bottom-[calc(4rem+env(safe-area-inset-bottom))] left-3 right-3 z-[500]">
+        <div className="bg-neutral-950/85 backdrop-blur-xl rounded-3xl p-4 shadow-2xl border border-white/10">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-[0.55rem] font-black uppercase tracking-widest text-white/40">Zona Terbaik Sekarang</p>
+              <p className="text-[1.05rem] font-black text-white leading-tight">{bestHotspot?.name || "Memindai..."}</p>
+              {bestHotspot && (
+                <p className="text-[0.7rem] font-bold mt-0.5" style={{ color: bestColor }}>
+                  {bestHotspot.label} · {bestHotspot.merchant_count} resto · {bestHotspot.ngetem_drivers} ngetem
+                </p>
+              )}
+            </div>
+            {bestHotspot && (
+              <span className="text-[0.65rem] font-black uppercase px-3 py-1.5 rounded-xl" style={{ backgroundColor: bestColor + "33", color: bestColor }}>
+                {bestHotspot.label}
+              </span>
+            )}
+          </div>
+
+          <div className="flex gap-2">
+            {bestHotspot && (
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${bestHotspot.lat},${bestHotspot.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 bg-white text-neutral-900 text-[0.8rem] font-black py-2.5 rounded-2xl text-center active:scale-95 transition-all"
+              >
+                Navigasi
+              </a>
+            )}
+            <button
+              onClick={fetchData}
+              disabled={fetching}
+              className="flex-1 bg-white/15 text-white text-[0.8rem] font-black py-2.5 rounded-2xl text-center active:scale-95 transition-all border border-white/10"
+            >
+              {fetching ? "Loading..." : "Refresh"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <DriverBottomNav />
     </div>
   );
 }

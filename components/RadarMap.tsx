@@ -143,9 +143,9 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
 
             const pinIcon = L.divIcon({
             className: "bg-transparent",
-            html: `<div style="display: flex; align-items: center; gap: 4px; transform: translate(-${size/2}px, -${size/2}px); pointer-events: none;">
+            html: `<div style="display: flex; align-items: center; gap: 4px; transform: translate(-${size/2}px, -${size/2}px); cursor: pointer;">
                     <div style="width: ${size}px; height: ${size}px; background-color: ${colors.fill}; border: 2.5px solid rgba(255,255,255,0.95); border-radius: 50%; box-shadow: 0 1px 5px rgba(0,0,0,0.4), 0 0 0 1px ${colors.fill}; flex-shrink:0;"></div>
-                    ${showLabel ? `<span style="font-size: 9px; font-weight: 900; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; pointer-events: auto; text-shadow: 0 0 4px #fff, 0 0 4px #fff, 0 0 4px #fff;">${m.label.length > 16 ? m.label.slice(0, 15) + '\u2026' : m.label}</span>` : ''}
+                    ${showLabel ? `<span style="font-size: 9px; font-weight: 900; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; text-shadow: 0 0 4px #fff, 0 0 4px #fff, 0 0 4px #fff;">${m.label.length > 16 ? m.label.slice(0, 15) + '\u2026' : m.label}</span>` : ''}
                   </div>`,
             iconSize: [0, 0],
             iconAnchor: [0, 0],
