@@ -189,33 +189,39 @@ export type MerchantSignal = {
 
 // Primary query for Home page — persistent active merchants sorted by busy_score
 export async function getActiveMerchants(areaName: string | null): Promise<MerchantSignal[]> {
-  if (!areaName) return [];
-
   const supabase = getServiceClient();
+  const now = new Date().toISOString();
 
-  const { data, error } = await supabase
+  // Get all active merchants - prioritize same area first, but include others
+  const query = supabase
     .from("merchant_signals")
     .select("*")
-    .eq("area", areaName)
     .eq("is_active", true)
+    .or(`expires_at.is.null,expires_at.gt.${now}`)
     .order("busy_score", { ascending: false })
+    .order("promo_active", { ascending: false })
     .order("updated_at", { ascending: false })
-    .limit(15);
+    .limit(20);
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("getActiveMerchants error:", error);
-    // Fallback: try without is_active filter (in case migration not run yet)
-    const { data: fallback } = await supabase
-      .from("merchant_signals")
-      .select("*")
-      .eq("area", areaName)
-      .gt("expires_at", new Date().toISOString())
-      .order("created_at", { ascending: false })
-      .limit(15);
-    return fallback || [];
+    return [];
   }
 
-  return data || [];
+  // Sort: same area first, then by score
+  const result = data || [];
+  if (areaName) {
+    result.sort((a, b) => {
+      const aLocal = a.area?.toLowerCase().includes(areaName.toLowerCase()) ? 1 : 0;
+      const bLocal = b.area?.toLowerCase().includes(areaName.toLowerCase()) ? 1 : 0;
+      if (bLocal !== aLocal) return bLocal - aLocal;
+      return (b.busy_score || 0) - (a.busy_score || 0);
+    });
+  }
+
+  return result;
 }
 
 // For Admin listing — all merchants regardless of area

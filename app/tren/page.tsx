@@ -167,24 +167,7 @@ export default function TrenPage() {
               </div>
             </section>
 
-            {/* DAILY PERFORMANCE */}
-            <section>
-              <h2 className="text-[0.72rem] font-bold uppercase tracking-widest text-neutral-400 mb-2 ml-1">Performa Hari Ini</h2>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="bg-white rounded-2xl p-3 shadow-sm border border-neutral-100 flex flex-col items-center justify-center text-center">
-                  <span className="text-[1.25rem] font-black text-green-600">{performance.correct}</span>
-                  <span className="text-[0.6rem] font-bold text-neutral-400 uppercase mt-1 tracking-wider">Tepat</span>
-                </div>
-                <div className="bg-white rounded-2xl p-3 shadow-sm border border-neutral-100 flex flex-col items-center justify-center text-center">
-                  <span className="text-[1.25rem] font-black text-red-500">{performance.failed}</span>
-                  <span className="text-[0.6rem] font-bold text-neutral-400 uppercase mt-1 tracking-wider">Meleset</span>
-                </div>
-                <div className="bg-white rounded-2xl p-3 shadow-sm border border-neutral-100 flex flex-col items-center justify-center text-center">
-                  <span className="text-[1.25rem] font-black text-blue-600">{performance.avgWaitSaved}m</span>
-                  <span className="text-[0.6rem] font-bold text-neutral-400 uppercase mt-1 tracking-wider">Waktu Hemat</span>
-                </div>
-              </div>
-            </section>
+            {/* DAILY PERFORMANCE — Hidden until analytics backend is ready */}
 
             {/* TOP 5 LIVE ZONES */}
             <section>

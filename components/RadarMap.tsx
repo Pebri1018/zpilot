@@ -125,13 +125,27 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
         
         {markers.map((m) => {
           const colors = getMarkerColor(m.type);
-          const isMerchant = m.type.startsWith("merchant");
           
+            // Pin size by priority (px)
+            const getPinSize = (type: string) => {
+              switch(type) {
+                case "merchant_high": return 14;
+                case "merchant_med": return 11;
+                case "merchant_low": return 8;
+                case "driver_ngetem": return 13;
+                case "driver_antar": return 10;
+                case "spot": return 10;
+                default: return 10;
+              }
+            };
+            const size = getPinSize(m.type);
+            const showLabel = !m.type.startsWith("driver_") && m.type !== "merchant_low" && zoom >= 14;
+
             const pinIcon = L.divIcon({
             className: "bg-transparent",
-            html: `<div style="display: flex; align-items: center; gap: 5px; transform: translate(-9px, -9px); pointer-events: none;">
-                    <div style="width: ${m.type.startsWith('driver_') ? '18px' : '14px'}; height: ${m.type.startsWith('driver_') ? '18px' : '14px'}; background-color: ${colors.fill}; border: 3px solid rgba(255,255,255,0.95); border-radius: 50%; box-shadow: 0 2px 8px rgba(0,0,0,0.45), 0 0 0 1.5px ${colors.fill}; flex-shrink:0;"></div>
-                    ${!m.type.startsWith("driver_") && m.type !== "merchant_low" && zoom >= 16 ? `<span style="font-size: 9.5px; font-weight: 900; color: #111; white-space: nowrap; max-width: 90px; overflow: hidden; text-overflow: ellipsis; pointer-events: auto; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff; letter-spacing: 0.01em;">${m.label.length > 18 ? m.label.slice(0, 17) + '…' : m.label}</span>` : ''}
+            html: `<div style="display: flex; align-items: center; gap: 4px; transform: translate(-${size/2}px, -${size/2}px); pointer-events: none;">
+                    <div style="width: ${size}px; height: ${size}px; background-color: ${colors.fill}; border: 2.5px solid rgba(255,255,255,0.95); border-radius: 50%; box-shadow: 0 1px 5px rgba(0,0,0,0.4), 0 0 0 1px ${colors.fill}; flex-shrink:0;"></div>
+                    ${showLabel ? `<span style="font-size: 9px; font-weight: 900; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; pointer-events: auto; text-shadow: 0 0 4px #fff, 0 0 4px #fff, 0 0 4px #fff;">${m.label.length > 16 ? m.label.slice(0, 15) + '\u2026' : m.label}</span>` : ''}
                   </div>`,
             iconSize: [0, 0],
             iconAnchor: [0, 0],

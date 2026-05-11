@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useLocation } from "@/hooks/useLocation";
 import { getRecommendationV2, getZoneStats, type RecommendationResult, type ZoneStatsResult } from "@/app/actions/recommendation";
@@ -69,10 +69,23 @@ export function LiveDashboard() {
     }
   }, [status, ngetemStartTime]);
 
+  // Throttle: only re-analyze if >5 mins since last OR status/area changed
+  const lastAnalysisRef = useRef<{ area: string|null; status: string; ts: number }>({ area: null, status: "", ts: 0 });
+
   useEffect(() => {
     async function fetchData() {
+      const now = Date.now();
+      const last = lastAnalysisRef.current;
+      const areaChanged = last.area !== areaName;
+      const statusChanged = last.status !== status;
+      const stale = now - last.ts > 5 * 60 * 1000; // 5 minutes
+
+      // Skip if nothing meaningful changed AND not stale
+      if (!areaChanged && !statusChanged && !stale) return;
+      lastAnalysisRef.current = { area: areaName, status, ts: now };
+
       try {
-        const idleMinutes = status === "Ngetem" && ngetemStartTime ? Math.floor((Date.now() - ngetemStartTime) / 60000) : 0;
+        const idleMinutes = status === "Ngetem" && ngetemStartTime ? Math.floor((now - ngetemStartTime) / 60000) : 0;
         
         // Run ALL fetches in parallel — no sequential awaits
         const [merchantsResult, statsResult, hotspotResult] = await Promise.all([
@@ -118,7 +131,6 @@ export function LiveDashboard() {
         }
       } catch (e) {
         console.error("Failed to fetch dashboard data", e);
-        // Don't stay on loading — show a safe fallback
         setRecommendation({
           action: "STAY",
           title: "Standby",
@@ -128,9 +140,8 @@ export function LiveDashboard() {
         });
       }
     }
-        // Always run fetchData, even if areaName is null — engine still works without location
     fetchData();
-  }, [areaName, time.getHours(), status, ngetemStartTime, latitude, longitude, lang]);
+  }, [areaName, status, lang]);
 
   // Real-time merchant listener
   useEffect(() => {
