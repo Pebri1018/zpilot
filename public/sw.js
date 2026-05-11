@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ztips-pilot-cache-v3';
+const CACHE_NAME = 'ztips-cache-v4';
 const urlsToCache = [
   '/manifest.json'
 ];
@@ -23,12 +23,36 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Network first — always fetch fresh, fall back to cache
+// Network first — safe fetch handler
 self.addEventListener('fetch', (event) => {
+  // Only cache GET requests
+  if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+  
+  // Do NOT intercept dynamic routes or APIs
+  if (
+    url.pathname.startsWith('/radar') || 
+    url.pathname.startsWith('/admin') || 
+    url.pathname.startsWith('/akun') || 
+    url.pathname.startsWith('/api') ||
+    url.hostname.includes('supabase.co')
+  ) {
+    return; // Pass through to browser fetch
+  }
+
   event.respondWith(
-    fetch(event.request).catch(() =>
-      caches.match(event.request)
-    )
+    fetch(event.request).catch(async () => {
+      const cached = await caches.match(event.request);
+      if (cached) return cached;
+      
+      // Fallback response instead of throwing TypeError
+      return new Response('Network error offline fallback', {
+        status: 503,
+        statusText: 'Service Unavailable',
+        headers: new Headers({ 'Content-Type': 'text/plain' })
+      });
+    })
   );
 });
 

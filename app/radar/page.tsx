@@ -32,6 +32,7 @@ export default function RadarPage() {
   const [markers, setMarkers] = useState<RadarMarker[]>([]);
   const [hotspots, setHotspots] = useState<HotspotZone[]>([]);
   const [fetching, setFetching] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -46,26 +47,28 @@ export default function RadarPage() {
           .select("id, last_lat, last_lng, status, nama")
           .not("last_lat", "is", null);
 
-        if (dErr) console.error("RADAR DEBUG: Driver fetch error:", dErr.message);
+        if (dErr) {
+          console.error("RADAR DEBUG: Supabase error fetching driver_locations:", dErr);
+          setFetchError("Gagal memuat data driver.");
+        } else {
+          console.log("RADAR DEBUG: Fetched drivers count:", drivers?.length || 0);
+        }
 
         // 2. Fetch Active Merchants
         let merchantsData: any[] = [];
-        try {
-          const { data: merchants, error: mErr } = await supabase
-            .from("merchant_signals")
-            .select("*")
-            .eq("is_active", true)
-            .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
-            .not("lat", "is", null);
+        const { data: merchants, error: mErr } = await supabase
+          .from("merchant_signals")
+          .select("*")
+          .eq("is_active", true)
+          .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+          .not("lat", "is", null);
 
-          if (mErr) {
-            console.error("RADAR DEBUG: Merchant fetch error:", mErr.message);
-          } else {
-            merchantsData = merchants || [];
-            console.log("RADAR DEBUG: Fetched merchants count:", merchantsData.length);
-          }
-        } catch (e) {
-          console.error("RADAR DEBUG: Merchant fetch crash:", e);
+        if (mErr) {
+          console.error("RADAR DEBUG: Supabase error fetching merchant_signals:", mErr);
+          setFetchError("Gagal memuat data merchant.");
+        } else {
+          merchantsData = merchants || [];
+          console.log("RADAR DEBUG: Fetched merchants count:", merchantsData.length);
         }
 
         // 3. Fetch Hangout Spots
@@ -74,18 +77,25 @@ export default function RadarPage() {
           .select("*")
           .not("lat", "is", null);
 
-        if (sErr) console.error("RADAR DEBUG: Spots fetch error:", sErr.message);
+        if (sErr) {
+          console.error("RADAR DEBUG: Supabase error fetching ngetem_spots:", sErr);
+          setFetchError("Gagal memuat data spot mangkal.");
+        } else {
+          console.log("RADAR DEBUG: Fetched spots count:", spots?.length || 0);
+        }
 
         // 4. Fetch Admin Manual Signals
         let manualSignals: any[] = [];
-        try {
-          const { data: mSigs } = await supabase
-            .from("admin_manual_signals")
-            .select("*")
-            .gt("expires_at", new Date().toISOString());
+        const { data: mSigs, error: manualErr } = await supabase
+          .from("admin_manual_signals")
+          .select("*")
+          .gt("expires_at", new Date().toISOString());
+        
+        if (manualErr) {
+          console.error("RADAR DEBUG: Supabase error fetching admin_manual_signals:", manualErr);
+        } else {
           manualSignals = mSigs || [];
-        } catch (e) {
-          console.warn("RADAR DEBUG: No manual signals table found.");
+          console.log("RADAR DEBUG: Fetched manual signals count:", manualSignals.length);
         }
 
         const newMarkers: RadarMarker[] = [];
@@ -158,7 +168,8 @@ export default function RadarPage() {
           spots: spots?.length || 0
         });
       } catch (err) {
-        console.error("RADAR DEBUG: Fetch error", err);
+        console.error("RADAR DEBUG: Critical Fetch error", err);
+        setFetchError("Koneksi gagal atau terjadi kesalahan server.");
       } finally {
         setFetching(false);
       }
@@ -171,16 +182,34 @@ export default function RadarPage() {
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-[#f7f7f8] text-neutral-900 antialiased">
-      <header className="px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-4 flex justify-between items-end">
-        <div>
-          <h1 className="text-[1.35rem] font-bold tracking-tight">Radar Intel</h1>
-          <p className="text-[0.85rem] text-neutral-500">{areaName || t("searching_loc")}</p>
-        </div>
-        <div className="bg-white px-3 py-1.5 rounded-xl border border-neutral-100 shadow-sm flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[0.7rem] font-bold uppercase tracking-wider">{fetching ? "..." : markers.length} Sinyal</span>
-        </div>
-      </header>
+      <div className="relative z-10 p-5 h-full flex flex-col pointer-events-none">
+          {/* HEADER */}
+          <div className="flex justify-between items-start pointer-events-auto">
+            <div className="bg-[#f7f7f8]/90 backdrop-blur-xl px-4 py-2.5 rounded-2xl shadow-sm border border-neutral-200">
+              <h1 className="text-[1.1rem] font-black tracking-tight flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
+                Radar Intel
+              </h1>
+              <p className="text-[0.7rem] font-bold text-neutral-500 uppercase tracking-wider">{areaName || "Area Tidak Diketahui"}</p>
+            </div>
+            
+            <div className="bg-[#f7f7f8]/90 backdrop-blur-xl px-4 py-2.5 rounded-2xl shadow-sm border border-neutral-200 flex flex-col items-end">
+              <span className="text-[1.1rem] font-black">{markers.length}</span>
+              <span className="text-[0.65rem] font-bold text-neutral-500 uppercase tracking-widest">Sinyal</span>
+            </div>
+          </div>
+
+          {/* ERROR BANNER */}
+          {fetchError && (
+            <div className="mt-4 bg-red-500/90 backdrop-blur-md text-white px-4 py-3 rounded-2xl shadow-lg border border-red-400 pointer-events-auto animate-in fade-in slide-in-from-top-2">
+              <p className="text-[0.8rem] font-bold uppercase tracking-wider mb-0.5 flex items-center gap-1.5">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                Radar data failed to load
+              </p>
+              <p className="text-[0.85rem] font-medium leading-tight">{fetchError}</p>
+            </div>
+          )}
+      </div>
 
       <div className="relative flex-[2] mx-4 mb-2 overflow-hidden rounded-[2.5rem] shadow-2xl border-4 border-white min-h-[60vh]">
         <RadarMap latitude={latitude} longitude={longitude} markers={markers} hotspots={hotspots} />
