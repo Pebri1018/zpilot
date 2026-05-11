@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { DriverBottomNav } from "@/components/DriverBottomNav";
@@ -33,6 +33,25 @@ export default function RadarPage() {
   const [hotspots, setHotspots] = useState<HotspotZone[]>([]);
   const [fetching, setFetching] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Idle Timer State
+  const [showMoveSuggest, setShowMoveSuggest] = useState(false);
+  const lastMovedRef = useRef<number>(0);
+  const lastLatRef = useRef<number | null>(null);
+  const lastLngRef = useRef<number | null>(null);
+
+  // Haversine distance in km
+  const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; 
+    const dLat = (lat2 - lat1) * Math.PI / 180;  
+    const dLon = (lon2 - lon1) * Math.PI / 180; 
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2); 
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    return R * c; 
+  };
 
   const fetchData = async () => {
     setFetching(true);
@@ -179,10 +198,65 @@ export default function RadarPage() {
       }
   };
 
+  // Idle Tracker
+  useEffect(() => {
+    if (!latitude || !longitude) return;
+    
+    if (lastLatRef.current && lastLngRef.current) {
+      const dist = getDistance(latitude, longitude, lastLatRef.current, lastLngRef.current);
+      if (dist > 0.05) { // 50 meters
+        lastMovedRef.current = Date.now();
+        setShowMoveSuggest(false);
+      }
+    } else {
+      lastMovedRef.current = Date.now();
+    }
+    
+    lastLatRef.current = latitude;
+    lastLngRef.current = longitude;
+  }, [latitude, longitude]);
+
+  useEffect(() => {
+    const checkIdle = setInterval(() => {
+      if (!lastMovedRef.current) return;
+      const idleMinutes = (Date.now() - lastMovedRef.current) / 60000;
+      if (idleMinutes >= 15 && !showMoveSuggest) {
+        setShowMoveSuggest(true);
+      }
+    }, 60000); // Check every minute
+    return () => clearInterval(checkIdle);
+  }, [showMoveSuggest]);
+
+  // Adaptive Polling
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 10000); // 10 seconds refresh
-    return () => clearInterval(interval);
+    let timeoutId: NodeJS.Timeout;
+    let isCancelled = false;
+    
+    const scheduleNextFetch = () => {
+      if (isCancelled) return;
+      const interval = document.visibilityState === 'visible' ? 10000 : 30000;
+      timeoutId = setTimeout(() => {
+        if (!isCancelled) fetchData().finally(scheduleNextFetch);
+      }, interval);
+    };
+    
+    scheduleNextFetch();
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        clearTimeout(timeoutId);
+        fetchData().finally(scheduleNextFetch);
+      }
+    };
+    
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    
+    return () => {
+      isCancelled = true;
+      clearTimeout(timeoutId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   return (
@@ -219,6 +293,22 @@ export default function RadarPage() {
                 Radar data failed to load
               </p>
               <p className="text-[0.85rem] font-medium leading-tight">{fetchError}</p>
+            </div>
+          )}
+
+          {/* MOVE SUGGESTION BANNER (AI DECISION) */}
+          {showMoveSuggest && (
+            <div className="mt-4 bg-[#4F46E5]/90 backdrop-blur-md text-white px-4 py-3 rounded-2xl shadow-lg border border-indigo-400 pointer-events-auto animate-in fade-in slide-in-from-top-2 flex items-start gap-3">
+              <div className="bg-white/20 p-2 rounded-xl shrink-0">
+                <svg className="w-5 h-5 text-white animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-[0.8rem] font-black uppercase tracking-wider mb-0.5">Saran Pindah Lokasi</p>
+                <p className="text-[0.8rem] font-medium leading-snug opacity-90">Kamu sudah diam lebih dari 15 menit. Coba cari Zona Peluang hijau terdekat.</p>
+              </div>
+              <button onClick={() => setShowMoveSuggest(false)} className="shrink-0 text-white/50 hover:text-white p-1">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
             </div>
           )}
       </div>

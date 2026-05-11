@@ -41,7 +41,7 @@ export type HotspotZone = {
   lat: number;
   lng: number;
   score: number;
-  label: "RAMAI" | "MENARIK" | "SEPI";
+  label: "RAMAI" | "MENARIK" | "SEPI" | "PELUANG" | "KOMPETISI";
   antar_drivers: number;
   ngetem_drivers: number;
   merchant_count: number;
@@ -115,8 +115,17 @@ export async function getHotspots(): Promise<HotspotZone[]> {
       // (antar * 3) + (merchants * 2) - (ngetem * 1.5)
       const score = (antarCount * 3) + (merchantCount * 2) - (ngetemCount * 1.5);
       
-      let label: "RAMAI" | "MENARIK" | "SEPI" = "SEPI";
-      if (score >= 12) label = "RAMAI";
+      let label: HotspotZone["label"] = "SEPI";
+      
+      // Opportunity zone: Good merchants, low ngetem
+      if (merchantCount >= 2 && ngetemCount <= 1) {
+        label = "PELUANG";
+      } 
+      // Competition zone: Too many ngetem drivers compared to merchants
+      else if (ngetemCount >= 4 && ngetemCount > merchantCount * 1.5) {
+        label = "KOMPETISI";
+      }
+      else if (score >= 12) label = "RAMAI";
       else if (score >= 5) label = "MENARIK";
 
       return {

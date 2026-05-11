@@ -147,7 +147,7 @@ export default function TrenPage() {
                   <div className="flex-1">
                     <p className="font-bold text-[0.95rem] text-neutral-900">{historical.label}</p>
                     <p className="text-[0.75rem] text-neutral-500 font-mono mt-0.5">{historical.timeRange}</p>
-                    <p className="text-[0.82rem] text-neutral-600 leading-relaxed mt-2 line-clamp-2">{historical.description}</p>
+                    <p className="text-[0.82rem] text-neutral-600 leading-relaxed mt-2">{historical.description}</p>
                   </div>
                 </div>
                 {historical.recommendedZones.length > 0 && (
@@ -208,7 +208,7 @@ export default function TrenPage() {
                         </p>
                       </div>
                     </div>
-                    <span className={`text-[0.65rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg shrink-0 ${h.label === 'RAMAI' ? 'bg-red-50 text-red-600 border border-red-100' : h.label === 'MENARIK' ? 'bg-orange-50 text-orange-600 border border-orange-100' : 'bg-neutral-50 text-neutral-600 border border-neutral-200'}`}>
+                    <span className={`text-[0.65rem] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg shrink-0 ${h.label === 'RAMAI' ? 'bg-red-50 text-red-600 border border-red-100' : h.label === 'KOMPETISI' ? 'bg-rose-50 text-rose-700 border border-rose-200' : h.label === 'PELUANG' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : h.label === 'MENARIK' ? 'bg-orange-50 text-orange-600 border border-orange-100' : 'bg-neutral-50 text-neutral-600 border border-neutral-200'}`}>
                       {h.label}
                     </span>
                   </div>

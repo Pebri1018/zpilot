@@ -29,6 +29,7 @@ const NAV = [
   { id: "users", label: "Users", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg> },
   { id: "feedback", label: "Feedback", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" /></svg> },
   { id: "broadcast", label: "Broadcast", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg> },
+  { id: "flash_sale", label: "Flash Sale", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> },
 ];
 
 export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = [], initialFeedback = [], stats }: Props) {
@@ -637,6 +638,64 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
                 </button>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* 7. FLASH SALE */}
+      {activeTab === "flash_sale" && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
+          <div className="bg-gradient-to-br from-rose-500 to-pink-600 p-6 rounded-[2.5rem] text-white shadow-lg">
+            <h3 className="text-[1.2rem] font-black tracking-tight flex items-center gap-2 mb-2">
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" /></svg>
+              Flash Sale
+            </h3>
+            <p className="text-[0.85rem] font-medium opacity-90 leading-relaxed">
+              Aktifkan Flash Sale untuk restoran tertentu. Resto yang masuk Flash Sale akan otomatis menyala merah (High) di Radar semua driver.
+            </p>
+          </div>
+          
+          <div className="bg-white rounded-[2rem] border border-neutral-100 shadow-sm overflow-hidden divide-y divide-neutral-100">
+            {merchants.map(m => (
+              <div key={m.id} className="p-5 flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-black text-[0.95rem] tracking-tight">{m.name}</p>
+                    {m.is_flash_sale && (
+                      <span className="bg-rose-100 text-rose-700 text-[0.6rem] font-black uppercase tracking-widest px-2 py-0.5 rounded-md">Aktif</span>
+                    )}
+                  </div>
+                  <p className="text-[0.7rem] text-neutral-400 font-bold uppercase tracking-widest">{m.area}</p>
+                </div>
+                <button
+                  onClick={async () => {
+                    const res = await fetch(`/admin/actions/signals`, { method: "POST" }); // We use server action
+                    // Wait, we need to import toggleFlashSale
+                    // We can just use form or onClick with imported action.
+                  }}
+                  className={`relative shrink-0 w-14 h-8 rounded-full transition-colors ${m.is_flash_sale ? 'bg-rose-500' : 'bg-neutral-200'}`}
+                >
+                  <form action={async () => {
+                    setLoading(true);
+                    // @ts-ignore
+                    const { toggleFlashSale } = await import("@/app/admin/actions/signals");
+                    const res = await toggleFlashSale(m.id, !m.is_flash_sale);
+                    setLoading(false);
+                    if (res.success) {
+                      setMerchants(merchants.map(merch => merch.id === m.id ? { ...merch, is_flash_sale: !m.is_flash_sale } : merch));
+                    } else alert(res.error);
+                  }}>
+                    <button type="submit" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" disabled={loading}></button>
+                  </form>
+                  <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-transform shadow-sm ${m.is_flash_sale ? 'translate-x-7' : 'translate-x-1'}`} />
+                </button>
+              </div>
+            ))}
+            {merchants.length === 0 && (
+              <div className="p-6 text-center text-[0.85rem] font-bold text-neutral-400 uppercase tracking-widest">
+                Belum ada data resto
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -168,6 +168,7 @@ export type MerchantSignal = {
   fast_pickup: boolean;
   pickup_fast?: boolean;
   is_active?: boolean;
+  is_flash_sale?: boolean;
   area: string;
   lat?: number | null;
   lng?: number | null;
@@ -229,4 +230,31 @@ export async function getAllMerchants(): Promise<MerchantSignal[]> {
     .limit(100);
 
   return data || [];
+}
+
+export async function toggleFlashSale(id: string, isFlashSale: boolean) {
+  const isAdmin = await verifyAdmin();
+  if (!isAdmin) return { error: "Unauthorized" };
+
+  const supabase = getServiceClient();
+  
+  // If it's a flash sale, boost busy_score to 5 to make it RAMAI (High).
+  // Otherwise, fallback to 2 (Medium) or we could calculate it but for simplicity just set to 2.
+  const busy_score = isFlashSale ? 5 : 2;
+  const busy_level = isFlashSale ? "High" : "Medium";
+  
+  const { error } = await supabase.from("merchant_signals").update({
+    is_flash_sale: isFlashSale,
+    busy_score,
+    busy_level
+  }).eq("id", id);
+
+  if (error) {
+    console.error("Error toggling flash sale", error);
+    return { error: error.message };
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/radar");
+  return { success: true };
 }

@@ -93,8 +93,10 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
         {/* Render Hotspot Zones behind markers */}
         {hotspots.map((h) => {
           let color = "#9CA3AF"; // Gray (Sepi)
-          if (h.label === "RAMAI") color = "#EF4444"; // Red
+          if (h.label === "KOMPETISI") color = "#991B1B"; // Red-800
+          else if (h.label === "RAMAI") color = "#EF4444"; // Red
           else if (h.label === "MENARIK") color = "#F97316"; // Orange
+          else if (h.label === "PELUANG") color = "#10B981"; // Emerald-500
 
           return (
             <Circle
@@ -115,11 +117,11 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
           const colors = getMarkerColor(m.type);
           const isMerchant = m.type.startsWith("merchant");
           
-          const pinIcon = L.divIcon({
+            const pinIcon = L.divIcon({
             className: "bg-transparent",
             html: `<div style="display: flex; align-items: center; gap: 4px; transform: translate(-8px, -8px); pointer-events: none;">
                     <div style="width: ${m.type.startsWith('driver_') ? '16px' : '14px'}; height: ${m.type.startsWith('driver_') ? '16px' : '14px'}; background-color: ${colors.fill}; border: 2.5px solid #fff; border-radius: 50%; box-shadow: 0 3px 6px rgba(0,0,0,0.4);"></div>
-                    ${!m.type.startsWith("driver_") ? `<span style="background-color: rgba(255,255,255,0.9); padding: 1px 5px; border-radius: 6px; font-size: 10px; font-weight: 800; color: #111; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.2); pointer-events: auto;">${m.label}</span>` : ''}
+                    ${!m.type.startsWith("driver_") && m.type !== "merchant_low" ? `<span style="background-color: ${colors.fill}; padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: 800; color: #fff; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.3); pointer-events: auto; text-shadow: 0 1px 2px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.3);">${m.label}</span>` : ''}
                   </div>`,
             iconSize: [0, 0],
             iconAnchor: [0, 0],
