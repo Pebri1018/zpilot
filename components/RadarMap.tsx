@@ -115,18 +115,15 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
           const colors = getMarkerColor(m.type);
           const isMerchant = m.type.startsWith("merchant");
           
-          const pinSize = isMerchant ? 32 : 24;
           const pinIcon = L.divIcon({
             className: "bg-transparent",
-            html: `<div style="position: relative; display: flex; align-items: center; justify-content: center;">
-                    <svg viewBox="0 0 24 24" fill="${colors.fill}" stroke="#fff" stroke-width="1.5" style="width: ${pinSize}px; height: ${pinSize}px; filter: drop-shadow(0px 4px 4px rgba(0,0,0,0.25));">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 21.5S4.5 13.5 4.5 9a7.5 7.5 0 0 1 15 0c0 4.5-7.5 12.5-7.5 12.5z"/>
-                      <circle cx="12" cy="9" r="3.5" fill="#fff" stroke="none"/>
-                    </svg>
+            html: `<div style="display: flex; align-items: center; gap: 4px; transform: translate(-8px, -8px); pointer-events: none;">
+                    <div style="width: 12px; height: 12px; background-color: ${colors.fill}; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
+                    <span style="background-color: rgba(255,255,255,0.8); padding: 0px 4px; border-radius: 4px; font-size: 10px; font-weight: 700; color: #111; white-space: nowrap; text-shadow: 0 1px 2px #fff; pointer-events: auto;">${m.label}</span>
                   </div>`,
-            iconSize: [pinSize, pinSize],
-            iconAnchor: [pinSize / 2, pinSize],
-            popupAnchor: [0, -pinSize + 4]
+            iconSize: [0, 0],
+            iconAnchor: [0, 0],
+            popupAnchor: [0, -10]
           });
           
           return (
@@ -144,28 +141,26 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
                     </div>
                   </div>
                   
-                  {isMerchant && (
-                    <div className="flex flex-col gap-1.5 mt-2">
-                      <a
-                        href={`https://www.google.com/maps/dir/?api=1&destination=${m.lat},${m.lng}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 w-full py-2.5 bg-neutral-900 text-white rounded-xl text-[0.72rem] font-bold active:scale-95 transition-all shadow-md"
-                      >
-                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                        Google Maps
-                      </a>
-                      <a
-                        href={`https://waze.com/ul?ll=${m.lat},${m.lng}&navigate=yes`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#05C8F7] text-white rounded-xl text-[0.72rem] font-bold active:scale-95 transition-all shadow-md"
-                      >
-                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm1 14.93V15a1 1 0 00-2 0v1.93A8.001 8.001 0 014.07 9H6a1 1 0 000-2H4.07A8.001 8.001 0 0111 3.07V5a1 1 0 002 0V3.07A8.001 8.001 0 0119.93 9H18a1 1 0 000 2h1.93A8.001 8.001 0 0113 16.93z"/></svg>
-                        Waze
-                      </a>
-                    </div>
-                  )}
+                  <div className="flex flex-col gap-1.5 mt-2">
+                    <a
+                      href={`https://www.google.com/maps/dir/?api=1&destination=${m.lat},${m.lng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full py-2.5 bg-neutral-900 text-white rounded-xl text-[0.72rem] font-bold active:scale-95 transition-all shadow-md"
+                    >
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                      Google Maps
+                    </a>
+                    <a
+                      href={`https://waze.com/ul?ll=${m.lat},${m.lng}&navigate=yes`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#05C8F7] text-white rounded-xl text-[0.72rem] font-bold active:scale-95 transition-all shadow-md"
+                    >
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm1 14.93V15a1 1 0 00-2 0v1.93A8.001 8.001 0 014.07 9H6a1 1 0 000-2H4.07A8.001 8.001 0 0111 3.07V5a1 1 0 002 0V3.07A8.001 8.001 0 0119.93 9H18a1 1 0 000 2h1.93A8.001 8.001 0 0113 16.93z"/></svg>
+                      Waze
+                    </a>
+                  </div>
                 </div>
               </Popup>
             </Marker>

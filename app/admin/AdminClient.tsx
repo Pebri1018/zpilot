@@ -16,7 +16,7 @@ type Props = {
   initialMerchants?: MerchantSignal[];
   initialUsers?: any[];
   initialFeedback?: any[];
-  stats: { users: number; feedback: number; signals: number };
+  stats: { users: number; feedback: number; signals: number; resto: number; seller: number; spots: number };
 };
 
 const NAV = [
@@ -58,6 +58,13 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Top Bar */}
+      <div className="flex justify-between items-center -mb-2 animate-in fade-in slide-in-from-top-2">
+        <a href="/akun" className="flex items-center gap-2 text-[0.8rem] font-bold text-neutral-500 bg-white px-4 py-2.5 rounded-xl shadow-sm border border-neutral-100 active:scale-95 transition-all">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+          Kembali ke App
+        </a>
+      </div>
       {/* Admin Nav */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-2 px-5 sticky top-[max(1.25rem,env(safe-area-inset-top))] z-40 bg-[#f7f7f8]/95 backdrop-blur-xl pt-2 pb-4 -mx-5 border-b border-neutral-200/50">
         {NAV.map(item => (
@@ -89,8 +96,20 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
             <p className="text-[1.8rem] font-black">{stats.feedback}</p>
           </div>
           <div className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm col-span-2">
-            <p className="text-[0.7rem] font-bold uppercase text-neutral-400 mb-1">Active Signals</p>
-            <p className="text-[1.8rem] font-black">{stats.signals}</p>
+            <p className="text-[0.7rem] font-bold uppercase text-neutral-400 mb-1">Total Active Signals</p>
+            <p className="text-[1.8rem] font-black">{stats.signals + stats.spots}</p>
+          </div>
+          <div className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm bg-blue-50/50">
+            <p className="text-[0.7rem] font-bold uppercase text-blue-400 mb-1">Total Resto</p>
+            <p className="text-[1.5rem] font-black text-blue-900">{stats.resto}</p>
+          </div>
+          <div className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm bg-orange-50/50">
+            <p className="text-[0.7rem] font-bold uppercase text-orange-400 mb-1">Total Seller</p>
+            <p className="text-[1.5rem] font-black text-orange-900">{stats.seller}</p>
+          </div>
+          <div className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm col-span-2 bg-purple-50/50">
+            <p className="text-[0.7rem] font-bold uppercase text-purple-400 mb-1">Manual Spots Admin</p>
+            <p className="text-[1.5rem] font-black text-purple-900">{stats.spots}</p>
           </div>
         </div>
       )}
@@ -100,7 +119,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
           <div className="bg-white p-6 rounded-[2.5rem] border border-neutral-100 shadow-sm">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-[1.1rem] font-black tracking-tight">{t("manage_merchants")}</h3>
+              <h3 className="text-[1.1rem] font-black tracking-tight">Tambah Data Resto / Seller</h3>
               <div className="flex bg-neutral-100 p-1 rounded-xl">
                 <button onClick={() => setMerchantMode("quick")} className={`px-3 py-1.5 rounded-lg text-[0.7rem] font-bold transition-all ${merchantMode === "quick" ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500"}`}>{t("quick_mode")}</button>
                 <button onClick={() => setMerchantMode("detail")} className={`px-3 py-1.5 rounded-lg text-[0.7rem] font-bold transition-all ${merchantMode === "detail" ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500"}`}>{t("detail_mode")}</button>
@@ -119,7 +138,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
                 alert("Saved!");
               } else alert(res.error);
             }} className="space-y-4">
-              <input name="name" required placeholder={t("merchant_name")} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold focus:border-neutral-900 focus:bg-white transition-all outline-none" />
+              <input name="name" required placeholder="Nama Resto / Toko / Seller" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold focus:border-neutral-900 focus:bg-white transition-all outline-none" />
               
               <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, addr, ar) => {
                 setLat(newLat); setLng(newLng); setAddress(addr); setArea(ar);
@@ -182,7 +201,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
               </div>
 
               <button disabled={loading} className="w-full py-4 bg-neutral-900 text-white font-black rounded-2xl shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 text-[1.05rem]">
-                {loading ? "..." : t("save_merchant")}
+                {loading ? "..." : "Simpan Data"}
               </button>
             </form>
           </div>

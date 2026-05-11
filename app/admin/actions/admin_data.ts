@@ -78,19 +78,25 @@ export async function getUserList() {
 
 export async function getAdminStats() {
   const isAdmin = await verifyAdmin();
-  if (!isAdmin) return { users: 0, feedback: 0, signals: 0 };
+  if (!isAdmin) return { users: 0, feedback: 0, signals: 0, resto: 0, seller: 0, spots: 0 };
 
   const supabase = await createClient();
-  const [u, f, s] = await Promise.all([
-    supabase.from("users").select("id", { count: "exact" }),
+  const [u, f, s, resto, seller, spots] = await Promise.all([
+    supabase.from("users").select("id", { count: "exact", head: true }),
     supabase.from("feedback").select("id", { count: "exact", head: true }).eq("status", "pending"),
-    supabase.from("merchant_signals").select("id", { count: "exact" }).eq("is_active", true)
+    supabase.from("merchant_signals").select("id", { count: "exact", head: true }).eq("is_active", true),
+    supabase.from("merchant_signals").select("id", { count: "exact", head: true }).in("category", ["Makanan", "Minuman"]),
+    supabase.from("merchant_signals").select("id", { count: "exact", head: true }).eq("category", "Toko/Seller"),
+    supabase.from("admin_manual_signals").select("id", { count: "exact", head: true })
   ]);
 
   return {
     users: u.count || 0,
     feedback: f.count || 0,
-    signals: s.count || 0
+    signals: s.count || 0,
+    resto: resto.count || 0,
+    seller: seller.count || 0,
+    spots: spots.count || 0
   };
 }
 
