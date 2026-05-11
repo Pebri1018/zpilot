@@ -23,7 +23,7 @@ export function AkunClient({ email, nama, kota, platform, driverId, ztipsId, rol
   const [notif, setNotif] = useState(true);
   const [batterySaver, setBatterySaver] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const [modal, setModal] = useState<"profile" | "password" | "feedback" | "delete" | "history" | null>(null);
+  const [modal, setModal] = useState<"profile" | "password" | "feedback" | "delete" | "history" | "settings" | null>(null);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -124,133 +124,23 @@ export function AkunClient({ email, nama, kota, platform, driverId, ztipsId, rol
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-neutral-100">
-        <div className="px-5 pt-4 pb-1">
-          <p className="text-[0.7rem] font-bold uppercase tracking-widest text-neutral-400">{t("settings")}</p>
-        </div>
-        <div className="divide-y divide-neutral-100">
-          <div className="flex justify-between items-center px-5 py-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" /></svg>
-              </div>
-              <span className="text-[0.9rem] font-semibold">{t("language")}</span>
-            </div>
-            <div className="flex rounded-xl bg-neutral-100 p-0.5">
-              {(["ID", "EN"] as const).map((l) => (
-                <button
-                  key={l}
-                  onClick={() => setLang(l)}
-                  className={`px-3 py-1.5 rounded-lg text-[0.8rem] font-bold transition-all ${lang === l ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500"}`}
-                >
-                  {l}
-                </button>
-              ))}
-            </div>
+      <button 
+        onClick={() => setModal("settings")} 
+        className="w-full bg-white rounded-3xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-neutral-100 p-5 flex items-center justify-between active:scale-[0.98] transition-all"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-neutral-900 text-white flex items-center justify-center shadow-md">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
           </div>
-
-          <div className="flex justify-between items-center px-5 py-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-              </div>
-              <span className="text-[0.9rem] font-semibold">{t("notifications")}</span>
-            </div>
-            <button
-              onClick={() => setNotif(!notif)}
-              className={`relative w-12 h-6 rounded-full transition-colors ${notif ? "bg-neutral-900" : "bg-neutral-300"}`}
-            >
-              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${notif ? "translate-x-6" : ""}`} />
-            </button>
-          </div>
-
-          <div className="flex justify-between items-center px-5 py-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-green-100 text-green-600 flex items-center justify-center">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-              </div>
-              <div>
-                <span className="text-[0.9rem] font-semibold block">{t("battery_saver")}</span>
-                <span className="text-[0.72rem] text-neutral-500">{lang === "ID" ? "GPS refresh lebih jarang" : "Slower GPS refresh"}</span>
-              </div>
-            </div>
-            <button
-              onClick={() => setBatterySaver(!batterySaver)}
-              className={`relative w-12 h-6 rounded-full transition-colors ${batterySaver ? "bg-green-600" : "bg-neutral-300"}`}
-            >
-              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${batterySaver ? "translate-x-6" : ""}`} />
-            </button>
+          <div className="text-left">
+            <p className="font-black text-[1.1rem] text-neutral-900 tracking-tight">Pengaturan</p>
+            <p className="text-[0.75rem] font-medium text-neutral-500 mt-0.5">Bahasa, Notif, Edit Akun, Bantuan</p>
           </div>
         </div>
-      </div>
+        <svg className="w-5 h-5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+      </button>
 
-      <div className="bg-white rounded-3xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-neutral-100">
-        <div className="divide-y divide-neutral-100">
-          <button onClick={() => setModal("profile")} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
-            <div className="w-8 h-8 rounded-xl bg-neutral-100 text-neutral-600 flex items-center justify-center">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-            </div>
-            <span className="text-[0.9rem] font-semibold">{t("edit_profile")}</span>
-            <svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-          </button>
-          <button onClick={() => setModal("password")} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
-            <div className="w-8 h-8 rounded-xl bg-neutral-100 text-neutral-600 flex items-center justify-center">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-            </div>
-            <span className="text-[0.9rem] font-semibold">{t("change_password")}</span>
-            <svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-3xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-neutral-100">
-        <div className="px-5 pt-4 pb-1">
-          <p className="text-[0.7rem] font-bold uppercase tracking-widest text-neutral-400">Bantuan</p>
-        </div>
-        <div className="divide-y divide-neutral-100">
-          <a
-            href={`https://wa.me/${WHATSAPP_NUMBER}?text=Halo Admin ZTIPS, saya butuh bantuan.`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 px-5 py-4 hover:bg-neutral-50 active:bg-neutral-100 transition"
-          >
-            <div className="w-8 h-8 rounded-xl bg-green-100 text-green-600 flex items-center justify-center">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
-            </div>
-            <span className="text-[0.9rem] font-semibold">{t("hubungi_admin")}</span>
-            <svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-          </a>
-          <button onClick={() => setModal("feedback")} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
-            <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-            </div>
-            <span className="text-[0.9rem] font-semibold">{t("kirim_masukan")}</span>
-            <svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-          </button>
-          <button onClick={() => setModal("history")} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
-            <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            </div>
-            <span className="text-[0.9rem] font-semibold">{lang === "ID" ? "Riwayat Masukan" : "Feedback History"}</span>
-            {feedback.some(f => f.admin_reply && f.status !== "closed") && (
-              <span className="bg-red-500 w-2 h-2 rounded-full ml-1" />
-            )}
-            <svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-          </button>
-          <button 
-            onClick={() => alert("Halaman Tips Gacor akan segera hadir!")} 
-            className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition"
-          >
-            <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-            </div>
-            <span className="text-[0.9rem] font-semibold">Tips Gacor</span>
-            <svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-          </button>
-        </div>
-      </div>
-
-      <div className="space-y-2">
+      <div className="space-y-2 pb-10">
         <button
           onClick={handleLogout}
           disabled={loggingOut}
@@ -259,14 +149,102 @@ export function AkunClient({ email, nama, kota, platform, driverId, ztipsId, rol
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
           {loggingOut ? "..." : t("logout")}
         </button>
-        <button onClick={() => setModal("delete")} className="w-full text-[0.85rem] font-medium text-red-500 py-2 hover:text-red-700 transition">
-          {t("delete_account")}
-        </button>
       </div>
 
       {modal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-5 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-sm rounded-[2.5rem] p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className={`fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-5 bg-neutral-900/40 backdrop-blur-sm transition-all duration-300 ${modal === "settings" ? "" : "animate-in fade-in"}`}>
+          <div className={`bg-[#f7f7f8] w-full max-w-md ${modal === "settings" ? "h-[100dvh] overflow-y-auto" : "rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 shadow-2xl animate-in slide-in-from-bottom-10 sm:zoom-in-95"}`}>
+            {modal === "settings" && (
+              <div className="min-h-full flex flex-col">
+                <div className="sticky top-0 z-10 bg-[#f7f7f8]/90 backdrop-blur-xl px-5 py-4 flex items-center gap-4 border-b border-neutral-200/50">
+                  <button onClick={() => setModal(null)} className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm active:scale-95 transition-all">
+                    <svg className="w-5 h-5 text-neutral-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+                  </button>
+                  <h2 className="text-[1.2rem] font-black tracking-tight">Pengaturan</h2>
+                </div>
+                
+                <div className="p-5 flex-1 space-y-6 pb-20">
+                  {/* Preferences */}
+                  <div className="bg-white rounded-3xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-neutral-100">
+                    <div className="px-5 pt-4 pb-2"><p className="text-[0.7rem] font-bold uppercase tracking-widest text-neutral-400">Preferensi Aplikasi</p></div>
+                    <div className="divide-y divide-neutral-100">
+                      <div className="flex justify-between items-center px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" /></svg></div>
+                          <span className="text-[0.95rem] font-semibold">{t("language")}</span>
+                        </div>
+                        <div className="flex rounded-xl bg-neutral-100 p-1">
+                          {(["ID", "EN"] as const).map((l) => (
+                            <button key={l} onClick={() => setLang(l)} className={`px-4 py-1.5 rounded-lg text-[0.8rem] font-bold transition-all ${lang === l ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500"}`}>{l}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg></div>
+                          <span className="text-[0.95rem] font-semibold">{t("notifications")}</span>
+                        </div>
+                        <button onClick={() => setNotif(!notif)} className={`relative w-12 h-6 rounded-full transition-colors ${notif ? "bg-neutral-900" : "bg-neutral-300"}`}><span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${notif ? "translate-x-6" : ""}`} /></button>
+                      </div>
+                      <div className="flex justify-between items-center px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-green-100 text-green-600 flex items-center justify-center"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></div>
+                          <div><span className="text-[0.95rem] font-semibold block">{t("battery_saver")}</span><span className="text-[0.75rem] text-neutral-500">{lang === "ID" ? "GPS refresh lebih jarang" : "Slower GPS refresh"}</span></div>
+                        </div>
+                        <button onClick={() => setBatterySaver(!batterySaver)} className={`relative w-12 h-6 rounded-full transition-colors ${batterySaver ? "bg-green-600" : "bg-neutral-300"}`}><span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${batterySaver ? "translate-x-6" : ""}`} /></button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Account */}
+                  <div className="bg-white rounded-3xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-neutral-100">
+                    <div className="px-5 pt-4 pb-2"><p className="text-[0.7rem] font-bold uppercase tracking-widest text-neutral-400">Akun</p></div>
+                    <div className="divide-y divide-neutral-100">
+                      <button onClick={() => setModal("profile")} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
+                        <div className="w-8 h-8 rounded-xl bg-neutral-100 text-neutral-600 flex items-center justify-center"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg></div>
+                        <span className="text-[0.95rem] font-semibold">{t("edit_profile")}</span><svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                      </button>
+                      <button onClick={() => setModal("password")} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
+                        <div className="w-8 h-8 rounded-xl bg-neutral-100 text-neutral-600 flex items-center justify-center"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg></div>
+                        <span className="text-[0.95rem] font-semibold">{t("change_password")}</span><svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Help */}
+                  <div className="bg-white rounded-3xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-neutral-100">
+                    <div className="px-5 pt-4 pb-2"><p className="text-[0.7rem] font-bold uppercase tracking-widest text-neutral-400">Bantuan & Masukan</p></div>
+                    <div className="divide-y divide-neutral-100">
+                      <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=Halo Admin ZTIPS, saya butuh bantuan.`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-5 py-4 hover:bg-neutral-50 active:bg-neutral-100 transition">
+                        <div className="w-8 h-8 rounded-xl bg-green-100 text-green-600 flex items-center justify-center"><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg></div>
+                        <span className="text-[0.95rem] font-semibold">{t("hubungi_admin")}</span><svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                      </a>
+                      <button onClick={() => setModal("feedback")} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
+                        <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg></div>
+                        <span className="text-[0.95rem] font-semibold">{t("kirim_masukan")}</span><svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                      </button>
+                      <button onClick={() => setModal("history")} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
+                        <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                        <span className="text-[0.95rem] font-semibold">{lang === "ID" ? "Riwayat Masukan" : "Feedback History"}</span>
+                        {feedback.some(f => f.admin_reply && f.status !== "closed") && <span className="bg-red-500 w-2 h-2 rounded-full ml-1" />}
+                        <svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                      </button>
+                      <button onClick={() => alert("Halaman Tips Gacor akan segera hadir!")} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 active:bg-neutral-100 transition">
+                        <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></div>
+                        <span className="text-[0.95rem] font-semibold">Tips Gacor</span><svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Danger Zone */}
+                  <div className="pt-2">
+                    <button onClick={() => setModal("delete")} className="w-full text-[0.85rem] font-bold text-red-500 py-3 hover:bg-red-50 rounded-2xl transition">
+                      {t("delete_account")}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             {modal === "profile" && (
               <form action={async (fd) => {
                 setLoading(true);
