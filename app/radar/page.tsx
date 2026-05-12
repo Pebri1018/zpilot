@@ -50,6 +50,7 @@ function RadarContent() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [driverCount, setDriverCount] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [legendOpen, setLegendOpen] = useState(false);
 
   // Idle Timer State
   const [showMoveSuggest, setShowMoveSuggest] = useState(false);
@@ -404,25 +405,37 @@ function RadarContent() {
         </div>
       )}
 
-      {/* COMPACT LEGEND — floating left */}
-      <div className="absolute bottom-[calc(14rem+env(safe-area-inset-bottom))] left-3 z-[500] pointer-events-none">
-        <div className="bg-neutral-950/75 backdrop-blur-md rounded-2xl p-2.5 shadow-xl border border-white/10 space-y-1.5">
-          {[
-            { color: "#000", border: "border-2 border-white", label: "Kamu" },
-            { color: "#4F46E5", label: "Ngetem" },
-            { color: "#EC4899", label: "Antar" },
-            { color: "#991B1B", label: "Sangat Sibuk" },
-            { color: "#EF4444", label: "Ramai" },
-            { color: "#F97316", label: "Sedang" },
-            { color: "#3B82F6", label: "Normal" },
-            { color: "#8B5CF6", label: "Spot" },
-            ...(isAdmin ? [{ color: "#1F2937", label: "Tutup (Admin)" }] : []),
-          ].map(({ color, border, label }) => (
-            <div key={label} className="flex items-center gap-2">
-              <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${border || ""}`} style={{ backgroundColor: color }} />
-              <span className="text-[0.62rem] font-bold text-white/80 whitespace-nowrap">{label}</span>
+      {/* COMPACT LEGEND — floating left, collapsible */}
+      <div className="absolute bottom-[calc(14rem+env(safe-area-inset-bottom))] left-3 z-[500]">
+        <div className="bg-neutral-950/75 backdrop-blur-md rounded-2xl shadow-xl border border-white/10">
+          <button
+            onClick={() => setLegendOpen(!legendOpen)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 w-full"
+          >
+            <div className="w-2 h-2 rounded-full bg-white/60" />
+            <span className="text-[0.6rem] font-black text-white/70 uppercase tracking-widest">Legenda</span>
+            <svg className={`w-3 h-3 text-white/50 ml-auto transition-transform ${legendOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+          </button>
+          {legendOpen && (
+            <div className="px-2.5 pb-2 space-y-1 border-t border-white/10 pt-1.5">
+              {[
+                { color: "#000", border: "border-2 border-white", label: "Kamu" },
+                { color: "#4F46E5", label: "Ngetem" },
+                { color: "#EC4899", label: "Antar" },
+                { color: "#991B1B", label: "Sangat Sibuk" },
+                { color: "#EF4444", label: "Ramai" },
+                { color: "#F97316", label: "Sedang" },
+                { color: "#3B82F6", label: "Normal" },
+                { color: "#8B5CF6", label: "Spot" },
+                ...(isAdmin ? [{ color: "#1F2937", label: "Tutup (Admin)" }] : []),
+              ].map(({ color, border, label }) => (
+                <div key={label} className="flex items-center gap-1.5">
+                  <div className={`w-2 h-2 rounded-full shrink-0 ${border || ""}`} style={{ backgroundColor: color }} />
+                  <span className="text-[0.6rem] font-bold text-white/80 whitespace-nowrap">{label}</span>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       </div>
 

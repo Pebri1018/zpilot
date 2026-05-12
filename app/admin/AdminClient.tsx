@@ -204,7 +204,10 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
             <div key={s.id} className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm flex flex-col gap-3">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="font-black text-[1.05rem] tracking-tight">{s.name}</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    {s.short_id && <span className="text-[0.65rem] font-black bg-neutral-900 text-white px-1.5 py-0.5 rounded-md">#{s.short_id}</span>}
+                    <p className="font-black text-[1.05rem] tracking-tight">{s.name}</p>
+                  </div>
                   <p className="text-[0.75rem] text-neutral-400 font-bold">{s.area}</p>
                 </div>
                 <button
