@@ -743,32 +743,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
               </button>
             </form>
 
-            <div className="mt-8 space-y-4">
-              <h4 className="text-[0.75rem] font-black uppercase tracking-widest text-neutral-400 mb-2 ml-1">Sinyal Aktif</h4>
-              {signals.length === 0 ? (
-                <p className="text-[0.85rem] text-neutral-400 text-center py-6 bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">Belum ada sinyal aktif.</p>
-              ) : (
-                signals.map((s: any) => (
-                  <div key={s.id} className="bg-white p-4 rounded-2xl border border-neutral-100 shadow-sm flex justify-between items-center">
-                    <div>
-                      <p className="font-bold text-[0.9rem]">{s.type === 'driver_ngetem' ? '🛵 Driver Ngetem' : '📍 Spot Mangkal'}</p>
-                      <p className="text-[0.75rem] text-neutral-500">{s.count} Driver · Exp: {new Date(s.expires_at).toLocaleTimeString()}</p>
-                    </div>
-                    <button 
-                      onClick={async () => {
-                        if (confirm("Hapus sinyal ini?")) {
-                          const res = await deleteManualSignal(s.id);
-                          if (res.success) setSignals(prev => prev.filter(x => x.id !== s.id));
-                        }
-                      }}
-                      className="text-red-500 font-bold text-[0.75rem] px-3.5 py-2 rounded-xl bg-red-50 active:scale-95 transition-all"
-                    >
-                      Hapus
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
+
           </div>
         </div>
       )}

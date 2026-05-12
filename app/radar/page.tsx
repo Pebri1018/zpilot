@@ -76,8 +76,8 @@ function RadarContent() {
     return R * c; 
   };
 
-  const fetchData = async () => {
-    if (Date.now() - globalLastFetchTime < 60000 && globalMarkers.length > 0) {
+  const fetchData = async (force = false) => {
+    if (!force && Date.now() - globalLastFetchTime < 60000 && globalMarkers.length > 0) {
       setMarkers(globalMarkers);
       setHotspots(globalHotspots);
       setFetching(false);
@@ -507,7 +507,7 @@ function RadarContent() {
               </a>
             )}
             <button
-              onClick={fetchData}
+              onClick={() => fetchData(true)}
               disabled={fetching}
               className="flex-1 bg-white/15 text-white text-[0.8rem] font-black py-2.5 rounded-2xl text-center active:scale-95 transition-all border border-white/10"
             >
