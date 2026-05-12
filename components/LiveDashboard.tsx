@@ -290,7 +290,7 @@ export function LiveDashboard() {
                   {m.is_flash_sale && <span className="text-[0.6rem] font-black bg-rose-500 text-white px-2 py-0.5 rounded-md shadow-sm">⚡ FLASH</span>}
                   {m.promo_active && <span className="text-[0.6rem] font-black bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-2 py-0.5 rounded-md">PROMO</span>}
                   <span className={`text-[0.6rem] font-black px-2 py-0.5 rounded-md ${m.live_score && m.live_score >= 66 ? 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400' : m.live_score && m.live_score >= 41 ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400' : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'}`}>
-                    {m.live_score && m.live_score >= 66 ? "Ramai" : m.live_score && m.live_score >= 41 ? "Panas" : "Standby"}
+                    {m.live_score && m.live_score >= 90 ? "Sangat Sibuk" : m.live_score && m.live_score >= 66 ? "Ramai" : m.live_score && m.live_score >= 41 ? "Sedang" : "Normal"}
                   </span>
                 </div>
               </div>

@@ -178,9 +178,9 @@ export default function RadarPage() {
 
             let statusStr = "Sepi";
             if (score >= 90) { type = "merchant_sangatsibuk"; statusStr = "Sangat Sibuk"; }
-            else if (score >= 66) { type = "merchant_ramai"; statusStr = "Ramai Pickup"; }
-            else if (score >= 41) { type = "merchant_mulaipanas"; statusStr = "Mulai Panas"; }
-            else if (score >= 20) { type = "merchant_bergerak"; statusStr = "Bergerak"; }
+            else if (score >= 66) { type = "merchant_ramai"; statusStr = "Ramai"; }
+            else if (score >= 41) { type = "merchant_mulaipanas"; statusStr = "Sedang"; }
+            else if (score >= 20) { type = "merchant_bergerak"; statusStr = "Normal"; }
             
             const flashTag = m.is_flash_sale ? " ⚡" : "";
             newMarkers.push({
@@ -375,8 +375,8 @@ export default function RadarPage() {
             { color: "#EC4899", label: "Antar" },
             { color: "#991B1B", label: "Sangat Sibuk" },
             { color: "#EF4444", label: "Ramai" },
-            { color: "#F97316", label: "Mulai Panas" },
-            { color: "#3B82F6", label: "Bergerak" },
+            { color: "#F97316", label: "Sedang" },
+            { color: "#3B82F6", label: "Normal" },
             { color: "#8B5CF6", label: "Spot" },
           ].map(({ color, border, label }) => (
             <div key={label} className="flex items-center gap-2">
