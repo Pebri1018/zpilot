@@ -800,55 +800,6 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
         </div>
       )}
 
-      {/* 5. SPOTS LIST */}
-      {activeTab === "spots_list" && (
-        <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2">
-          {spots
-            .sort((a, b) => {
-              if (a.short_id && b.short_id) {
-                return b.short_id.localeCompare(a.short_id);
-              }
-              return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-            })
-            .map(s => (
-            <div key={s.id} className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm flex flex-col gap-3">
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    {s.short_id && <span className="text-[0.65rem] font-black bg-neutral-900 text-white px-1.5 py-0.5 rounded-md">#{s.short_id}</span>}
-                    <p className="font-black text-[1.05rem] tracking-tight">{s.name}</p>
-                  </div>
-                  <p className="text-[0.7rem] text-neutral-400 font-bold tracking-wide">{s.area}</p>
-                </div>
-                <span className={`text-[0.6rem] font-black uppercase tracking-widest px-2 py-1 rounded-lg shrink-0 ${s.quality === 'Bagus' ? 'bg-emerald-100 text-emerald-700' : s.quality === 'Lumayan' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}`}>{s.quality}</span>
-              </div>
-              <div className="flex gap-2">
-                <div className="px-2.5 py-1.5 rounded-xl bg-neutral-50 text-neutral-600 text-[0.65rem] font-bold">
-                  Jam Terbaik: {s.best_hours || "-"}
-                </div>
-              </div>
-              {s.notes && (
-                <p className="text-[0.75rem] text-neutral-500 font-medium italic mt-1">"{s.notes}"</p>
-              )}
-              <div className="flex gap-2 pt-2 border-t border-neutral-50 mt-1">
-                <button 
-                  onClick={async () => {
-                    if (confirm("Hapus spot ini?")) {
-                      const { deleteNgetemSpot } = await import("@/app/admin/actions/notes");
-                      await deleteNgetemSpot(s.id);
-                      setSpots(prev => prev.filter(x => x.id !== s.id));
-                    }
-                  }}
-                  className="px-3 py-2 rounded-xl bg-red-50 text-red-600 text-[0.75rem] font-bold hover:bg-red-100 transition-colors ml-auto"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* 6. FEEDBACK */}
       {activeTab === "feedback" && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
