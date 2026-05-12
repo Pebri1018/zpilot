@@ -346,11 +346,11 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                     <div id="time_grid_resto" className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Buka</p>
-                        <input name="open_time" type="time" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+                        <input name="open_time" type="time" lang="en-GB" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
                       </div>
                       <div>
                         <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Tutup</p>
-                        <input name="close_time" type="time" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+                        <input name="close_time" type="time" lang="en-GB" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
                       </div>
                     </div>
                   </div>
@@ -482,11 +482,11 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
               <div id="time_grid_seller" className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Buka</p>
-                  <input name="open_time" type="time" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+                  <input name="open_time" type="time" lang="en-GB" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
                 </div>
                 <div>
                   <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Tutup</p>
-                  <input name="close_time" type="time" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+                  <input name="close_time" type="time" lang="en-GB" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
                 </div>
               </div>
 
@@ -977,11 +977,11 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
               <div id="edit_time_grid" className="grid grid-cols-2 gap-3" style={{ display: editingMerchant.is_open_24h ? "none" : "grid" }}>
                 <div>
                   <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1 pl-1">Buka</p>
-                  <input name="open_time" type="time" defaultValue={editingMerchant.open_time ?? ""} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+                  <input name="open_time" type="time" lang="en-GB" defaultValue={editingMerchant.open_time ?? ""} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
                 </div>
                 <div>
                   <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1 pl-1">Tutup</p>
-                  <input name="close_time" type="time" defaultValue={editingMerchant.close_time ?? ""} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+                  <input name="close_time" type="time" lang="en-GB" defaultValue={editingMerchant.close_time ?? ""} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
                 </div>
               </div>
               <div className="flex gap-2 pt-2">
