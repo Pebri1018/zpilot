@@ -373,3 +373,38 @@ export async function boostMerchantLive(id: string) {
   revalidatePath("/");
   return { success: true };
 }
+
+export async function resolveGmapsLink(url: string) {
+  try {
+    let finalUrl = url;
+    
+    // Un-shorten if maps.app.goo.gl or bit.ly or similar short link
+    if (url.includes("maps.app.goo.gl") || url.includes("goo.gl/maps")) {
+      const res = await fetch(url, { redirect: "manual" });
+      const location = res.headers.get("location");
+      if (location) finalUrl = location;
+    }
+
+    // Match /@lat,lng
+    const atMatch = finalUrl.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (atMatch) {
+      return { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) };
+    }
+
+    // Match !3dLAT!4dLNG
+    const dataMatch = finalUrl.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+    if (dataMatch) {
+      return { lat: parseFloat(dataMatch[1]), lng: parseFloat(dataMatch[2]) };
+    }
+    
+    // Match q=lat,lng
+    const qMatch = finalUrl.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/);
+    if (qMatch) {
+      return { lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2]) };
+    }
+
+    return { error: "No coordinates found in link" };
+  } catch (e) {
+    return { error: String(e) };
+  }
+}

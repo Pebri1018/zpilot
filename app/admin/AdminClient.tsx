@@ -278,13 +278,29 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
               <div className="flex flex-col gap-1.5 mb-2">
                 <input 
                   type="text" 
-                  placeholder="Atau Paste Titik Koordinat dari Gmaps (-6.xxx, 106.xxx)" 
-                  onChange={(e) => {
+                  placeholder="Atau Paste Link Gmaps / Titik Koordinat (-6.xxx, 106.xxx)" 
+                  onChange={async (e) => {
                     const val = e.target.value;
+                    if (!val.trim()) return;
+
+                    if (val.includes("http") || val.includes("goo.gl") || val.includes("maps")) {
+                      setLoading(true);
+                      const { resolveGmapsLink } = await import("@/app/admin/actions/signals");
+                      const coords = await resolveGmapsLink(val);
+                      setLoading(false);
+                      if (coords.lat && coords.lng) {
+                        setLat(coords.lat);
+                        setLng(coords.lng);
+                      } else {
+                        alert("Gagal mendeteksi koordinat dari link: " + (coords.error || ""));
+                      }
+                      return;
+                    }
+
                     const coords = val.split(",");
                     if (coords.length >= 2) {
-                      const newLat = parseFloat(coords[0].trim());
-                      const newLng = parseFloat(coords[1].trim());
+                      const newLat = parseFloat(coords[0].replace(/[^0-9.-]/g, ""));
+                      const newLng = parseFloat(coords[1].replace(/[^0-9.-]/g, ""));
                       if (!isNaN(newLat) && !isNaN(newLng)) {
                         setLat(newLat);
                         setLng(newLng);
@@ -404,13 +420,29 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
               <div className="flex flex-col gap-1.5 mb-2">
                 <input 
                   type="text" 
-                  placeholder="Atau Paste Titik Koordinat dari Gmaps (-6.xxx, 106.xxx)" 
-                  onChange={(e) => {
+                  placeholder="Atau Paste Link Gmaps / Titik Koordinat (-6.xxx, 106.xxx)" 
+                  onChange={async (e) => {
                     const val = e.target.value;
+                    if (!val.trim()) return;
+
+                    if (val.includes("http") || val.includes("goo.gl") || val.includes("maps")) {
+                      setLoading(true);
+                      const { resolveGmapsLink } = await import("@/app/admin/actions/signals");
+                      const coords = await resolveGmapsLink(val);
+                      setLoading(false);
+                      if (coords.lat && coords.lng) {
+                        setLat(coords.lat);
+                        setLng(coords.lng);
+                      } else {
+                        alert("Gagal mendeteksi koordinat dari link: " + (coords.error || ""));
+                      }
+                      return;
+                    }
+
                     const coords = val.split(",");
                     if (coords.length >= 2) {
-                      const newLat = parseFloat(coords[0].trim());
-                      const newLng = parseFloat(coords[1].trim());
+                      const newLat = parseFloat(coords[0].replace(/[^0-9.-]/g, ""));
+                      const newLng = parseFloat(coords[1].replace(/[^0-9.-]/g, ""));
                       if (!isNaN(newLat) && !isNaN(newLng)) {
                         setLat(newLat);
                         setLng(newLng);
