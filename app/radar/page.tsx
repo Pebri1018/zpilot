@@ -23,7 +23,7 @@ export type RadarMarker = {
   id: string;
   lat: number;
   lng: number;
-  type: "driver_ngetem" | "driver_antar" | "merchant_sepi" | "merchant_bergerak" | "merchant_mulaipanas" | "merchant_ramai" | "merchant_sangatsibuk" | "spot";
+  type: "driver_ngetem" | "driver_antar" | "merchant_sepi" | "merchant_bergerak" | "merchant_mulaipanas" | "merchant_ramai" | "merchant_sangatsibuk" | "merchant_tutup" | "spot";
   label: string;
   live_status?: string;
   antar_nearby?: number;
@@ -49,6 +49,7 @@ function RadarContent() {
   const [fetching, setFetching] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [driverCount, setDriverCount] = useState(0);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Idle Timer State
   const [showMoveSuggest, setShowMoveSuggest] = useState(false);
@@ -78,6 +79,15 @@ function RadarContent() {
 
         const { data: sessionData } = await supabase.auth.getSession();
         const currentUserId = sessionData?.session?.user?.id;
+        
+        let isAdminFlag = false;
+        if (currentUserId) {
+          const { data: userData } = await supabase.from("users").select("role").eq("id", currentUserId).single();
+          if (userData?.role === "Admin" || userData?.role === "Founder") {
+            isAdminFlag = true;
+            setIsAdmin(true);
+          }
+        }
 
         // 1. Fetch active (non-Offline) drivers from users table
         const { data: drivers, error: dErr } = await supabase
@@ -153,6 +163,7 @@ function RadarContent() {
         merchantsData.forEach(m => {
           if (m.lat && m.lng) {
             // --- OPEN/CLOSED FILTER ---
+            let isClosed = false;
             if (!m.is_open_24h && m.open_time && m.close_time) {
               const nowHHMM = new Date().toLocaleTimeString("en-US", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", hour12: false });
               // Handle overnight: e.g. open 22:00, close 04:00
@@ -160,38 +171,46 @@ function RadarContent() {
               const isOpen = isOvernight
                 ? (nowHHMM >= m.open_time || nowHHMM < m.close_time)
                 : (nowHHMM >= m.open_time && nowHHMM < m.close_time);
-              if (!isOpen) return; // Skip closed merchants
+              if (!isOpen) isClosed = true;
+            } else if (!m.is_open_24h && !m.open_time && !m.close_time) {
+              // If not 24h and no hours defined, consider it closed by default unless manual override
+              isClosed = true;
             }
 
-            let type: RadarMarker["type"] = "merchant_sepi";
+            if (isClosed && !isAdminFlag) return; // Skip closed merchants for normal drivers
+
+            let type: RadarMarker["type"] = isClosed ? "merchant_tutup" : "merchant_sepi";
+            let statusStr = isClosed ? "Tutup" : "Sepi";
+            
             
             // Calculate live score locally
-            let antar_15m = 0;
-            let ngetem_15m = 0;
-            drivers?.forEach(d => {
-              if (!d.last_lat || !d.last_lng) return;
-              const dist = getDistance(m.lat, m.lng, d.last_lat, d.last_lng);
-              if (dist <= 0.12) {
-                if (d.status === "Antar") antar_15m++;
-                if (d.status === "Ngetem") ngetem_15m++;
-              }
-            });
+            if (!isClosed) {
+              let antar_15m = 0;
+              let ngetem_15m = 0;
+              drivers?.forEach(d => {
+                if (!d.last_lat || !d.last_lng) return;
+                const dist = getDistance(m.lat, m.lng, d.last_lat, d.last_lng);
+                if (dist <= 0.12) {
+                  if (d.status === "Antar") antar_15m++;
+                  if (d.status === "Ngetem") ngetem_15m++;
+                }
+              });
 
-            // Re-calculate basic score
-            const isPeak = new Date().getHours() >= 11 && new Date().getHours() <= 13 || new Date().getHours() >= 17 && new Date().getHours() <= 19;
-            const score = 
-              (antar_15m * 5) + 
-              (ngetem_15m * 2) + 
-              (m.promo_active ? 15 : 0) + 
-              (m.fast_pickup ? 10 : 0) + 
-              (isPeak ? 10 : 0) +
-              ((m.manual_admin_boost_until && m.manual_admin_boost_until > new Date().toISOString()) ? 20 : 0);
+              // Re-calculate basic score
+              const isPeak = new Date().getHours() >= 11 && new Date().getHours() <= 13 || new Date().getHours() >= 17 && new Date().getHours() <= 19;
+              const score = 
+                (antar_15m * 5) + 
+                (ngetem_15m * 2) + 
+                (m.promo_active ? 15 : 0) + 
+                (m.fast_pickup ? 10 : 0) + 
+                (isPeak ? 10 : 0) +
+                ((m.manual_admin_boost_until && m.manual_admin_boost_until > new Date().toISOString()) ? 20 : 0);
 
-            let statusStr = "Sepi";
-            if (score >= 90) { type = "merchant_sangatsibuk"; statusStr = "Sangat Sibuk"; }
-            else if (score >= 66) { type = "merchant_ramai"; statusStr = "Ramai"; }
-            else if (score >= 41) { type = "merchant_mulaipanas"; statusStr = "Sedang"; }
-            else if (score >= 20) { type = "merchant_bergerak"; statusStr = "Normal"; }
+              if (score >= 90) { type = "merchant_sangatsibuk"; statusStr = "Sangat Sibuk"; }
+              else if (score >= 66) { type = "merchant_ramai"; statusStr = "Ramai"; }
+              else if (score >= 41) { type = "merchant_mulaipanas"; statusStr = "Sedang"; }
+              else if (score >= 20) { type = "merchant_bergerak"; statusStr = "Normal"; }
+            }
             
             const flashTag = m.is_flash_sale ? " ⚡" : "";
             newMarkers.push({
@@ -392,6 +411,7 @@ function RadarContent() {
             { color: "#F97316", label: "Sedang" },
             { color: "#3B82F6", label: "Normal" },
             { color: "#8B5CF6", label: "Spot" },
+            ...(isAdmin ? [{ color: "#1F2937", label: "Tutup (Admin)" }] : []),
           ].map(({ color, border, label }) => (
             <div key={label} className="flex items-center gap-2">
               <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${border || ""}`} style={{ backgroundColor: color }} />

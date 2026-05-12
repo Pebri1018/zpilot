@@ -74,6 +74,7 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
       case "merchant_mulaipanas": return { color: "#F97316", fill: "#F97316" }; 
       case "merchant_bergerak": return { color: "#3B82F6", fill: "#3B82F6" };  
       case "merchant_sepi": return { color: "#9CA3AF", fill: "#9CA3AF" };  
+      case "merchant_tutup": return { color: "#1F2937", fill: "#111827" }; // Dark grey/black for closed
       case "spot": return { color: "#8B5CF6", fill: "#8B5CF6" };          
       default: return { color: "#000", fill: "#000" };
     }
