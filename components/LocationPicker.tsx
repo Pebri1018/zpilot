@@ -104,7 +104,16 @@ export default function LocationPicker({ initialLat, initialLng, onLocationSelec
     if (initialLat && initialLng) {
       reverseGeocode(initialLat, initialLng);
     }
-  }, []);
+  }, []); // Only on mount
+
+  useEffect(() => {
+    if (isMounted && initialLat !== null && initialLng !== null) {
+      if (initialLat !== position.lat || initialLng !== position.lng) {
+        setPosition({ lat: initialLat, lng: initialLng });
+        reverseGeocode(initialLat, initialLng);
+      }
+    }
+  }, [initialLat, initialLng, isMounted]);
 
   const reverseGeocode = useCallback(async (lat: number, lng: number) => {
     try {
