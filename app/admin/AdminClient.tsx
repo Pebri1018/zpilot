@@ -793,6 +793,8 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
             </div>
           ))}
         </div>
+      )}
+
       {/* 5. SPOTS LIST */}
       {activeTab === "spots_list" && (
         <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2">
