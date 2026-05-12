@@ -159,6 +159,7 @@ export async function reportMerchantSignal(formData: FormData) {
 
 export type MerchantSignal = {
   id: string;
+  short_id?: string | null;
   name: string;
   category: string;
   busy_level: "Low" | "Medium" | "High"; // legacy
