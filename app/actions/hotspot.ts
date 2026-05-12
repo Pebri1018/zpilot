@@ -112,21 +112,22 @@ export async function getHotspots(): Promise<HotspotZone[]> {
       });
 
       // 4. Calculate Score
-      // (antar * 3) + (merchants * 2) - (ngetem * 1.5)
-      const score = (antarCount * 3) + (merchantCount * 2) - (ngetemCount * 1.5);
+      // (merchant ramai di zona) + (driver antar tinggi) - (driver ngetem terlalu padat)
+      const score = (merchantCount * 5) + (antarCount * 3) - (ngetemCount * 2);
       
       let label: HotspotZone["label"] = "SEPI";
       
-      // Opportunity zone: Good merchants, low ngetem
-      if (merchantCount >= 2 && ngetemCount <= 1) {
-        label = "PELUANG";
-      } 
-      // Competition zone: Too many ngetem drivers compared to merchants
-      else if (ngetemCount >= 4 && ngetemCount > merchantCount * 1.5) {
+      // Jika terlalu banyak ngetem: status = Kompetisi Tinggi
+      // Jika merchant aktif tinggi tapi driver sedikit: status = Peluang Emas
+      if (ngetemCount >= 3 && ngetemCount > merchantCount * 2) {
         label = "KOMPETISI";
+      } else if (merchantCount >= 2 && ngetemCount <= 1) {
+        label = "PELUANG";
+      } else if (score >= 15) {
+        label = "RAMAI";
+      } else if (score >= 8) {
+        label = "MENARIK";
       }
-      else if (score >= 12) label = "RAMAI";
-      else if (score >= 5) label = "MENARIK";
 
       return {
         ...zone,

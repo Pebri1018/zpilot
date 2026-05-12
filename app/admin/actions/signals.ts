@@ -161,9 +161,13 @@ export type MerchantSignal = {
   id: string;
   name: string;
   category: string;
-  busy_level: "Low" | "Medium" | "High";
-  busy_score?: number | null;
-  popularity_score?: number | null;
+  busy_level: "Low" | "Medium" | "High"; // legacy
+  busy_score?: number | null; // legacy
+  live_score?: number;
+  live_status?: "Sepi" | "Bergerak" | "Mulai Panas" | "Ramai Pickup" | "Sangat Sibuk";
+  driver_antar_nearby?: number;
+  driver_ngetem_nearby?: number;
+  manual_admin_boost_until?: string | null;
   promo_active: boolean;
   promo_percent?: number | null;
   fast_pickup: boolean;
@@ -187,34 +191,46 @@ export type MerchantSignal = {
   close_time?: string | null;
 };
 
-// Primary query for Home page — persistent active merchants sorted by busy_score
+// Haversine distance in km
+function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371; 
+  const dLat = (lat2 - lat1) * Math.PI / 180;  
+  const dLon = (lon2 - lon1) * Math.PI / 180; 
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2); 
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  return R * c; 
+}
+
+// Primary query for Home page — live intelligence based on driver movement
 export async function getActiveMerchants(areaName: string | null): Promise<MerchantSignal[]> {
   const supabase = getServiceClient();
   const now = new Date().toISOString();
 
-  // Get all active merchants - prioritize same area first, but include others
+  // 1. Fetch active merchants (exclude SPX sellers)
   const query = supabase
     .from("merchant_signals")
     .select("*")
     .eq("is_active", true)
-    .or(`expires_at.is.null,expires_at.gt.${now}`)
-    .order("busy_score", { ascending: false })
-    .order("promo_active", { ascending: false })
-    .order("updated_at", { ascending: false })
-    .limit(20);
+    .neq("category", "Seller SPX")
+    .or(`expires_at.is.null,expires_at.gt.${now}`);
 
-  const { data, error } = await query;
-
+  const { data: merchantsData, error } = await query;
   if (error) {
     console.error("getActiveMerchants error:", error);
     return [];
   }
 
-  // Sort: same area first, then by score
-  let result = data || [];
-  
+  let result = merchantsData || [];
+
   // Filter out closed merchants
-  const jakartaTime = new Date().toLocaleTimeString("en-US", { timeZone: "Asia/Jakarta", hour12: false, hour: "2-digit", minute: "2-digit" });
+  const jakartaTimeStr = new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" });
+  const jakartaTimeObj = new Date(jakartaTimeStr);
+  const hour = jakartaTimeObj.getHours();
+  const jakartaTime = jakartaTimeObj.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" });
+  
   result = result.filter(m => {
     if (m.is_open_24h) return true;
     if (m.open_time && m.close_time) {
@@ -223,16 +239,81 @@ export async function getActiveMerchants(areaName: string | null): Promise<Merch
         ? (jakartaTime >= m.open_time || jakartaTime < m.close_time)
         : (jakartaTime >= m.open_time && jakartaTime < m.close_time);
     }
-    return true; // if no hours specified, assume open
+    return true; 
   });
 
+  // 2. Fetch recent drivers (last 15 mins)
+  const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+  const { data: drivers } = await supabase
+    .from("users")
+    .select("last_lat, last_lng, status")
+    .not("last_lat", "is", null)
+    .neq("status", "Offline")
+    .gte("last_active", fifteenMinsAgo);
+
+  const activeDrivers = drivers || [];
+
+  // 3. Historical hour bonus (Lunch 11-13, Dinner 17-19, Night 20-23)
+  const isPeak = (hour >= 11 && hour <= 13) || (hour >= 17 && hour <= 19) || (hour >= 20 && hour <= 23);
+  const historical_hour_bonus = isPeak ? 1 : 0;
+
+  // 4. Calculate Live Score for each merchant
+  result = result.map(m => {
+    let antar_15m = 0;
+    let ngetem_15m = 0;
+
+    if (m.lat && m.lng) {
+      activeDrivers.forEach(d => {
+        if (!d.last_lat || !d.last_lng) return;
+        const dist = getDistance(m.lat!, m.lng!, d.last_lat, d.last_lng);
+        if (dist <= 0.12) { // 120m radius
+          if (d.status === 'Antar') antar_15m++;
+          if (d.status === 'Ngetem') ngetem_15m++;
+        }
+      });
+    }
+
+    const promoScore = m.promo_active ? 1 : 0;
+    const fastScore = m.fast_pickup ? 1 : 0;
+    
+    let adminBoost = 0;
+    if (m.manual_admin_boost_until && m.manual_admin_boost_until > now) {
+      adminBoost = 1;
+    }
+
+    const live_score = 
+      (antar_15m * 5) + 
+      (ngetem_15m * 2) + 
+      (promoScore * 15) + 
+      (fastScore * 10) + 
+      (historical_hour_bonus * 10) + 
+      (adminBoost * 20);
+
+    let live_status: "Sepi" | "Bergerak" | "Mulai Panas" | "Ramai Pickup" | "Sangat Sibuk" = "Sepi";
+    if (live_score >= 90) live_status = "Sangat Sibuk";
+    else if (live_score >= 66) live_status = "Ramai Pickup";
+    else if (live_score >= 41) live_status = "Mulai Panas";
+    else if (live_score >= 20) live_status = "Bergerak";
+
+    return {
+      ...m,
+      live_score,
+      live_status,
+      driver_antar_nearby: antar_15m,
+      driver_ngetem_nearby: ngetem_15m
+    };
+  });
+
+  // 5. Sort by live_score
   if (areaName) {
     result.sort((a, b) => {
       const aLocal = a.area?.toLowerCase().includes(areaName.toLowerCase()) ? 1 : 0;
       const bLocal = b.area?.toLowerCase().includes(areaName.toLowerCase()) ? 1 : 0;
       if (bLocal !== aLocal) return bLocal - aLocal;
-      return (b.busy_score || 0) - (a.busy_score || 0);
+      return (b.live_score || 0) - (a.live_score || 0);
     });
+  } else {
+    result.sort((a, b) => (b.live_score || 0) - (a.live_score || 0));
   }
 
   return result;
@@ -272,5 +353,23 @@ export async function toggleFlashSale(id: string, isFlashSale: boolean) {
 
   revalidatePath("/admin");
   revalidatePath("/radar");
+  return { success: true };
+}
+
+export async function boostMerchantLive(id: string) {
+  const isAdmin = await verifyAdmin();
+  if (!isAdmin) return { error: "Unauthorized" };
+
+  const supabase = getServiceClient();
+  const until = new Date(Date.now() + 20 * 60000).toISOString();
+  
+  const { error } = await supabase.from("merchant_signals").update({
+    manual_admin_boost_until: until
+  }).eq("id", id);
+  
+  if (error) return { error: error.message };
+  revalidatePath("/admin");
+  revalidatePath("/radar");
+  revalidatePath("/");
   return { success: true };
 }

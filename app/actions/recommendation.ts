@@ -93,8 +93,8 @@ export async function getRecommendationV2(
         action: "STAY",
         title: isID ? "Zona Peluang!" : "Opportunity Zone!",
         reason: isID
-          ? `Zona ini punya banyak merchant tapi driver masih sedikit. ${isPeak ? "Jam sibuk sekarang — stay dulu!" : "Hold posisi."}`
-          : `High merchant signal, low drivers. ${isPeak ? "Peak hours — stay here!" : "Hold position."}`,
+          ? `${currentHotspot.merchant_count} merchant di radius terdekat mulai panas. Bertahan 10 menit lagi.`
+          : `${currentHotspot.merchant_count} merchants nearby getting hot. Hold for 10 mins.`,
         color: "#10B981",
         badge: "High"
       };
@@ -104,8 +104,8 @@ export async function getRecommendationV2(
         action: "STAY",
         title: isID ? "Zona Bagus" : "Good Zone",
         reason: isID
-          ? `Sinyal ${currentHotspot.label.toLowerCase()} di sini. Tetap stand by.`
-          : `Zone is ${currentHotspot.label}. Hold position.`,
+          ? `${currentHotspot.merchant_count} merchant sangat sibuk di area ini. Bertahan 10-15 menit lagi.`
+          : `${currentHotspot.merchant_count} merchants very busy here. Hold for 10-15 mins.`,
         color: "#3B82F6",
         badge: "High"
       };
@@ -116,8 +116,8 @@ export async function getRecommendationV2(
         action: "MOVE",
         title: isID ? "Zona Terlalu Padat" : "Overcrowded Zone",
         reason: isID
-          ? `Terlalu banyak driver di sini. Coba geser ke ${target}.`
-          : `Too many drivers. Shift to ${target}.`,
+          ? `Terlalu banyak driver ngetem di spot ini. Geser ke ${target}.`
+          : `Too many drivers idling here. Shift to ${target}.`,
         targetZone: target,
         color: "#EF4444",
         badge: "High"

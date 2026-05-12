@@ -277,12 +277,23 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
               </select>
               <textarea name="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t("address")} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] resize-none" rows={2} />
 
-              <div className="grid grid-cols-2 gap-4">
-                <input name="rating" type="number" step="0.1" placeholder={t("rating")} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
-                <input name="reviews" type="number" placeholder={t("reviews")} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+              <div className="flex flex-col gap-3">
+                <label className="flex items-center gap-3 bg-neutral-50 rounded-2xl px-4 py-3 border border-neutral-200 cursor-pointer mb-1">
+                  <input 
+                    type="checkbox" 
+                    name="is_open_24h" 
+                    id="is_open_24h_seller"
+                    className="w-5 h-5 rounded-lg accent-neutral-900"
+                    onChange={(e) => {
+                      const grid = document.getElementById("time_grid_seller");
+                      if (grid) grid.style.display = e.target.checked ? "none" : "grid";
+                    }}
+                  />
+                  <span className="text-[0.85rem] font-bold text-neutral-700">Buka 24 Jam</span>
+                </label>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div id="time_grid_seller" className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Buka</p>
                   <input name="open_time" type="time" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
@@ -335,15 +346,19 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
                 onChange={(e) => setFilterLevel(e.target.value)}
                 className="px-3 py-2.5 rounded-xl bg-white border border-neutral-200 text-[0.85rem] font-semibold outline-none"
               >
-                <option value="All">All</option>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
+                <option value="All">All Category</option>
+                <option value="Resto">Resto</option>
+                <option value="Seller">Seller SPX/Paket</option>
               </select>
             </div>
 
             {merchants
-              .filter(m => filterLevel === "All" || m.busy_level === filterLevel)
+              .filter(m => {
+                if (filterLevel === "All") return true;
+                if (filterLevel === "Resto") return m.category !== "Seller SPX" && m.category !== "Paket" && m.category !== "Toko/Seller";
+                if (filterLevel === "Seller") return m.category === "Seller SPX" || m.category === "Paket" || m.category === "Toko/Seller";
+                return true;
+              })
               .filter(m => m.name.toLowerCase().includes(searchQuery.toLowerCase()) || m.area.toLowerCase().includes(searchQuery.toLowerCase()))
               .map(m => (
               <div key={m.id} className={`bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm flex flex-col gap-4 ${!m.is_active ? "opacity-60 grayscale" : ""}`}>
@@ -380,25 +395,43 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
                   Updated: {new Date(m.updated_at || m.created_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false })}
                 </p>
 
-                <div className="flex gap-2 border-t border-neutral-50 pt-3">
+                <div className="flex flex-col gap-2 border-t border-neutral-50 pt-3">
                   <button 
-                    onClick={() => setEditingMerchant(m)} 
-                    className="flex-1 py-2.5 rounded-xl bg-blue-50 text-[0.75rem] font-bold text-blue-600 active:scale-95 transition-all"
+                    onClick={async () => {
+                      setLoading(true);
+                      const { boostMerchantLive } = await import("@/app/admin/actions/signals");
+                      const res = await boostMerchantLive(m.id);
+                      setLoading(false);
+                      if (res.success) {
+                        alert("Tandai ramai berhasil (+20 menit)!");
+                      } else {
+                        alert("Gagal tandai ramai");
+                      }
+                    }} 
+                    className="w-full py-2.5 rounded-xl bg-purple-50 text-[0.75rem] font-bold text-purple-600 active:scale-95 transition-all"
                   >
-                    {t("edit")}
+                    🔥 Tandai Sedang Ramai (20mnt)
                   </button>
-                  <button onClick={() => toggleMerchantActive(m.id, !m.is_active)} className={`flex-1 py-2.5 rounded-xl text-[0.75rem] font-bold uppercase tracking-widest transition-all ${m.is_active ? "bg-emerald-50 text-emerald-600" : "bg-neutral-100 text-neutral-400"}`}>
-                    {m.is_active ? t("enable") : t("disable")}
-                  </button>
-                  <button onClick={async () => {
-                    if (confirm("Delete merchant?")) {
-                      await deleteMerchant(m.id);
-                      setMerchants(prev => prev.filter(x => x.id !== m.id));
-                    }
-                  }} className="flex-1 py-2.5 rounded-xl bg-red-50 text-[0.75rem] font-bold text-red-600 active:scale-95 transition-all">{t("delete")}</button>
-                  <a href={`/radar?lat=${m.lat}&lng=${m.lng}`} className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                  </a>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => setEditingMerchant(m)} 
+                      className="flex-1 py-2.5 rounded-xl bg-blue-50 text-[0.75rem] font-bold text-blue-600 active:scale-95 transition-all"
+                    >
+                      {t("edit")}
+                    </button>
+                    <button onClick={() => toggleMerchantActive(m.id, !m.is_active)} className={`flex-1 py-2.5 rounded-xl text-[0.75rem] font-bold uppercase tracking-widest transition-all ${m.is_active ? "bg-emerald-50 text-emerald-600" : "bg-neutral-100 text-neutral-400"}`}>
+                      {m.is_active ? t("enable") : t("disable")}
+                    </button>
+                    <button onClick={async () => {
+                      if (confirm("Delete merchant?")) {
+                        await deleteMerchant(m.id);
+                        setMerchants(prev => prev.filter(x => x.id !== m.id));
+                      }
+                    }} className="flex-1 py-2.5 rounded-xl bg-red-50 text-[0.75rem] font-bold text-red-600 active:scale-95 transition-all">{t("delete")}</button>
+                    <a href={`/radar?lat=${m.lat}&lng=${m.lng}`} className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    </a>
+                  </div>
                 </div>
               </div>
             ))}
@@ -760,7 +793,21 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
                 </label>
               </div>
               <input name="promo_percent" type="number" defaultValue={editingMerchant.promo_percent ?? ""} placeholder="Promo % (e.g. 20)" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
-              <div className="grid grid-cols-2 gap-3">
+              <label className="flex items-center gap-3 bg-neutral-50 rounded-2xl px-4 py-3 border border-neutral-200 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  name="is_open_24h" 
+                  defaultChecked={editingMerchant.is_open_24h}
+                  className="w-5 h-5 rounded-lg accent-neutral-900"
+                  onChange={(e) => {
+                    const grid = document.getElementById("edit_time_grid");
+                    if (grid) grid.style.display = e.target.checked ? "none" : "grid";
+                  }}
+                />
+                <span className="text-[0.85rem] font-bold text-neutral-700">Buka 24 Jam</span>
+              </label>
+              
+              <div id="edit_time_grid" className="grid grid-cols-2 gap-3" style={{ display: editingMerchant.is_open_24h ? "none" : "grid" }}>
                 <div>
                   <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1 pl-1">Buka</p>
                   <input name="open_time" type="time" defaultValue={editingMerchant.open_time ?? ""} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />

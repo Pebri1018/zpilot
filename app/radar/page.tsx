@@ -22,8 +22,12 @@ export type RadarMarker = {
   id: string;
   lat: number;
   lng: number;
-  type: "driver_ngetem" | "driver_antar" | "merchant_high" | "merchant_med" | "merchant_low" | "spot";
+  type: "driver_ngetem" | "driver_antar" | "merchant_sepi" | "merchant_bergerak" | "merchant_mulaipanas" | "merchant_ramai" | "merchant_sangatsibuk" | "spot";
   label: string;
+  live_status?: string;
+  antar_nearby?: number;
+  ngetem_nearby?: number;
+  promo_active?: boolean;
 };
 
 export default function RadarPage() {
@@ -148,9 +152,35 @@ export default function RadarPage() {
               if (!isOpen) return; // Skip closed merchants
             }
 
-            let type: RadarMarker["type"] = "merchant_low";
-            if (m.busy_score >= 5) type = "merchant_high";
-            else if (m.busy_score >= 3) type = "merchant_med";
+            let type: RadarMarker["type"] = "merchant_sepi";
+            
+            // Calculate live score locally
+            let antar_15m = 0;
+            let ngetem_15m = 0;
+            drivers?.forEach(d => {
+              if (!d.last_lat || !d.last_lng) return;
+              const dist = getDistance(m.lat, m.lng, d.last_lat, d.last_lng);
+              if (dist <= 0.12) {
+                if (d.status === "Antar") antar_15m++;
+                if (d.status === "Ngetem") ngetem_15m++;
+              }
+            });
+
+            // Re-calculate basic score
+            const isPeak = new Date().getHours() >= 11 && new Date().getHours() <= 13 || new Date().getHours() >= 17 && new Date().getHours() <= 19;
+            const score = 
+              (antar_15m * 5) + 
+              (ngetem_15m * 2) + 
+              (m.promo_active ? 15 : 0) + 
+              (m.fast_pickup ? 10 : 0) + 
+              (isPeak ? 10 : 0) +
+              ((m.manual_admin_boost_until && m.manual_admin_boost_until > new Date().toISOString()) ? 20 : 0);
+
+            let statusStr = "Sepi";
+            if (score >= 90) { type = "merchant_sangatsibuk"; statusStr = "Sangat Sibuk"; }
+            else if (score >= 66) { type = "merchant_ramai"; statusStr = "Ramai Pickup"; }
+            else if (score >= 41) { type = "merchant_mulaipanas"; statusStr = "Mulai Panas"; }
+            else if (score >= 20) { type = "merchant_bergerak"; statusStr = "Bergerak"; }
             
             const flashTag = m.is_flash_sale ? " ⚡" : "";
             newMarkers.push({
@@ -158,7 +188,11 @@ export default function RadarPage() {
               lat: m.lat,
               lng: m.lng,
               type,
-              label: m.name + flashTag
+              label: m.name + flashTag,
+              live_status: statusStr,
+              antar_nearby: antar_15m,
+              ngetem_nearby: ngetem_15m,
+              promo_active: m.promo_active
             });
           }
         });

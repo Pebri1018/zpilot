@@ -68,9 +68,11 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
     switch (type) {
       case "driver_ngetem": return { color: "#4F46E5", fill: "#4F46E5" }; // Indigo 600
       case "driver_antar": return { color: "#EC4899", fill: "#EC4899" };  // Pink 500
-      case "merchant_high": return { color: "#EF4444", fill: "#EF4444" }; 
-      case "merchant_med": return { color: "#F97316", fill: "#F97316" };  
-      case "merchant_low": return { color: "#10B981", fill: "#10B981" };  
+      case "merchant_sangatsibuk": return { color: "#991B1B", fill: "#991B1B" }; 
+      case "merchant_ramai": return { color: "#EF4444", fill: "#EF4444" }; 
+      case "merchant_mulaipanas": return { color: "#F97316", fill: "#F97316" }; 
+      case "merchant_bergerak": return { color: "#3B82F6", fill: "#3B82F6" };  
+      case "merchant_sepi": return { color: "#9CA3AF", fill: "#9CA3AF" };  
       case "spot": return { color: "#8B5CF6", fill: "#8B5CF6" };          
       default: return { color: "#000", fill: "#000" };
     }
@@ -129,9 +131,11 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
             // Pin size by priority (px)
             const getPinSize = (type: string) => {
               switch(type) {
-                case "merchant_high": return 14;
-                case "merchant_med": return 11;
-                case "merchant_low": return 8;
+                case "merchant_sangatsibuk": return 15;
+                case "merchant_ramai": return 13;
+                case "merchant_mulaipanas": return 11;
+                case "merchant_bergerak": return 9;
+                case "merchant_sepi": return 7;
                 case "driver_ngetem": return 13;
                 case "driver_antar": return 10;
                 case "spot": return 10;
@@ -159,13 +163,25 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
               icon={pinIcon}
             >
               <Popup className="radar-popup">
-                <div className="min-w-[140px] p-1">
+                <div className="min-w-[150px] p-1">
                   <p className="text-[0.95rem] font-black text-neutral-900 leading-tight mb-1.5">{m.label}</p>
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <div className="px-2 py-0.5 rounded-md text-[0.6rem] font-black uppercase tracking-wider text-white" style={{ backgroundColor: colors.color }}>
-                      {m.type.replace("merchant_", "").replace("driver_", "").replace("_", " ")}
+                  
+                  {m.type.startsWith("merchant_") ? (
+                    <div className="flex flex-col gap-1 mb-2">
+                      <div className="px-2 py-0.5 rounded-md text-[0.6rem] font-black uppercase tracking-wider text-white w-fit" style={{ backgroundColor: colors.color }}>
+                        {m.live_status || "Merchant"}
+                      </div>
+                      <p className="text-[0.65rem] font-medium text-neutral-600 mt-1">Driver Antar dekat: <b>{m.antar_nearby || 0}</b></p>
+                      <p className="text-[0.65rem] font-medium text-neutral-600">Driver Ngetem dekat: <b>{m.ngetem_nearby || 0}</b></p>
+                      <p className="text-[0.65rem] font-medium text-neutral-600">Promo: <b>{m.promo_active ? "Ya" : "Tidak"}</b></p>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <div className="px-2 py-0.5 rounded-md text-[0.6rem] font-black uppercase tracking-wider text-white" style={{ backgroundColor: colors.color }}>
+                        {m.type.replace("driver_", "").replace("_", " ")}
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="flex flex-col gap-1.5 mt-2">
                     <a
