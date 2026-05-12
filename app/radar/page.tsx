@@ -404,7 +404,7 @@ function RadarContent() {
       {/* TOP RIGHT — Driver count + refresh */}
       <div className="absolute top-[max(1rem,env(safe-area-inset-top))] right-3 z-[500]">
         <button
-          onClick={fetchData}
+          onClick={() => fetchData()}
           disabled={fetching}
           className="bg-neutral-950/80 backdrop-blur-md rounded-2xl px-3 py-2 shadow-xl border border-white/10 flex flex-col items-center active:scale-95 transition-all"
         >
