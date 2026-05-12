@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
@@ -34,7 +34,7 @@ export type RadarMarker = {
   notes?: string;
 };
 
-export default function RadarPage() {
+function RadarContent() {
   const { lang, t } = useLanguage();
   const { latitude, longitude, areaName, loading, error } = useLocation();
   const searchParams = useSearchParams();
@@ -445,5 +445,13 @@ export default function RadarPage() {
 
       <DriverBottomNav />
     </div>
+  );
+}
+
+export default function RadarPage() {
+  return (
+    <Suspense fallback={<div className="h-[100dvh] w-full bg-[#f0f0f0] flex items-center justify-center">Loading Radar...</div>}>
+      <RadarContent />
+    </Suspense>
   );
 }
