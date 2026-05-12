@@ -81,12 +81,12 @@ function RadarContent() {
         const currentUserId = sessionData?.session?.user?.id;
         
         let isAdminFlag = false;
-        if (currentUserId) {
-          const { data: userData } = await supabase.from("users").select("role").eq("id", currentUserId).single();
-          if (userData?.role === "Admin" || userData?.role === "Founder") {
-            isAdminFlag = true;
-            setIsAdmin(true);
-          }
+        try {
+          const { verifyAdmin } = await import("@/app/admin/actions");
+          isAdminFlag = await verifyAdmin();
+          setIsAdmin(isAdminFlag);
+        } catch (err) {
+          console.error("Failed to verify admin", err);
         }
 
         // 1. Fetch active (non-Offline) drivers from users table

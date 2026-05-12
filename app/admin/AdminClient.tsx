@@ -311,6 +311,31 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 />
               </div>
 
+              <button
+                type="button"
+                onClick={() => {
+                  if (navigator.geolocation) {
+                    setLoading(true);
+                    navigator.geolocation.getCurrentPosition(
+                      (pos) => {
+                        setLat(pos.coords.latitude);
+                        setLng(pos.coords.longitude);
+                        setLoading(false);
+                      },
+                      () => {
+                        alert("Gagal mendapatkan lokasi. Pastikan izin lokasi aktif.");
+                        setLoading(false);
+                      },
+                      { enableHighAccuracy: true, timeout: 10000 }
+                    );
+                  }
+                }}
+                className="w-full flex items-center justify-center gap-2 py-3 mb-2 bg-blue-50 text-blue-700 font-bold rounded-2xl border border-blue-100 active:scale-[0.98] transition-all text-[0.85rem]"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+                Gunakan Lokasi Saya Saat Ini
+              </button>
+
               <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, addr, ar) => {
                 setLat(newLat); setLng(newLng); setAddress(addr); setArea(ar);
               }} />
@@ -452,6 +477,30 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                   className="w-full px-5 py-3 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] focus:outline-none"
                 />
               </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (navigator.geolocation) {
+                    setLoading(true);
+                    navigator.geolocation.getCurrentPosition(
+                      (pos) => {
+                        setLat(pos.coords.latitude);
+                        setLng(pos.coords.longitude);
+                        setLoading(false);
+                      },
+                      () => {
+                        alert("Gagal mendapatkan lokasi. Pastikan izin lokasi aktif.");
+                        setLoading(false);
+                      },
+                      { enableHighAccuracy: true, timeout: 10000 }
+                    );
+                  }
+                }}
+                className="w-full flex items-center justify-center gap-2 py-3 mb-2 bg-blue-50 text-blue-700 font-bold rounded-2xl border border-blue-100 active:scale-[0.98] transition-all text-[0.85rem]"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+                Gunakan Lokasi Saya Saat Ini
+              </button>
 
               <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, addr, ar) => {
                 setLat(newLat); setLng(newLng); setAddress(addr); setArea(ar);
