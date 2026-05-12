@@ -121,6 +121,7 @@ export function LiveDashboard() {
 
       const finalMerchants = merchantsResult.filter(m => {
         if (!latitude || !longitude) return true;
+        if (m.lat == null || m.lng == null) return true;
         return getDist(latitude, longitude, m.lat, m.lng) <= 5;
       }).sort((a, b) => (b.live_score || 0) - (a.live_score || 0));
 
