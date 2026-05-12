@@ -67,6 +67,7 @@ export async function upsertMerchant(formData: FormData) {
   const close_time = String(formData.get("close_time") || "").trim() || null;
   const free_shipping = formData.get("free_shipping") === "on";
   const is_open_24h = formData.get("is_open_24h") === "on";
+  const closed_days = String(formData.get("closed_days") || "").trim() || null;
 
   if (!name || !area) return { error: "Nama resto dan area wajib diisi" };
 
@@ -103,6 +104,7 @@ export async function upsertMerchant(formData: FormData) {
       is_open_24h: is_open_24h || false,
       open_time: is_open_24h ? null : open_time,
       close_time: is_open_24h ? null : close_time,
+      closed_days,
       lat: lat && !isNaN(lat) ? lat : null,
       lng: lng && !isNaN(lng) ? lng : null,
       area,
@@ -190,6 +192,7 @@ export type MerchantSignal = {
   created_at: string;
   open_time?: string | null;
   close_time?: string | null;
+  closed_days?: string | null;
 };
 
 // Haversine distance in km

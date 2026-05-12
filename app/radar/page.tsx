@@ -164,7 +164,11 @@ function RadarContent() {
           if (m.lat && m.lng) {
             // --- OPEN/CLOSED FILTER ---
             let isClosed = false;
-            if (!m.is_open_24h && m.open_time && m.close_time) {
+            const todayDay = new Date().toLocaleDateString("id-ID", { weekday: "long", timeZone: "Asia/Jakarta" });
+            
+            if (m.closed_days && m.closed_days.toLowerCase().includes(todayDay.toLowerCase())) {
+              isClosed = true;
+            } else if (!m.is_open_24h && m.open_time && m.close_time) {
               const nowHHMM = new Date().toLocaleTimeString("en-US", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", hour12: false });
               // Handle overnight: e.g. open 22:00, close 04:00
               const isOvernight = m.open_time > m.close_time;

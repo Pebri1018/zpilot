@@ -378,6 +378,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                         <input name="close_time" type="time" lang="en-GB" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
                       </div>
                     </div>
+                    <input name="closed_days" placeholder="Hari Libur (opsional, misal: Senin, Minggu)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold mt-1" />
                   </div>
 
                   <div className="flex flex-col gap-3 pt-2">
@@ -538,6 +539,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                   <input name="close_time" type="time" lang="en-GB" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
                 </div>
               </div>
+              <input name="closed_days" placeholder="Hari Libur (opsional, misal: Senin, Minggu)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold mb-2" />
 
               <div className="flex flex-col gap-3 pt-2 border-t border-neutral-100">
                 <label className="flex items-center gap-2 cursor-pointer group p-3 bg-rose-50 rounded-xl border border-rose-100">
@@ -1086,6 +1088,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                   <input name="close_time" type="time" lang="en-GB" defaultValue={editingMerchant.close_time ?? ""} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
                 </div>
               </div>
+              <input name="closed_days" defaultValue={editingMerchant.closed_days ?? ""} placeholder="Hari Libur (opsional, misal: Senin, Minggu)" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
               <div className="flex gap-2 pt-2">
                 <button type="button" onClick={() => setEditingMerchant(null)} className="flex-1 py-3 rounded-2xl bg-neutral-100 font-bold text-neutral-600">
                   Batal
