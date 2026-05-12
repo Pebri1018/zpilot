@@ -829,8 +829,8 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 <button 
                   onClick={async () => {
                     if (confirm("Hapus spot ini?")) {
-                      const { deleteSpot } = await import("@/app/admin/actions/signals");
-                      await deleteSpot(s.id);
+                      const { deleteNgetemSpot } = await import("@/app/admin/actions/notes");
+                      await deleteNgetemSpot(s.id);
                       setSpots(prev => prev.filter(x => x.id !== s.id));
                     }
                   }}
