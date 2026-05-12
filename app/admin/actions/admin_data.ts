@@ -85,8 +85,8 @@ export async function getAdminStats() {
     supabase.from("users").select("id", { count: "exact", head: true }),
     supabase.from("feedback").select("id", { count: "exact", head: true }).eq("status", "pending"),
     supabase.from("merchant_signals").select("id", { count: "exact", head: true }).eq("is_active", true),
-    supabase.from("merchant_signals").select("id", { count: "exact", head: true }).in("category", ["Makanan", "Minuman"]),
-    supabase.from("merchant_signals").select("id", { count: "exact", head: true }).eq("category", "Toko/Seller"),
+    supabase.from("merchant_signals").select("id", { count: "exact", head: true }).in("category", ["Makanan", "Minuman", "Snack"]),
+    supabase.from("merchant_signals").select("id", { count: "exact", head: true }).in("category", ["Paket", "Toko/Seller", "Seller SPX"]),
     supabase.from("ngetem_spots").select("id", { count: "exact", head: true })
   ]);
 
