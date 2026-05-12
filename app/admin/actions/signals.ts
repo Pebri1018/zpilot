@@ -68,6 +68,7 @@ export async function upsertMerchant(formData: FormData) {
   const free_shipping = formData.get("free_shipping") === "on";
   const is_open_24h = formData.get("is_open_24h") === "on";
   const closed_days = String(formData.get("closed_days") || "").trim() || null;
+  const volume = String(formData.get("volume") || "Normal");
 
   if (!name || !area) return { error: "Nama resto dan area wajib diisi" };
 
@@ -87,6 +88,19 @@ export async function upsertMerchant(formData: FormData) {
   // Strict mapping: High requires really good score (>= 60), Med requires >= 35
   const busy_score = score >= 60 ? 5 : score >= 35 ? 3 : 1;
   const busy_level = busy_score >= 5 ? "High" : busy_score >= 3 ? "Medium" : "Low";
+
+  let live_score = undefined;
+  let live_status = undefined;
+  let manual_admin_boost_until = undefined;
+
+  if (volume === "Ramai") {
+    live_score = 100;
+    live_status = "Sangat Sibuk";
+    manual_admin_boost_until = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+  } else if (volume === "Sepi") {
+    live_score = 10;
+    live_status = "Sepi";
+  }
 
   const supabase = getServiceClient();
   const { data, error } = await supabase.from("merchant_signals").upsert(
@@ -112,6 +126,9 @@ export async function upsertMerchant(formData: FormData) {
       rating,
       reviews,
       popularity_score: score,
+      live_score,
+      live_status,
+      manual_admin_boost_until,
       updated_at: new Date().toISOString(),
       expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
     },

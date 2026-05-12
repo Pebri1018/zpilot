@@ -9,7 +9,7 @@ import { saveNgetemSpot } from "./actions/notes";
 import { toggleUserDisabled, deleteUserAccount, replyFeedback } from "./actions/admin_data";
 import { useLanguage } from "@/context/LanguageContext";
 
-
+const LocationPicker = dynamic(() => import("@/components/LocationPicker"), { ssr: false });
 
 type Props = {
   broadcasts: Broadcast[];
@@ -345,6 +345,11 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 />
               </div>
 
+              <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, addr, ar) => {
+                setLat(newLat); setLng(newLng);
+                if (addr) setAddress(addr);
+                if (ar) setArea(ar);
+              }} />
               <div className="grid grid-cols-2 gap-3">
                 <input name="area" required value={area} onChange={e => setArea(e.target.value)} placeholder="Kecamatan / Area (Wajib)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold" />
                 <input value={`${lat || ''}, ${lng || ''}`} readOnly placeholder="Koordinat" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] text-neutral-500 font-mono focus:outline-none" />
@@ -410,6 +415,14 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                     </div>
                     <div id="promo_percent_container" style={{ display: "none" }}>
                       <input name="promo_percent" type="number" placeholder="Promo Percent (e.g. 20, 40)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+                    </div>
+                    <div>
+                      <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Live Status / Kepadatan</p>
+                      <select name="volume" defaultValue="Normal" className="w-full px-4 py-3 rounded-xl bg-white border border-neutral-200 text-[0.9rem] font-semibold">
+                        <option value="Sepi">🟢 Sepi — Antrian kosong</option>
+                        <option value="Normal">🟡 Normal — Antrian biasa</option>
+                        <option value="Ramai">🔴 Ramai — Antrian panjang</option>
+                      </select>
                     </div>
                   </div>
                 </>
@@ -480,6 +493,11 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                   className="w-full px-5 py-3 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] focus:outline-none"
                 />
               </div>
+              <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, addr, ar) => {
+                setLat(newLat); setLng(newLng);
+                if (addr) setAddress(addr);
+                if (ar) setArea(ar);
+              }} />
               <div className="grid grid-cols-2 gap-3">
                 <input name="area" required value={area} onChange={e => setArea(e.target.value)} placeholder="Kecamatan / Area (Wajib)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold" />
                 <input value={`${lat || ''}, ${lng || ''}`} readOnly placeholder="Koordinat" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] text-neutral-500 font-mono focus:outline-none" />
@@ -702,6 +720,9 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                   className="w-full px-5 py-3 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] focus:outline-none"
                 />
               </div>
+              <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng) => {
+                setLat(newLat); setLng(newLng);
+              }} />
               <input value={`${lat || ''}, ${lng || ''}`} readOnly placeholder="Koordinat" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] text-neutral-500 font-mono focus:outline-none" />
               
               <div className="grid grid-cols-2 gap-4">
@@ -760,6 +781,10 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
             </div>
             <div className="grid grid-cols-2 gap-3">
               <input name="area" required value={area} onChange={e => setArea(e.target.value)} placeholder="Kecamatan / Area (Wajib)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold" />
+              <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, addr, ar) => {
+                setLat(newLat); setLng(newLng);
+                if (ar) setArea(ar);
+              }} />
               <input value={`${lat || ''}, ${lng || ''}`} readOnly placeholder="Koordinat" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] text-neutral-500 font-mono focus:outline-none" />
             </div>
 
@@ -1086,6 +1111,14 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                           </label>
                         </div>
                         <input name="promo_percent" type="number" defaultValue={editingMerchant.promo_percent ?? ""} placeholder="Promo % (e.g. 20)" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+                        <div className="mt-2">
+                          <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Live Status / Kepadatan</p>
+                          <select name="volume" defaultValue={editingMerchant.live_status === "Sangat Sibuk" ? "Ramai" : editingMerchant.live_status === "Sepi" ? "Sepi" : "Normal"} className="w-full px-4 py-3 rounded-xl bg-white border border-neutral-200 text-[0.9rem] font-semibold">
+                            <option value="Sepi">🟢 Sepi — Antrian kosong</option>
+                            <option value="Normal">🟡 Normal — Antrian biasa</option>
+                            <option value="Ramai">🔴 Ramai — Antrian panjang</option>
+                          </select>
+                        </div>
                       </>
                     )}
                   </>

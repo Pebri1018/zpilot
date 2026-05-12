@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useLocation } from "@/hooks/useLocation";
 import { getRecommendationV2, getZoneStats, type RecommendationResult, type ZoneStatsResult } from "@/app/actions/recommendation";
@@ -38,6 +38,11 @@ function getActionColors(action: string, color: string) {
   return { bg: "bg-emerald-600", text: "text-white", border: "border-emerald-500", pill: "bg-emerald-700", accent: "#059669" };
 }
 
+// Keep cache state outside component to survive remounts
+let globalLastAnalysisTs = 0;
+let globalLastArea: string | null = null;
+let globalLastStatus = "";
+
 export function LiveDashboard() {
   const { lang, t } = useLanguage();
   const { status, areaName, loading, error, timestamp, refreshLocation, latitude, longitude } = useLocation();
@@ -58,8 +63,6 @@ export function LiveDashboard() {
     driverCount: 0
   });
 
-  const lastAnalysisRef = useRef<{ area: string|null; status: string; ts: number }>({ area: null, status: "", ts: 0 });
-
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 30000);
     return () => clearInterval(timer);
@@ -79,62 +82,81 @@ export function LiveDashboard() {
     }
   }, [status]);
 
-  useEffect(() => {
-    async function fetchData() {
-      const now = Date.now();
-      const last = lastAnalysisRef.current;
-      const areaChanged = last.area !== areaName;
-      const statusChanged = last.status !== status;
-      const stale = now - last.ts > 5 * 60 * 1000;
-      if (!areaChanged && !statusChanged && !stale) return;
-      lastAnalysisRef.current = { area: areaName, status, ts: now };
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-      try {
-        const idleMinutes = status === "Ngetem" && ngetemStartTime ? Math.floor((now - ngetemStartTime) / 60000) : 0;
-        const [merchantsResult, statsResult, hotspotResult] = await Promise.all([
-          getActiveMerchants(areaName),
-          getZoneStats(areaName),
-          getHotspots()
-        ]);
+  const fetchData = useCallback(async (force = false) => {
+    const now = Date.now();
+    const areaChanged = globalLastArea !== areaName;
+    const statusChanged = globalLastStatus !== status;
+    const stale = now - globalLastAnalysisTs > 5 * 60 * 1000;
+    
+    if (!force && !areaChanged && !statusChanged && !stale) return;
+    
+    globalLastArea = areaName;
+    globalLastStatus = status;
+    globalLastAnalysisTs = now;
 
-        const recResult = await getRecommendationV2(
-          areaName, status, idleMinutes,
-          statsResult.driverCount, merchantsResult.length,
-          lang, hotspotResult
-        );
+    setIsRefreshing(true);
+    try {
+      const idleMinutes = status === "Ngetem" && ngetemStartTime ? Math.floor((now - ngetemStartTime) / 60000) : 0;
+      const [merchantsResult, statsResult, hotspotResult] = await Promise.all([
+        getActiveMerchants(areaName),
+        getZoneStats(areaName),
+        getHotspots()
+      ]);
 
-        setMerchants(prev => {
-          const prevIds = new Set(prev.map((m: MerchantSignal) => m.id));
-          const freshOnly = merchantsResult.filter((m: MerchantSignal) => !prevIds.has(m.id));
-          const merged = [...freshOnly, ...merchantsResult.filter((m: MerchantSignal) => prevIds.has(m.id))];
-          saveMerchantsCache(merged);
-          return merged;
-        });
-        setZoneStats(statsResult);
-        setRecommendation(recResult);
-        setTopZones(hotspotResult.slice(0, 3));
+      const recResult = await getRecommendationV2(
+        areaName, status, idleMinutes,
+        statsResult.driverCount, merchantsResult.length,
+        lang, hotspotResult
+      );
 
-        if (hotspotResult.length > 0 && latitude && longitude) {
-          const getDist = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2)**2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-          };
-          let closest = hotspotResult[0], minDist = getDist(latitude, longitude, closest.lat, closest.lng);
-          for (let i = 1; i < hotspotResult.length; i++) {
-            const d = getDist(latitude, longitude, hotspotResult[i].lat, hotspotResult[i].lng);
-            if (d < minDist) { minDist = d; closest = hotspotResult[i]; }
-          }
-          setNearestHotspot({ ...closest, dist: minDist });
+      const getDist = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2)**2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      };
+
+      const finalMerchants = merchantsResult.filter(m => {
+        if (!latitude || !longitude) return true;
+        return getDist(latitude, longitude, m.lat, m.lng) <= 5;
+      }).sort((a, b) => (b.live_score || 0) - (a.live_score || 0));
+
+      setMerchants(finalMerchants);
+      saveMerchantsCache(finalMerchants);
+
+      setZoneStats(statsResult);
+      setRecommendation(recResult);
+      setTopZones(hotspotResult.slice(0, 3));
+
+      if (hotspotResult.length > 0 && latitude && longitude) {
+        let closest = hotspotResult[0], minDist = getDist(latitude, longitude, closest.lat, closest.lng);
+        for (let i = 1; i < hotspotResult.length; i++) {
+          const d = getDist(latitude, longitude, hotspotResult[i].lat, hotspotResult[i].lng);
+          if (d < minDist) { minDist = d; closest = hotspotResult[i]; }
         }
-      } catch (e) {
-        console.error("Dashboard fetch failed", e);
+        setNearestHotspot({ ...closest, dist: minDist });
       }
+    } catch (e) {
+      console.error("Dashboard fetch failed", e);
+    } finally {
+      setIsRefreshing(false);
     }
+  }, [areaName, status, lang, latitude, longitude, ngetemStartTime]);
+
+  useEffect(() => {
     fetchData();
-  }, [areaName, status, lang]);
+  }, [fetchData]);
+
+  // Auto refresh every 5 minutes
+  useEffect(() => {
+    const timer = setInterval(() => {
+      fetchData(true);
+    }, 5 * 60 * 1000);
+    return () => clearInterval(timer);
+  }, [fetchData]);
 
   // Real-time merchant listener
   useEffect(() => {
@@ -197,11 +219,21 @@ export function LiveDashboard() {
           <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/60">
             {recommendation.action === "MOVE" ? "⚡ GERAK SEKARANG" : recommendation.action === "OFFLINE" ? "😴 OFFLINE" : recommendation.action === "BUSY" ? "🚀 SEDANG ANTAR" : "✅ REKOMENDASI"}
           </p>
-          {recommendation.badge && (
-            <span className={`text-[0.6rem] font-black uppercase px-2 py-0.5 rounded-lg ${recommendation.badge === "High" ? "bg-white/20 text-white" : "bg-white/10 text-white/70"}`}>
-              {recommendation.badge}
-            </span>
-          )}
+          <div className="flex items-center gap-1.5">
+            {recommendation.badge && (
+              <span className={`text-[0.6rem] font-black uppercase px-2 py-0.5 rounded-lg ${recommendation.badge === "High" ? "bg-white/20 text-white" : "bg-white/10 text-white/70"}`}>
+                {recommendation.badge}
+              </span>
+            )}
+            <button 
+              onClick={() => fetchData(true)} 
+              disabled={isRefreshing}
+              className={`p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all ${isRefreshing ? "animate-spin opacity-50" : "active:scale-90"}`}
+              aria-label="Refresh Data"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            </button>
+          </div>
         </div>
         <p className="text-[1.6rem] font-black text-white leading-tight tracking-tight">{recommendation.title}</p>
         {nearestHotspot && recommendation.action !== "OFFLINE" && (
