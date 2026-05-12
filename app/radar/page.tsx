@@ -184,9 +184,10 @@ function RadarContent() {
             
             
             // Calculate live score locally
+            let antar_15m = 0;
+            let ngetem_15m = 0;
             if (!isClosed) {
-              let antar_15m = 0;
-              let ngetem_15m = 0;
+
               drivers?.forEach(d => {
                 if (!d.last_lat || !d.last_lng) return;
                 const dist = getDistance(m.lat, m.lng, d.last_lat, d.last_lng);
