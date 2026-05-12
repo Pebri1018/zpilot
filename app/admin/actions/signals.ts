@@ -88,7 +88,7 @@ export async function upsertMerchant(formData: FormData) {
   const busy_level = busy_score >= 5 ? "High" : busy_score >= 3 ? "Medium" : "Low";
 
   const supabase = getServiceClient();
-  const { error } = await supabase.from("merchant_signals").upsert(
+  const { data, error } = await supabase.from("merchant_signals").upsert(
     {
       name,
       category,
@@ -114,14 +114,14 @@ export async function upsertMerchant(formData: FormData) {
       expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
     },
     { onConflict: "name,area" }
-  );
+  ).select().single();
 
   if (error) return { error: error.message };
 
   revalidatePath("/admin");
   revalidatePath("/");
   revalidatePath("/radar");
-  return { success: true };
+  return { success: true, data };
 }
 
 export async function deleteMerchant(id: string) {
