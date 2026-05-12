@@ -14,6 +14,7 @@ const LocationPicker = dynamic(() => import("@/components/LocationPicker"), { ss
 type Props = {
   broadcasts: Broadcast[];
   initialMerchants?: MerchantSignal[];
+  initialSpots?: any[];
   initialUsers?: any[];
   initialFeedback?: any[];
   stats: { users: number; feedback: number; signals: number; resto: number; seller: number; spots: number };
@@ -31,11 +32,12 @@ const NAV = [
   { id: "flash_sale", label: "Flash Sale", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> },
 ];
 
-export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = [], initialFeedback = [], stats }: Props) {
+export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = [], initialUsers = [], initialFeedback = [], stats }: Props) {
   const { lang, t } = useLanguage();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [merchantMode, setMerchantMode] = useState<"quick" | "detail">("quick");
   const [merchants, setMerchants] = useState(initialMerchants);
+  const [spots, setSpots] = useState(initialSpots);
   const [users, setUsers] = useState(initialUsers);
   const [editingMerchant, setEditingMerchant] = useState<any | null>(null);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
@@ -181,12 +183,52 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
         </div>
       )}
 
-      {/* DUMMY LISTS */}
+      {/* 5. SPOTS LIST */}
       {activeTab === "spots_list" && (
-        <div className="bg-white p-6 rounded-[2.5rem] border border-neutral-100 shadow-sm text-center">
-          <p className="text-neutral-500 font-bold">List Data Spot sedang dalam pembaruan.</p>
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
+          {spots.map(s => (
+            <div key={s.id} className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm flex flex-col gap-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="font-black text-[1.05rem] tracking-tight">{s.name}</p>
+                  <p className="text-[0.75rem] text-neutral-400 font-bold">{s.area}</p>
+                </div>
+                <button
+                  onClick={async () => {
+                    if (confirm("Hapus spot ini?")) {
+                      const { deleteNgetemSpot } = await import("./actions/notes");
+                      const res = await deleteNgetemSpot(s.id);
+                      if (res.success) setSpots(spots.filter(sp => sp.id !== s.id));
+                      else alert(res.error);
+                    }
+                  }}
+                  className="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                <div className="bg-neutral-50 rounded-xl p-2.5">
+                  <p className="text-[0.65rem] font-bold text-neutral-400 uppercase tracking-widest mb-1">Kualitas</p>
+                  <p className="text-[0.85rem] font-black text-neutral-800">{s.quality}</p>
+                </div>
+                <div className="bg-neutral-50 rounded-xl p-2.5">
+                  <p className="text-[0.65rem] font-bold text-neutral-400 uppercase tracking-widest mb-1">Jam Terbaik</p>
+                  <p className="text-[0.85rem] font-black text-neutral-800">{s.best_hours || "-"}</p>
+                </div>
+              </div>
+              {s.notes && <p className="text-[0.8rem] text-neutral-600 font-medium px-2 italic">"{s.notes}"</p>}
+            </div>
+          ))}
+          {spots.length === 0 && (
+            <div className="bg-white p-6 rounded-[2.5rem] border border-neutral-100 shadow-sm text-center">
+              <p className="text-neutral-500 font-bold">Belum ada data spot.</p>
+            </div>
+          )}
         </div>
       )}
+      
+      {/* DUMMY LISTS */}
       {activeTab === "signals_list" && (
         <div className="bg-white p-6 rounded-[2.5rem] border border-neutral-100 shadow-sm text-center">
           <p className="text-neutral-500 font-bold">List Data Sinyal (Sesi 10 Menit) sedang dalam pembaruan.</p>

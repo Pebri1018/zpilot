@@ -168,39 +168,48 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
                   <p className="text-[0.95rem] font-black text-neutral-900 leading-tight mb-1.5">{m.label}</p>
                   
                   {m.type.startsWith("merchant_") ? (
-                    <div className="flex flex-col gap-1 mb-2">
-                      <div className="px-2 py-0.5 rounded-md text-[0.6rem] font-black uppercase tracking-wider text-white w-fit" style={{ backgroundColor: colors.color }}>
+                    <div className="flex flex-col gap-0.5 mb-2">
+                      <div className="px-1.5 py-0.5 rounded-md text-[0.55rem] font-black uppercase tracking-wider text-white w-fit mb-0.5" style={{ backgroundColor: colors.color }}>
                         {m.live_status || "Merchant"}
                       </div>
-                      <p className="text-[0.65rem] font-medium text-neutral-600 mt-1">Driver Antar dekat: <b>{m.antar_nearby || 0}</b></p>
-                      <p className="text-[0.65rem] font-medium text-neutral-600">Driver Ngetem dekat: <b>{m.ngetem_nearby || 0}</b></p>
-                      <p className="text-[0.65rem] font-medium text-neutral-600">Promo: <b>{m.promo_active ? "Ya" : "Tidak"}</b></p>
+                      <p className="text-[0.6rem] font-medium text-neutral-600">Antar dekat: <b>{m.antar_nearby || 0}</b></p>
+                      <p className="text-[0.6rem] font-medium text-neutral-600">Ngetem dekat: <b>{m.ngetem_nearby || 0}</b></p>
+                      <p className="text-[0.6rem] font-medium text-neutral-600">Promo: <b>{m.promo_active ? "Ya" : "Tidak"}</b></p>
+                    </div>
+                  ) : m.type === "spot" ? (
+                    <div className="flex flex-col gap-0.5 mb-2">
+                      <div className="px-1.5 py-0.5 rounded-md text-[0.55rem] font-black uppercase tracking-wider text-white w-fit mb-0.5" style={{ backgroundColor: colors.color }}>
+                        SPOT MANGKAL
+                      </div>
+                      {m.quality && <p className="text-[0.6rem] font-medium text-neutral-600">Kualitas: <b>{m.quality}</b></p>}
+                      {m.best_hours && <p className="text-[0.6rem] font-medium text-neutral-600">Jam Terbaik: <b>{m.best_hours}</b></p>}
+                      {m.notes && <p className="text-[0.6rem] font-medium text-neutral-600 italic line-clamp-2">"{m.notes}"</p>}
                     </div>
                   ) : (
                     <div className="flex items-center gap-1.5 mb-2">
-                      <div className="px-2 py-0.5 rounded-md text-[0.6rem] font-black uppercase tracking-wider text-white" style={{ backgroundColor: colors.color }}>
+                      <div className="px-1.5 py-0.5 rounded-md text-[0.55rem] font-black uppercase tracking-wider text-white" style={{ backgroundColor: colors.color }}>
                         {m.type.replace("driver_", "").replace("_", " ")}
                       </div>
                     </div>
                   )}
                   
-                  <div className="flex flex-col gap-1.5 mt-2">
+                  <div className="flex flex-col gap-1 mt-1">
                     <a
                       href={`https://www.google.com/maps/dir/?api=1&destination=${m.lat},${m.lng}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full py-2.5 bg-neutral-900 text-white rounded-xl text-[0.72rem] font-bold active:scale-95 transition-all shadow-md"
+                      className="flex items-center justify-center gap-1.5 w-full py-1.5 bg-neutral-900 text-white rounded-lg text-[0.65rem] font-bold active:scale-95 transition-all shadow-sm"
                     >
-                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
                       Google Maps
                     </a>
                     <a
                       href={`https://waze.com/ul?ll=${m.lat},${m.lng}&navigate=yes`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 w-full py-2.5 bg-[#05C8F7] text-white rounded-xl text-[0.72rem] font-bold active:scale-95 transition-all shadow-md"
+                      className="flex items-center justify-center gap-1.5 w-full py-1.5 bg-[#05C8F7] text-white rounded-lg text-[0.65rem] font-bold active:scale-95 transition-all shadow-sm"
                     >
-                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm1 14.93V15a1 1 0 00-2 0v1.93A8.001 8.001 0 014.07 9H6a1 1 0 000-2H4.07A8.001 8.001 0 0111 3.07V5a1 1 0 002 0V3.07A8.001 8.001 0 0119.93 9H18a1 1 0 000 2h1.93A8.001 8.001 0 0113 16.93z"/></svg>
+                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm1 14.93V15a1 1 0 00-2 0v1.93A8.001 8.001 0 014.07 9H6a1 1 0 000-2H4.07A8.001 8.001 0 0111 3.07V5a1 1 0 002 0V3.07A8.001 8.001 0 0119.93 9H18a1 1 0 000 2h1.93A8.001 8.001 0 0113 16.93z"/></svg>
                       Waze
                     </a>
                   </div>

@@ -76,3 +76,25 @@ export async function saveNgetemSpot(formData: FormData) {
   revalidatePath("/admin");
   return { success: true };
 }
+
+export async function getAllNgetemSpots() {
+  const supabase = getServiceClient();
+  const { data, error } = await supabase.from("ngetem_spots").select("*").order("created_at", { ascending: false });
+  if (error) {
+    console.error("getAllNgetemSpots error:", error);
+    return [];
+  }
+  return data;
+}
+
+export async function deleteNgetemSpot(id: string) {
+  const isAdmin = await verifyAdmin();
+  if (!isAdmin) return { error: "Unauthorized" };
+
+  const supabase = getServiceClient();
+  const { error } = await supabase.from("ngetem_spots").delete().eq("id", id);
+  if (error) return { error: error.message };
+  
+  revalidatePath("/admin");
+  return { success: true };
+}

@@ -87,7 +87,7 @@ export async function getAdminStats() {
     supabase.from("merchant_signals").select("id", { count: "exact", head: true }).eq("is_active", true),
     supabase.from("merchant_signals").select("id", { count: "exact", head: true }).in("category", ["Makanan", "Minuman"]),
     supabase.from("merchant_signals").select("id", { count: "exact", head: true }).eq("category", "Toko/Seller"),
-    supabase.from("admin_manual_signals").select("id", { count: "exact", head: true })
+    supabase.from("ngetem_spots").select("id", { count: "exact", head: true })
   ]);
 
   return {

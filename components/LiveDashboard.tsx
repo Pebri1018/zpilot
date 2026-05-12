@@ -280,7 +280,7 @@ export function LiveDashboard() {
           </div>
           <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-5 px-5 no-scrollbar">
             {merchants.slice(0, 8).map(m => (
-              <div key={m.id} className="shrink-0 w-[140px] bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-900 dark:to-neutral-950 rounded-[1.2rem] p-3.5 border border-neutral-200/60 dark:border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between min-h-[110px] relative overflow-hidden">
+              <Link href={`/radar?lat=${m.lat}&lng=${m.lng}`} key={m.id} className="shrink-0 w-[140px] bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-900 dark:to-neutral-950 rounded-[1.2rem] p-3.5 border border-neutral-200/60 dark:border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between min-h-[110px] relative overflow-hidden active:scale-95 transition-transform cursor-pointer">
                 <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/10 blur-2xl rounded-full -mr-8 -mt-8 pointer-events-none"></div>
                 <div>
                   <p className="text-[0.85rem] font-black text-neutral-900 dark:text-neutral-100 line-clamp-2 leading-snug tracking-tight relative z-10">{m.name}</p>
@@ -293,7 +293,7 @@ export function LiveDashboard() {
                     {m.live_score && m.live_score >= 90 ? "Sangat Sibuk" : m.live_score && m.live_score >= 66 ? "Ramai" : m.live_score && m.live_score >= 41 ? "Sedang" : "Normal"}
                   </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

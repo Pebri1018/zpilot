@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { DriverBottomNav } from "@/components/DriverBottomNav";
 import { useLocation } from "@/hooks/useLocation";
@@ -28,11 +29,21 @@ export type RadarMarker = {
   antar_nearby?: number;
   ngetem_nearby?: number;
   promo_active?: boolean;
+  quality?: string;
+  best_hours?: string;
+  notes?: string;
 };
 
 export default function RadarPage() {
   const { lang, t } = useLanguage();
   const { latitude, longitude, areaName, loading, error } = useLocation();
+  const searchParams = useSearchParams();
+  const urlLat = searchParams.get("lat");
+  const urlLng = searchParams.get("lng");
+  
+  const mapLat = urlLat ? Number(urlLat) : latitude;
+  const mapLng = urlLng ? Number(urlLng) : longitude;
+
   const [markers, setMarkers] = useState<RadarMarker[]>([]);
   const [hotspots, setHotspots] = useState<HotspotZone[]>([]);
   const [fetching, setFetching] = useState(true);
@@ -204,7 +215,10 @@ export default function RadarPage() {
               lat: s.lat,
               lng: s.lng,
               type: "spot",
-              label: s.name
+              label: s.name,
+              quality: s.quality,
+              best_hours: s.best_hours,
+              notes: s.notes
             });
           }
         });
@@ -316,7 +330,7 @@ export default function RadarPage() {
 
       {/* MAP — takes full screen */}
       <div className="absolute inset-0">
-        <RadarMap latitude={latitude} longitude={longitude} markers={markers} hotspots={hotspots} />
+        <RadarMap latitude={mapLat} longitude={mapLng} markers={markers} hotspots={hotspots} />
       </div>
 
       {/* TOP LEFT — Zone pill */}

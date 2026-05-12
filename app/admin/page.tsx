@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { verifyAdmin, getBroadcasts } from "./actions";
 import { getAllMerchants } from "./actions/signals";
+import { getAllNgetemSpots } from "./actions/notes";
 import { getFeedbackList, getUserList, getAdminStats } from "./actions/admin_data";
 import { AdminClient } from "./AdminClient";
 
@@ -10,9 +11,10 @@ export default async function AdminPage() {
   const isAdmin = await verifyAdmin();
   if (!isAdmin) redirect("/");
 
-  const [broadcasts, initialMerchants, initialUsers, initialFeedback, stats] = await Promise.all([
+  const [broadcasts, initialMerchants, initialSpots, initialUsers, initialFeedback, stats] = await Promise.all([
     getBroadcasts(),
     getAllMerchants(),
+    getAllNgetemSpots(),
     getUserList(),
     getFeedbackList(),
     getAdminStats()
@@ -33,6 +35,7 @@ export default async function AdminPage() {
         <AdminClient 
           broadcasts={broadcasts} 
           initialMerchants={initialMerchants} 
+          initialSpots={initialSpots}
           initialUsers={initialUsers}
           initialFeedback={initialFeedback}
           stats={stats}
