@@ -152,7 +152,7 @@ export async function getHotspots(): Promise<HotspotZone[]> {
   } catch (error) {
     console.error("getHotspots error:", error);
     return PREDEFINED_ZONES.map(z => ({
-      ...z, score: 0, label: "SEPI", antar_drivers: 0, ngetem_drivers: 0, merchant_count: 0
+      ...z, score: 0, label: "HINDARI", antar_drivers: 0, ngetem_drivers: 0, merchant_count: 0
     }));
   }
 }
