@@ -34,6 +34,11 @@ export type RadarMarker = {
   notes?: string;
 };
 
+// Global cache to persist data across unmounts (tab switching) for 1 minute
+let globalMarkers: RadarMarker[] = [];
+let globalHotspots: HotspotZone[] = [];
+let globalLastFetchTime = 0;
+
 function RadarContent() {
   const { lang, t } = useLanguage();
   const { latitude, longitude, areaName, loading, error } = useLocation();
@@ -72,6 +77,13 @@ function RadarContent() {
   };
 
   const fetchData = async () => {
+    if (Date.now() - globalLastFetchTime < 60000 && globalMarkers.length > 0) {
+      setMarkers(globalMarkers);
+      setHotspots(globalHotspots);
+      setFetching(false);
+      return;
+    }
+
     setFetching(true);
     try {
       const supabase = createClient();
@@ -288,6 +300,10 @@ function RadarContent() {
         const hotspotData = await getHotspots();
         const driverMarkers = newMarkers.filter(m => m.type.startsWith("driver_"));
         setDriverCount(driverMarkers.length);
+        globalMarkers = newMarkers;
+        globalHotspots = hotspotData;
+        globalLastFetchTime = Date.now();
+
         setMarkers(newMarkers);
         setHotspots(hotspotData);
         console.log("RADAR DEBUG: Final markers", { 

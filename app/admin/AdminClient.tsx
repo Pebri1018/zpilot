@@ -6,7 +6,7 @@ import type { Broadcast } from "./actions";
 import { createBroadcast, deleteBroadcast } from "./actions";
 import { upsertMerchant, toggleMerchantActive, getAllMerchants, deleteMerchant, type MerchantSignal } from "./actions/signals";
 import { saveNgetemSpot } from "./actions/notes";
-import { toggleUserDisabled, deleteUserAccount, replyFeedback, deleteManualSignal } from "./actions/admin_data";
+import { toggleUserDisabled, deleteUserAccount, replyFeedback, deleteManualSignal, addManualSignal } from "./actions/admin_data";
 import { useLanguage } from "@/context/LanguageContext";
 
 const LocationPicker = dynamic(() => import("@/components/LocationPicker"), { ssr: false });
@@ -680,21 +680,24 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
               Tambahkan driver bayangan (fake drivers) atau spot khusus ke radar secara manual agar tampil di semua aplikasi driver.
             </p>
             <form action={async (fd) => {
+              if (!lat || !lng) {
+                alert("Silakan pilih lokasi di peta atau isi koordinat terlebih dahulu.");
+                return;
+              }
               setLoading(true);
-              const supabase = (await import("@/lib/supabase/client")).createClient();
               const expires_at = new Date(Date.now() + 10 * 60000).toISOString();
-              const { data, error } = await supabase.from("admin_manual_signals").insert({
-                lat: lat,
-                lng: lng,
-                type: String(fd.get("type") || "driver_ngetem"),
-                count: Number(fd.get("count") || 1),
-                expires_at: expires_at
-              }).select().single();
+              const res = await addManualSignal(
+                lat,
+                lng,
+                String(fd.get("type") || "driver_ngetem"),
+                Number(fd.get("count") || 1),
+                expires_at
+              );
               setLoading(false);
-              if (error) alert(error.message);
+              if (res.error) alert(res.error);
               else {
                 alert("Sinyal berhasil ditambahkan!");
-                if (data) setSignals(prev => [data, ...prev]);
+                if (res.data) setSignals(prev => [res.data, ...prev]);
               }
             }} className="space-y-4">
               <div className="flex flex-col gap-1.5 mb-2">

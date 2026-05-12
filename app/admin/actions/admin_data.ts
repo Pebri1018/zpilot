@@ -187,6 +187,20 @@ export async function getManualSignals() {
   return data || [];
 }
 
+export async function addManualSignal(lat: number, lng: number, type: string, count: number, expires_at: string) {
+  const isAdmin = await verifyAdmin();
+  if (!isAdmin) return { error: "Unauthorized" };
+  const supabase = getServiceClient();
+  const { data, error } = await supabase
+    .from("admin_manual_signals")
+    .insert({ lat, lng, type, count, expires_at })
+    .select()
+    .single();
+  if (error) return { error: error.message };
+  revalidatePath("/admin");
+  return { success: true, data };
+}
+
 export async function deleteManualSignal(id: string) {
   const isAdmin = await verifyAdmin();
   if (!isAdmin) return { error: "Unauthorized" };
