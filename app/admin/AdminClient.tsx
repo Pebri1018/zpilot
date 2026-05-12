@@ -6,7 +6,7 @@ import type { Broadcast } from "./actions";
 import { createBroadcast, deleteBroadcast } from "./actions";
 import { upsertMerchant, toggleMerchantActive, getAllMerchants, deleteMerchant, type MerchantSignal } from "./actions/signals";
 import { saveNgetemSpot } from "./actions/notes";
-import { toggleUserDisabled, deleteUserAccount, replyFeedback } from "./actions/admin_data";
+import { toggleUserDisabled, deleteUserAccount, replyFeedback, deleteManualSignal } from "./actions/admin_data";
 import { useLanguage } from "@/context/LanguageContext";
 
 const LocationPicker = dynamic(() => import("@/components/LocationPicker"), { ssr: false });
@@ -683,16 +683,19 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
               setLoading(true);
               const supabase = (await import("@/lib/supabase/client")).createClient();
               const expires_at = new Date(Date.now() + 10 * 60000).toISOString();
-              const { error } = await supabase.from("admin_manual_signals").insert({
+              const { data, error } = await supabase.from("admin_manual_signals").insert({
                 lat: lat,
                 lng: lng,
                 type: String(fd.get("type") || "driver_ngetem"),
                 count: Number(fd.get("count") || 1),
                 expires_at: expires_at
-              });
+              }).select().single();
               setLoading(false);
               if (error) alert(error.message);
-              else alert("Sinyal berhasil ditambahkan!");
+              else {
+                alert("Sinyal berhasil ditambahkan!");
+                if (data) setSignals(prev => [data, ...prev]);
+              }
             }} className="space-y-4">
               <div className="flex flex-col gap-1.5 mb-2">
                 <input 
@@ -736,6 +739,33 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 {loading ? "..." : "Tambahkan Sinyal"}
               </button>
             </form>
+
+            <div className="mt-8 space-y-4">
+              <h4 className="text-[0.75rem] font-black uppercase tracking-widest text-neutral-400 mb-2 ml-1">Sinyal Aktif</h4>
+              {signals.length === 0 ? (
+                <p className="text-[0.85rem] text-neutral-400 text-center py-6 bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">Belum ada sinyal aktif.</p>
+              ) : (
+                signals.map((s: any) => (
+                  <div key={s.id} className="bg-white p-4 rounded-2xl border border-neutral-100 shadow-sm flex justify-between items-center">
+                    <div>
+                      <p className="font-bold text-[0.9rem]">{s.type === 'driver_ngetem' ? '🛵 Driver Ngetem' : '📍 Spot Mangkal'}</p>
+                      <p className="text-[0.75rem] text-neutral-500">{s.count} Driver · Exp: {new Date(s.expires_at).toLocaleTimeString()}</p>
+                    </div>
+                    <button 
+                      onClick={async () => {
+                        if (confirm("Hapus sinyal ini?")) {
+                          const res = await deleteManualSignal(s.id);
+                          if (res.success) setSignals(prev => prev.filter(x => x.id !== s.id));
+                        }
+                      }}
+                      className="text-red-500 font-bold text-[0.75rem] px-3.5 py-2 rounded-xl bg-red-50 active:scale-95 transition-all"
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}

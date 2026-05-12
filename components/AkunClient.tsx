@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { updateProfile, changePassword, sendFeedback, deleteAccount } from "@/app/akun/actions";
@@ -23,6 +23,23 @@ export function AkunClient({ email, nama, kota, platform, driverId, ztipsId, rol
   const [notif, setNotif] = useState(true);
   const [batterySaver, setBatterySaver] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    setIsDark(document.documentElement.classList.contains('dark'));
+  }, []);
+
+  const toggleDarkMode = () => {
+    const newDark = !isDark;
+    setIsDark(newDark);
+    if (newDark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  };
   const [modal, setModal] = useState<"profile" | "password" | "feedback" | "delete" | "history" | "settings" | null>(null);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -185,6 +202,17 @@ export function AkunClient({ email, nama, kota, platform, driverId, ztipsId, rol
                           <span className="text-[0.95rem] font-semibold">{t("notifications")}</span>
                         </div>
                         <button onClick={() => setNotif(!notif)} className={`relative w-12 h-6 rounded-full transition-colors ${notif ? "bg-neutral-900" : "bg-neutral-300"}`}><span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${notif ? "translate-x-6" : ""}`} /></button>
+                      </div>
+                      <div className="flex justify-between items-center px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                          </div>
+                          <span className="text-[0.95rem] font-semibold">Mode Gelap</span>
+                        </div>
+                        <button onClick={toggleDarkMode} className={`relative w-12 h-6 rounded-full transition-colors ${isDark ? "bg-neutral-900" : "bg-neutral-300"}`}>
+                          <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${isDark ? "translate-x-6" : ""}`} />
+                        </button>
                       </div>
                       <div className="flex justify-between items-center px-5 py-4">
                         <div className="flex items-center gap-3">

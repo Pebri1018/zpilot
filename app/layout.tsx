@@ -48,9 +48,11 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  var hour = new Date().getHours();
-                  if (hour >= 18 || hour < 6) {
+                  var theme = localStorage.getItem('theme');
+                  if (theme === 'dark') {
                     document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
                   }
                 } catch (e) {}
               })();

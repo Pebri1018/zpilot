@@ -42,22 +42,26 @@ function getActionColors(action: string, color: string) {
 let globalLastAnalysisTs = 0;
 let globalLastArea: string | null = null;
 let globalLastStatus = "";
+let globalRecommendation: RecommendationResult | null = null;
+let globalZoneStats: ZoneStatsResult | null = null;
+let globalTopZones: HotspotZone[] | null = null;
+let globalNearestHotspot: (HotspotZone & { dist: number }) | null = null;
 
 export function LiveDashboard() {
   const { lang, t } = useLanguage();
   const { status, areaName, loading, error, timestamp, refreshLocation, latitude, longitude } = useLocation();
   const [time, setTime] = useState(new Date());
   const [ngetemStartTime, setNgetemStartTime] = useState<number | null>(null);
-  const [recommendation, setRecommendation] = useState<RecommendationResult>({
+  const [recommendation, setRecommendation] = useState<RecommendationResult>(globalRecommendation || {
     action: "STAY" as const,
     title: "Standby",
     reason: "Memuat data...",
     color: "#10B981"
   });
   const [merchants, setMerchants] = useState<MerchantSignal[]>([]);
-  const [nearestHotspot, setNearestHotspot] = useState<(HotspotZone & { dist: number }) | null>(null);
-  const [topZones, setTopZones] = useState<HotspotZone[]>([]);
-  const [zoneStats, setZoneStats] = useState<ZoneStatsResult>({
+  const [nearestHotspot, setNearestHotspot] = useState<(HotspotZone & { dist: number }) | null>(globalNearestHotspot);
+  const [topZones, setTopZones] = useState<HotspotZone[]>(globalTopZones || []);
+  const [zoneStats, setZoneStats] = useState<ZoneStatsResult>(globalZoneStats || {
     orderan: "Data Minim",
     pesaing: "Longgar" as any,
     driverCount: 0
@@ -132,6 +136,10 @@ export function LiveDashboard() {
       setRecommendation(recResult);
       setTopZones(hotspotResult.slice(0, 3));
 
+      globalRecommendation = recResult;
+      globalZoneStats = statsResult;
+      globalTopZones = hotspotResult.slice(0, 3);
+
       if (hotspotResult.length > 0 && latitude && longitude) {
         let closest = hotspotResult[0], minDist = getDist(latitude, longitude, closest.lat, closest.lng);
         for (let i = 1; i < hotspotResult.length; i++) {
@@ -139,6 +147,7 @@ export function LiveDashboard() {
           if (d < minDist) { minDist = d; closest = hotspotResult[i]; }
         }
         setNearestHotspot({ ...closest, dist: minDist });
+        globalNearestHotspot = { ...closest, dist: minDist };
       }
     } catch (e) {
       console.error("Dashboard fetch failed", e);
