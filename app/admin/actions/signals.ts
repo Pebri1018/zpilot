@@ -126,6 +126,70 @@ export async function upsertMerchant(formData: FormData) {
   return { success: true, data };
 }
 
+// Seller / SPX upsert — simplified, no food-delivery fields
+export async function upsertSeller(formData: FormData) {
+  const isAdmin = await verifyAdmin();
+  if (!isAdmin) return { error: "Unauthorized" };
+
+  const name = String(formData.get("name") || "").trim();
+  const category = String(formData.get("category") || "Paket");
+  const latStr = String(formData.get("lat"));
+  const lngStr = String(formData.get("lng"));
+  const lat = latStr && latStr !== "null" ? Number(latStr) : null;
+  const lng = lngStr && lngStr !== "null" ? Number(lngStr) : null;
+  const area = String(formData.get("area") || "").trim();
+  const address = String(formData.get("address") || "").trim();
+  const open_time = String(formData.get("open_time") || "").trim() || null;
+  const close_time = String(formData.get("close_time") || "").trim() || null;
+  const is_open_24h = formData.get("is_open_24h") === "on";
+  const closed_days = String(formData.get("closed_days") || "").trim() || null;
+  const notes = String(formData.get("notes") || "").trim() || null;
+  const volume = String(formData.get("volume") || "Normal");
+
+  if (!name || !area) return { error: "Nama dan area wajib diisi" };
+
+  const busy_score = volume === "Ramai" ? 5 : volume === "Normal" ? 3 : 1;
+  const busy_level = busy_score >= 5 ? "High" : busy_score >= 3 ? "Medium" : "Low";
+
+  const supabase = getServiceClient();
+  const { data, error } = await supabase.from("merchant_signals").upsert(
+    {
+      name,
+      category,
+      busy_score,
+      busy_level,
+      promo_active: false,
+      promo_percent: null,
+      pickup_fast: false,
+      fast_pickup: false,
+      free_shipping: false,
+      is_active: true,
+      is_open_24h: is_open_24h || false,
+      open_time: is_open_24h ? null : open_time,
+      close_time: is_open_24h ? null : close_time,
+      closed_days,
+      lat: lat && !isNaN(lat) ? lat : null,
+      lng: lng && !isNaN(lng) ? lng : null,
+      area,
+      address,
+      rating: null,
+      reviews: null,
+      notes,
+      popularity_score: busy_score * 20,
+      updated_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    { onConflict: "name,area" }
+  ).select().single();
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin");
+  revalidatePath("/");
+  revalidatePath("/radar");
+  return { success: true, data };
+}
+
 export async function deleteMerchant(id: string) {
   const isAdmin = await verifyAdmin();
   if (!isAdmin) return { error: "Unauthorized" };

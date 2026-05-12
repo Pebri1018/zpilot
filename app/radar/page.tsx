@@ -23,7 +23,7 @@ export type RadarMarker = {
   id: string;
   lat: number;
   lng: number;
-  type: "driver_ngetem" | "driver_antar" | "merchant_sepi" | "merchant_bergerak" | "merchant_mulaipanas" | "merchant_ramai" | "merchant_sangatsibuk" | "merchant_tutup" | "spot";
+  type: "driver_ngetem" | "driver_antar" | "merchant_sepi" | "merchant_bergerak" | "merchant_mulaipanas" | "merchant_ramai" | "merchant_sangatsibuk" | "merchant_tutup" | "spot" | "seller";
   label: string;
   live_status?: string;
   antar_nearby?: number;
@@ -183,6 +183,25 @@ function RadarContent() {
             }
 
             if (isClosed && !isAdminFlag) return; // Skip closed merchants for normal drivers
+
+            // --- SELLER / SPX: separate marker type ---
+            const isSellerType = ["Paket", "Toko/Seller", "Seller SPX"].includes(m.category);
+            if (isSellerType) {
+              if (!isClosed) {
+                newMarkers.push({
+                  id: m.id,
+                  lat: m.lat,
+                  lng: m.lng,
+                  type: "seller",
+                  label: m.name,
+                  live_status: m.notes || "SPX / Seller",
+                  promo_active: false,
+                });
+              } else if (isAdminFlag) {
+                newMarkers.push({ id: m.id, lat: m.lat, lng: m.lng, type: "merchant_tutup", label: m.name + " (Tutup)", live_status: "Tutup", promo_active: false });
+              }
+              return;
+            }
 
             let type: RadarMarker["type"] = isClosed ? "merchant_tutup" : "merchant_sepi";
             let statusStr = isClosed ? "Tutup" : "Sepi";
@@ -427,6 +446,7 @@ function RadarContent() {
                 { color: "#F97316", label: "Sedang" },
                 { color: "#3B82F6", label: "Normal" },
                 { color: "#8B5CF6", label: "Spot" },
+                { color: "#F59E0B", label: "Seller/SPX" },
                 ...(isAdmin ? [{ color: "#1F2937", label: "Tutup (Admin)" }] : []),
               ].map(({ color, border, label }) => (
                 <div key={label} className="flex items-center gap-1.5">

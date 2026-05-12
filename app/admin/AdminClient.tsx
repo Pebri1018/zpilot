@@ -428,16 +428,9 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
             <form action={async (fd) => {
               setLoading(true);
               fd.append("lat", String(lat)); fd.append("lng", String(lng)); fd.append("area", area); fd.append("address", address);
-              
-              const markCrowded = fd.get("mark_crowded");
-              
-              const res = await upsertMerchant(fd);
-              if (res.success && res.data && markCrowded) {
-                const { boostMerchantLive } = await import("@/app/admin/actions/signals");
-                await boostMerchantLive(res.data.id);
-              }
+              const { upsertSeller } = await import("@/app/admin/actions/signals");
+              const res = await upsertSeller(fd);
               setLoading(false);
-              
               if (res.success) { 
                 const updated = await getAllMerchants(); 
                 setMerchants(updated);
@@ -510,11 +503,25 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 setLat(newLat); setLng(newLng); setAddress(addr); setArea(ar);
               }} />
 
-              <select name="category" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold">
-                <option value="Paket">📦 Paket Ekspedisi (SPX, JNT, dll)</option>
-                <option value="Toko/Seller">🏪 Toko Retail / Konter</option>
-              </select>
-              <textarea name="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t("address")} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] resize-none" rows={2} />
+              {/* Seller-specific fields — no food delivery data */}
+              <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 space-y-3">
+                <p className="text-[0.7rem] font-black uppercase tracking-widest text-amber-700">📦 Data Seller / SPX</p>
+                <select name="category" className="w-full px-4 py-3 rounded-xl bg-white border border-amber-200 text-[0.9rem] font-semibold">
+                  <option value="Paket">📦 SPX / Paket Ekspedisi</option>
+                  <option value="Toko/Seller">🏪 Seller Online / Reseller</option>
+                </select>
+                <div>
+                  <p className="text-[0.65rem] font-black text-amber-600 uppercase tracking-widest mb-1.5">Volume Paket / Antrian</p>
+                  <select name="volume" className="w-full px-4 py-3 rounded-xl bg-white border border-amber-200 text-[0.9rem] font-semibold">
+                    <option value="Sepi">🟢 Sepi — Antrian kosong</option>
+                    <option value="Normal">🟡 Normal — Antrian biasa</option>
+                    <option value="Ramai">🔴 Ramai — Antrian panjang</option>
+                  </select>
+                </div>
+                <textarea name="notes" placeholder="Catatan (opsional) — misal: antri padat jam 16-18, dropoff cepat, dll" className="w-full px-4 py-3 rounded-xl bg-white border border-amber-200 text-[0.85rem] resize-none" rows={2} />
+              </div>
+
+              <textarea name="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Alamat lengkap (opsional)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] resize-none" rows={2} />
 
               <div className="flex flex-col gap-3">
                 <label className="flex items-center gap-3 bg-neutral-50 rounded-2xl px-4 py-3 border border-neutral-200 cursor-pointer mb-1">
@@ -544,14 +551,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
               </div>
               <input name="closed_days" placeholder="Hari Libur (opsional, misal: Senin, Minggu)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold mb-2" />
 
-              <div className="flex flex-col gap-3 pt-2 border-t border-neutral-100">
-                <label className="flex items-center gap-2 cursor-pointer group p-3 bg-rose-50 rounded-xl border border-rose-100">
-                  <input type="checkbox" name="mark_crowded" className="w-5 h-5 rounded-lg accent-rose-600 text-rose-600 focus:ring-rose-600 focus:ring-offset-2 transition-colors cursor-pointer" />
-                  <span className="text-[0.85rem] font-black text-rose-700">🔥 Langsung Tandai Ramai (Biar driver mendekat)</span>
-                </label>
-              </div>
-
-              <button disabled={loading} className="w-full mt-4 bg-neutral-900 text-white font-black py-4 rounded-2xl shadow-[0_4px_14px_rgba(0,0,0,0.15)] active:scale-[0.98] transition-all disabled:opacity-50 tracking-wide text-[1.05rem]">
+              <button disabled={loading} className="w-full mt-4 bg-amber-500 text-white font-black py-4 rounded-2xl shadow-[0_4px_14px_rgba(245,158,11,0.3)] active:scale-[0.98] transition-all disabled:opacity-50 tracking-wide text-[1.05rem]">
                 {loading ? "Menyimpan..." : "Simpan Seller / Paket"}
               </button>
             </form>
