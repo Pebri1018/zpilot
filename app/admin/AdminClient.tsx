@@ -18,6 +18,7 @@ type Props = {
   initialUsers?: any[];
   initialFeedback?: any[];
   stats: { users: number; feedback: number; signals: number; resto: number; seller: number; spots: number };
+  hotspots?: any[];
 };
 
 const NAV = [
@@ -32,7 +33,7 @@ const NAV = [
   { id: "flash_sale", label: "Flash Sale", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> },
 ];
 
-export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = [], initialUsers = [], initialFeedback = [], stats }: Props) {
+export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = [], initialUsers = [], initialFeedback = [], stats, hotspots = [] }: Props) {
   const { lang, t } = useLanguage();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [merchantMode, setMerchantMode] = useState<"quick" | "detail">("quick");
@@ -48,7 +49,20 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterLevel, setFilterLevel] = useState("All");
+  const [completenessFilter, setCompletenessFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
   const merchantFormRef = useRef<HTMLFormElement>(null);
+
+  const getCompleteness = (m: MerchantSignal) => {
+    const hasLocation = !!m.lat && !!m.lng;
+    const hasCategory = !!m.category && m.category !== "";
+    const hasPromo = m.promo_active === true || m.promo_percent !== null;
+    const hasPickup = m.fast_pickup === true;
+
+    if (hasLocation && hasCategory && hasPromo && hasPickup) return "Complete";
+    if (hasLocation && hasCategory) return "Partial";
+    return "Basic";
+  };
 
   // Auto-detect admin current location on start
   useEffect(() => {
@@ -430,23 +444,46 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
               <h4 className="text-[0.75rem] font-black uppercase tracking-widest text-neutral-400 ml-2">Active Database</h4>
             </div>
             
-            <div className="flex gap-2 mb-4">
+            <div className="flex flex-col gap-2 mb-4">
               <input 
                 type="text" 
                 placeholder="Search name or area..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-white border border-neutral-200 text-[0.85rem] font-semibold outline-none focus:border-neutral-900"
+                className="w-full px-4 py-2.5 rounded-xl bg-white border border-neutral-200 text-[0.85rem] font-semibold outline-none focus:border-neutral-900"
               />
-              <select 
-                value={filterLevel} 
-                onChange={(e) => setFilterLevel(e.target.value)}
-                className="px-3 py-2.5 rounded-xl bg-white border border-neutral-200 text-[0.85rem] font-semibold outline-none"
-              >
-                <option value="All">All Category</option>
-                <option value="Resto">Resto</option>
-                <option value="Seller">Seller SPX/Paket</option>
-              </select>
+              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                <select 
+                  value={filterLevel} 
+                  onChange={(e) => setFilterLevel(e.target.value)}
+                  className="px-3 py-2 rounded-xl bg-white border border-neutral-200 text-[0.75rem] font-bold outline-none shrink-0"
+                >
+                  <option value="All">All Category</option>
+                  <option value="Resto">Resto</option>
+                  <option value="Seller">Seller SPX/Paket</option>
+                </select>
+                <select 
+                  value={completenessFilter} 
+                  onChange={(e) => setCompletenessFilter(e.target.value)}
+                  className="px-3 py-2 rounded-xl bg-white border border-neutral-200 text-[0.75rem] font-bold outline-none shrink-0"
+                >
+                  <option value="all">All Completeness</option>
+                  <option value="Complete">Complete</option>
+                  <option value="Partial">Partial</option>
+                  <option value="Basic">Basic</option>
+                  <option value="missing_promo">Missing Promo</option>
+                  <option value="missing_category">Missing Category</option>
+                  <option value="missing_pickup">Missing Pickup</option>
+                </select>
+                <select 
+                  value={sortBy} 
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="px-3 py-2 rounded-xl bg-white border border-neutral-200 text-[0.75rem] font-bold outline-none shrink-0"
+                >
+                  <option value="newest">Newest First</option>
+                  <option value="priority">🔥 Hotspot Priority</option>
+                </select>
+              </div>
             </div>
 
             {merchants
@@ -457,81 +494,61 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 return true;
               })
               .filter(m => m.name.toLowerCase().includes(searchQuery.toLowerCase()) || m.area.toLowerCase().includes(searchQuery.toLowerCase()))
-              .map(m => (
-              <div key={m.id} className={`bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm flex flex-col gap-4 ${!m.is_active ? "opacity-60 grayscale" : ""}`}>
+              .filter(m => {
+                if (completenessFilter === "all") return true;
+                const status = getCompleteness(m);
+                if (completenessFilter === "missing_promo") return !m.promo_active && m.promo_percent === null;
+                if (completenessFilter === "missing_category") return !m.category;
+                if (completenessFilter === "missing_pickup") return !m.fast_pickup;
+                return status === completenessFilter;
+              })
+              .sort((a, b) => {
+                if (sortBy === "priority" && hotspots?.length) {
+                  const isAHotspot = hotspots.some(h => a.area?.toLowerCase().includes(h.name.toLowerCase()));
+                  const isBHotspot = hotspots.some(h => b.area?.toLowerCase().includes(h.name.toLowerCase()));
+                  if (isAHotspot && !isBHotspot) return -1;
+                  if (!isAHotspot && isBHotspot) return 1;
+                }
+                return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+              })
+              .map(m => {
+                const compStatus = getCompleteness(m);
+                const isHotspot = hotspots?.some(h => m.area?.toLowerCase().includes(h.name.toLowerCase()));
+                return (
+              <div key={m.id} className={`bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)] flex flex-col gap-3 ${!m.is_active ? "opacity-60 grayscale" : ""}`}>
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="font-black text-[1.05rem] tracking-tight">{m.name}</p>
-                    <p className="text-[0.75rem] text-neutral-400 font-bold">{m.area}</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="font-black text-[1.05rem] tracking-tight">{m.name}</p>
+                      {isHotspot && <span className="text-[0.6rem] font-black bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded-md">HOTSPOT</span>}
+                    </div>
+                    <p className="text-[0.7rem] text-neutral-400 font-bold tracking-wide">{m.area} <span className="text-neutral-300 mx-0.5">•</span> {m.category || <span className="text-red-400">No Category</span>}</p>
                   </div>
-                  <div className={`flex items-center justify-center w-10 h-10 rounded-full font-black text-[0.85rem] shadow-sm ${m.live_score && m.live_score >= 66 ? 'bg-red-50 text-red-600' : m.live_score && m.live_score >= 41 ? 'bg-orange-50 text-orange-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                    {m.live_score || m.busy_score || 0}
-                  </div>
+                  <span className={`text-[0.6rem] font-black uppercase tracking-widest px-2 py-1 rounded-lg shrink-0 ${compStatus === 'Complete' ? 'bg-emerald-100 text-emerald-700' : compStatus === 'Partial' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>{compStatus}</span>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-2 mt-1">
-                  <div className="bg-neutral-50 rounded-xl p-2.5">
-                    <p className="text-[0.65rem] font-bold text-neutral-400 uppercase tracking-widest mb-1">Rating / Reviews</p>
-                    <p className="text-[0.85rem] font-black text-neutral-800">⭐ {m.rating || "-"} <span className="text-neutral-400 font-semibold">({m.reviews || 0})</span></p>
+                <div className="flex gap-2">
+                  <div className={`px-2.5 py-1.5 rounded-xl text-[0.65rem] font-black tracking-wide ${m.promo_active || m.promo_percent ? 'bg-green-50 text-green-700' : 'bg-neutral-100 text-neutral-400'}`}>
+                    💰 {m.promo_active || m.promo_percent ? "PROMO ACTIVE" : "NO PROMO"}
                   </div>
-                  <div className="bg-neutral-50 rounded-xl p-2.5">
-                    <p className="text-[0.65rem] font-bold text-neutral-400 uppercase tracking-widest mb-1">Promo / Ongkir</p>
-                    <p className="text-[0.85rem] font-black text-neutral-800">
-                      {m.promo_active ? (m.promo_percent ? `${m.promo_percent}% OFF` : "Promo Aktif") : "No Promo"}
-                      {m.free_shipping && <span className="ml-1 text-[0.7rem] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-md">Gratis Ongkir</span>}
-                    </p>
+                  <div className={`px-2.5 py-1.5 rounded-xl text-[0.65rem] font-black tracking-wide ${m.fast_pickup ? 'bg-blue-50 text-blue-700' : 'bg-neutral-100 text-neutral-400'}`}>
+                    ⚡ {m.fast_pickup ? "FAST PICKUP" : "NO PICKUP"}
                   </div>
                 </div>
-                {(m.open_time || m.close_time) && (
-                  <div className="bg-neutral-50 rounded-xl px-3 py-2 flex items-center gap-2">
-                    <span className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest">Jam</span>
-                    <span className="text-[0.82rem] font-black text-neutral-800">{m.open_time || "?"} – {m.close_time || "?"}</span>
-                  </div>
-                )}
-                <p className="text-[0.65rem] text-neutral-400 font-semibold italic text-center -mt-1">
-                  Updated: {new Date(m.updated_at || m.created_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false })}
-                </p>
 
-                <div className="flex flex-col gap-2 border-t border-neutral-50 pt-3">
+                <div className="flex gap-2 pt-2 mt-1">
                   <button 
-                    onClick={async () => {
-                      setLoading(true);
-                      const { boostMerchantLive } = await import("@/app/admin/actions/signals");
-                      const res = await boostMerchantLive(m.id);
-                      setLoading(false);
-                      if (res.success) {
-                        alert("Tandai ramai berhasil (+20 menit)!");
-                      } else {
-                        alert("Gagal tandai ramai");
-                      }
-                    }} 
-                    className="w-full py-2.5 rounded-xl bg-purple-50 text-[0.75rem] font-bold text-purple-600 active:scale-95 transition-all"
+                    onClick={() => setEditingMerchant(m)} 
+                    className="flex-1 py-3 rounded-xl bg-neutral-900 text-[0.75rem] font-bold text-white active:scale-95 transition-all shadow-md"
                   >
-                    🔥 Tandai Sedang Ramai (20mnt)
+                    Edit & Lengkapi Data
                   </button>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => setEditingMerchant(m)} 
-                      className="flex-1 py-2.5 rounded-xl bg-blue-50 text-[0.75rem] font-bold text-blue-600 active:scale-95 transition-all"
-                    >
-                      {t("edit")}
-                    </button>
-                    <button onClick={() => toggleMerchantActive(m.id, !m.is_active)} className={`flex-1 py-2.5 rounded-xl text-[0.75rem] font-bold uppercase tracking-widest transition-all ${m.is_active ? "bg-emerald-50 text-emerald-600" : "bg-neutral-100 text-neutral-400"}`}>
-                      {m.is_active ? t("enable") : t("disable")}
-                    </button>
-                    <button onClick={async () => {
-                      if (confirm("Delete merchant?")) {
-                        await deleteMerchant(m.id);
-                        setMerchants(prev => prev.filter(x => x.id !== m.id));
-                      }
-                    }} className="flex-1 py-2.5 rounded-xl bg-red-50 text-[0.75rem] font-bold text-red-600 active:scale-95 transition-all">{t("delete")}</button>
-                    <a href={`/radar?lat=${m.lat}&lng=${m.lng}`} className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                    </a>
-                  </div>
+                  <a href={`/radar?lat=${m.lat}&lng=${m.lng}`} className="w-11 h-11 rounded-xl bg-neutral-100 text-neutral-600 flex items-center justify-center flex-shrink-0 active:scale-95 transition-all">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  </a>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </div>
       )}
@@ -916,6 +933,42 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 </button>
               </div>
             </form>
+            <div className="flex gap-2 mt-4 pt-4 border-t border-neutral-100">
+              <button 
+                type="button"
+                onClick={async () => {
+                  setLoading(true);
+                  const { boostMerchantLive } = await import("@/app/admin/actions/signals");
+                  const res = await boostMerchantLive(editingMerchant.id);
+                  setLoading(false);
+                  if (res.success) {
+                    alert("Tandai ramai berhasil (+20 menit)!");
+                  } else alert("Gagal tandai ramai");
+                }} 
+                className="flex-1 py-2.5 rounded-xl bg-purple-50 text-[0.7rem] font-bold text-purple-600 active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5 leading-tight"
+              >
+                <span>🔥</span>
+                <span>Ramai</span>
+              </button>
+              <button type="button" onClick={async () => {
+                await toggleMerchantActive(editingMerchant.id, !editingMerchant.is_active);
+                setMerchants(prev => prev.map(x => x.id === editingMerchant.id ? { ...x, is_active: !editingMerchant.is_active } : x));
+                setEditingMerchant(null);
+              }} className={`flex-1 py-2.5 rounded-xl text-[0.7rem] font-bold uppercase tracking-widest transition-all ${editingMerchant.is_active ? "bg-emerald-50 text-emerald-600" : "bg-neutral-100 text-neutral-400"} flex flex-col items-center justify-center gap-0.5 leading-tight`}>
+                <span>{editingMerchant.is_active ? "🟢" : "⚪"}</span>
+                <span>{editingMerchant.is_active ? t("enable") : t("disable")}</span>
+              </button>
+              <button type="button" onClick={async () => {
+                if (confirm("Delete merchant?")) {
+                  await deleteMerchant(editingMerchant.id);
+                  setMerchants(prev => prev.filter(x => x.id !== editingMerchant.id));
+                  setEditingMerchant(null);
+                }
+              }} className="flex-1 py-2.5 rounded-xl bg-red-50 text-[0.7rem] font-bold text-red-600 active:scale-95 transition-all flex flex-col items-center justify-center gap-0.5 leading-tight">
+                <span>🗑️</span>
+                <span>Hapus</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

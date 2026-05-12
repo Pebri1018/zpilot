@@ -3,6 +3,7 @@ import { verifyAdmin, getBroadcasts } from "./actions";
 import { getAllMerchants } from "./actions/signals";
 import { getAllNgetemSpots } from "./actions/notes";
 import { getFeedbackList, getUserList, getAdminStats } from "./actions/admin_data";
+import { getHotspots } from "@/app/actions/hotspot";
 import { AdminClient } from "./AdminClient";
 
 export const dynamic = "force-dynamic";
@@ -11,13 +12,14 @@ export default async function AdminPage() {
   const isAdmin = await verifyAdmin();
   if (!isAdmin) redirect("/");
 
-  const [broadcasts, initialMerchants, initialSpots, initialUsers, initialFeedback, stats] = await Promise.all([
+  const [broadcasts, initialMerchants, initialSpots, initialUsers, initialFeedback, stats, hotspots] = await Promise.all([
     getBroadcasts(),
     getAllMerchants(),
     getAllNgetemSpots(),
     getUserList(),
     getFeedbackList(),
-    getAdminStats()
+    getAdminStats(),
+    getHotspots()
   ]);
 
   return (
@@ -39,6 +41,7 @@ export default async function AdminPage() {
           initialUsers={initialUsers}
           initialFeedback={initialFeedback}
           stats={stats}
+          hotspots={hotspots}
         />
       </div>
     </div>
