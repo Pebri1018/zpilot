@@ -275,6 +275,26 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
             }} className="space-y-4">
               <input name="name" required placeholder="Nama Resto / Toko / Seller" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold focus:border-neutral-900 focus:bg-white transition-all outline-none" />
               
+              <div className="flex flex-col gap-1.5 mb-2">
+                <input 
+                  type="text" 
+                  placeholder="Atau Paste Titik Koordinat dari Gmaps (-6.xxx, 106.xxx)" 
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const coords = val.split(",");
+                    if (coords.length >= 2) {
+                      const newLat = parseFloat(coords[0].trim());
+                      const newLng = parseFloat(coords[1].trim());
+                      if (!isNaN(newLat) && !isNaN(newLng)) {
+                        setLat(newLat);
+                        setLng(newLng);
+                      }
+                    }
+                  }}
+                  className="w-full px-5 py-3 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] focus:outline-none"
+                />
+              </div>
+
               <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, addr, ar) => {
                 setLat(newLat); setLng(newLng); setAddress(addr); setArea(ar);
               }} />
@@ -287,51 +307,47 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                     <option value="Snack">🍟 Snack</option>
                   </select>
                   <textarea name="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t("address")} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] resize-none" rows={2} />
-                </>
-              )}
 
-              <div className="grid grid-cols-2 gap-4">
-                <input name="rating" type="number" step="0.1" placeholder={t("rating")} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
-                <input name="reviews" type="number" placeholder={t("reviews")} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <label className="flex items-center gap-3 bg-neutral-50 rounded-2xl px-4 py-3 border border-neutral-200 cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    name="is_open_24h" 
-                    id="is_open_24h_resto"
-                    className="w-5 h-5 rounded-lg accent-neutral-900"
-                    onChange={(e) => {
-                      const grid = document.getElementById("time_grid_resto");
-                      if (grid) grid.style.display = e.target.checked ? "none" : "grid";
-                    }}
-                  />
-                  <span className="text-[0.85rem] font-bold text-neutral-700">Buka 24 Jam</span>
-                </label>
-                <div id="time_grid_resto" className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Buka</p>
-                    <input name="open_time" type="time" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+                  <div className="grid grid-cols-2 gap-4">
+                    <input name="rating" type="number" step="0.1" placeholder={t("rating")} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+                    <input name="reviews" type="number" placeholder={t("reviews")} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
                   </div>
-                  <div>
-                    <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Tutup</p>
-                    <input name="close_time" type="time" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
-                  </div>
-                </div>
-              </div>
 
-              <div className="flex flex-col gap-3 pt-2">
-                <div className="flex gap-5">
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input type="checkbox" name="promo_active" id="promo_active" defaultChecked={false} onChange={(e) => {
-                      const input = document.getElementById("promo_percent_container");
-                      if (input) input.style.display = e.target.checked ? "block" : "none";
-                    }} className="w-5 h-5 rounded-lg border-neutral-300 text-neutral-900 focus:ring-0" />
-                    <span className="text-[0.85rem] font-bold text-neutral-600 group-hover:text-neutral-900 transition-colors">{t("promo")}</span>
-                  </label>
-                  {merchantMode === "detail" && (
-                    <>
+                  <div className="flex flex-col gap-3">
+                    <label className="flex items-center gap-3 bg-neutral-50 rounded-2xl px-4 py-3 border border-neutral-200 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        name="is_open_24h" 
+                        id="is_open_24h_resto"
+                        className="w-5 h-5 rounded-lg accent-neutral-900"
+                        onChange={(e) => {
+                          const grid = document.getElementById("time_grid_resto");
+                          if (grid) grid.style.display = e.target.checked ? "none" : "grid";
+                        }}
+                      />
+                      <span className="text-[0.85rem] font-bold text-neutral-700">Buka 24 Jam</span>
+                    </label>
+                    <div id="time_grid_resto" className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Buka</p>
+                        <input name="open_time" type="time" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+                      </div>
+                      <div>
+                        <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Tutup</p>
+                        <input name="close_time" type="time" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-3 pt-2">
+                    <div className="flex gap-5">
+                      <label className="flex items-center gap-2 cursor-pointer group">
+                        <input type="checkbox" name="promo_active" id="promo_active" defaultChecked={false} onChange={(e) => {
+                          const input = document.getElementById("promo_percent_container");
+                          if (input) input.style.display = e.target.checked ? "block" : "none";
+                        }} className="w-5 h-5 rounded-lg border-neutral-300 text-neutral-900 focus:ring-0" />
+                        <span className="text-[0.85rem] font-bold text-neutral-600 group-hover:text-neutral-900 transition-colors">{t("promo")}</span>
+                      </label>
                       <label className="flex items-center gap-2 cursor-pointer group">
                         <input type="checkbox" name="pickup_fast" className="w-5 h-5 rounded-lg border-neutral-300 text-neutral-900 focus:ring-0" />
                         <span className="text-[0.85rem] font-bold text-neutral-600 group-hover:text-neutral-900 transition-colors">{t("fast_pickup")}</span>
@@ -340,13 +356,13 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                         <input type="checkbox" name="free_shipping" className="w-5 h-5 rounded-lg border-neutral-300 text-neutral-900 focus:ring-0" />
                         <span className="text-[0.85rem] font-bold text-neutral-600 group-hover:text-neutral-900 transition-colors">Diskon Ongkir</span>
                       </label>
-                    </>
-                  )}
-                </div>
-                <div id="promo_percent_container" style={{ display: "none" }}>
-                  <input name="promo_percent" type="number" placeholder="Promo Percent (e.g. 20, 40)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
-                </div>
-              </div>
+                    </div>
+                    <div id="promo_percent_container" style={{ display: "none" }}>
+                      <input name="promo_percent" type="number" placeholder="Promo Percent (e.g. 20, 40)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+                    </div>
+                  </div>
+                </>
+              )}
 
               <button disabled={loading} className="w-full py-4 bg-neutral-900 text-white font-black rounded-2xl shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 text-[1.05rem]">
                 {loading ? "..." : "Simpan Data"}
@@ -367,9 +383,16 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
             <form action={async (fd) => {
               setLoading(true);
               fd.append("lat", String(lat)); fd.append("lng", String(lng)); fd.append("area", area); fd.append("address", address);
-              // Force category logic based on name or user selection
+              
+              const markCrowded = fd.get("mark_crowded");
+              
               const res = await upsertMerchant(fd);
+              if (res.success && res.data && markCrowded) {
+                const { boostMerchantLive } = await import("@/app/admin/actions/signals");
+                await boostMerchantLive(res.data.id);
+              }
               setLoading(false);
+              
               if (res.success) { 
                 const updated = await getAllMerchants(); 
                 setMerchants(updated);
@@ -378,6 +401,26 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
             }} className="space-y-4">
               <input name="name" required placeholder="Nama Toko Seller / Ekspedisi" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold focus:border-neutral-900 focus:bg-white transition-all outline-none" />
               
+              <div className="flex flex-col gap-1.5 mb-2">
+                <input 
+                  type="text" 
+                  placeholder="Atau Paste Titik Koordinat dari Gmaps (-6.xxx, 106.xxx)" 
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const coords = val.split(",");
+                    if (coords.length >= 2) {
+                      const newLat = parseFloat(coords[0].trim());
+                      const newLng = parseFloat(coords[1].trim());
+                      if (!isNaN(newLat) && !isNaN(newLng)) {
+                        setLat(newLat);
+                        setLng(newLng);
+                      }
+                    }
+                  }}
+                  className="w-full px-5 py-3 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] focus:outline-none"
+                />
+              </div>
+
               <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, addr, ar) => {
                 setLat(newLat); setLng(newLng); setAddress(addr); setArea(ar);
               }} />
@@ -415,20 +458,14 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 </div>
               </div>
 
-              <div className="flex flex-col gap-3 pt-2">
-                <div className="flex gap-5">
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input type="checkbox" name="pickup_fast" defaultChecked={false} className="w-5 h-5 rounded-lg border-2 border-neutral-300 text-neutral-900 focus:ring-neutral-900 focus:ring-offset-2 transition-colors cursor-pointer" />
-                    <span className="text-[0.85rem] font-bold text-neutral-700 group-hover:text-neutral-900">Pickup Cepat (Sistem)</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input type="checkbox" name="free_shipping" defaultChecked={false} className="w-5 h-5 rounded-lg border-2 border-neutral-300 text-neutral-900 focus:ring-neutral-900 focus:ring-offset-2 transition-colors cursor-pointer" />
-                    <span className="text-[0.85rem] font-bold text-neutral-700 group-hover:text-neutral-900">Gratis Ongkir</span>
-                  </label>
-                </div>
+              <div className="flex flex-col gap-3 pt-2 border-t border-neutral-100">
+                <label className="flex items-center gap-2 cursor-pointer group p-3 bg-rose-50 rounded-xl border border-rose-100">
+                  <input type="checkbox" name="mark_crowded" className="w-5 h-5 rounded-lg accent-rose-600 text-rose-600 focus:ring-rose-600 focus:ring-offset-2 transition-colors cursor-pointer" />
+                  <span className="text-[0.85rem] font-black text-rose-700">🔥 Langsung Tandai Ramai (Biar driver mendekat)</span>
+                </label>
               </div>
 
-              <button disabled={loading} className="w-full mt-4 bg-neutral-900 text-white font-black py-4 rounded-2xl shadow-[0_4px_14px_rgba(0,0,0,0.15)] active:scale-[0.98] transition-all disabled:opacity-50 tracking-wide">
+              <button disabled={loading} className="w-full mt-4 bg-neutral-900 text-white font-black py-4 rounded-2xl shadow-[0_4px_14px_rgba(0,0,0,0.15)] active:scale-[0.98] transition-all disabled:opacity-50 tracking-wide text-[1.05rem]">
                 {loading ? "Menyimpan..." : "Simpan Seller / Paket"}
               </button>
             </form>
@@ -453,15 +490,6 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 className="w-full px-4 py-2.5 rounded-xl bg-white border border-neutral-200 text-[0.85rem] font-semibold outline-none focus:border-neutral-900"
               />
               <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                <select 
-                  value={filterLevel} 
-                  onChange={(e) => setFilterLevel(e.target.value)}
-                  className="px-3 py-2 rounded-xl bg-white border border-neutral-200 text-[0.75rem] font-bold outline-none shrink-0"
-                >
-                  <option value="All">All Category</option>
-                  <option value="Resto">Resto</option>
-                  <option value="Seller">Seller SPX/Paket</option>
-                </select>
                 <select 
                   value={completenessFilter} 
                   onChange={(e) => setCompletenessFilter(e.target.value)}
