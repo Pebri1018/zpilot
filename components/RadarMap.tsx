@@ -35,10 +35,10 @@ function MyLocationButton({ lat, lng }: { lat: number | null; lng: number | null
         e.stopPropagation();
         map.flyTo([lat, lng], 16);
       }}
-      className="absolute bottom-6 right-6 z-[1000] bg-white text-blue-600 p-3 rounded-full shadow-lg active:scale-90 transition-transform border border-neutral-100 flex items-center justify-center"
+      className="absolute bottom-[calc(14rem+env(safe-area-inset-bottom))] right-3 z-[1000] bg-white text-neutral-900 p-3.5 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.15)] active:scale-90 transition-transform border border-neutral-100 flex items-center justify-center"
       aria-label="My Location"
     >
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
     </button>
   );
 }
