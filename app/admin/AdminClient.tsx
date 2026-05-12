@@ -367,8 +367,8 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialUsers = 
                     <p className="font-black text-[1.05rem] tracking-tight">{m.name}</p>
                     <p className="text-[0.75rem] text-neutral-400 font-bold">{m.area}</p>
                   </div>
-                  <div className={`flex items-center justify-center w-10 h-10 rounded-full font-black text-[0.85rem] shadow-sm ${m.busy_level === 'High' ? 'bg-red-50 text-red-600' : m.busy_level === 'Medium' ? 'bg-orange-50 text-orange-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                    {m.popularity_score || m.busy_score}
+                  <div className={`flex items-center justify-center w-10 h-10 rounded-full font-black text-[0.85rem] shadow-sm ${m.live_score && m.live_score >= 66 ? 'bg-red-50 text-red-600' : m.live_score && m.live_score >= 41 ? 'bg-orange-50 text-orange-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                    {m.live_score || m.busy_score || 0}
                   </div>
                 </div>
                 
