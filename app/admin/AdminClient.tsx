@@ -9,7 +9,7 @@ import { saveNgetemSpot } from "./actions/notes";
 import { toggleUserDisabled, deleteUserAccount, replyFeedback } from "./actions/admin_data";
 import { useLanguage } from "@/context/LanguageContext";
 
-const LocationPicker = dynamic(() => import("@/components/LocationPicker"), { ssr: false });
+
 
 type Props = {
   broadcasts: Broadcast[];
@@ -19,6 +19,7 @@ type Props = {
   initialFeedback?: any[];
   stats: { users: number; feedback: number; signals: number; resto: number; seller: number; spots: number };
   hotspots?: any[];
+  initialSignals?: any[];
 };
 
 const NAV = [
@@ -33,13 +34,14 @@ const NAV = [
   { id: "flash_sale", label: "Flash Sale", icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> },
 ];
 
-export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = [], initialUsers = [], initialFeedback = [], stats, hotspots = [] }: Props) {
+export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = [], initialUsers = [], initialFeedback = [], stats, hotspots = [], initialSignals = [] }: Props) {
   const { lang, t } = useLanguage();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [merchantMode, setMerchantMode] = useState<"quick" | "detail">("quick");
   const [merchants, setMerchants] = useState(initialMerchants);
   const [spots, setSpots] = useState(initialSpots);
   const [users, setUsers] = useState(initialUsers);
+  const [signals, setSignals] = useState(initialSignals);
   const [editingMerchant, setEditingMerchant] = useState<any | null>(null);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [lat, setLat] = useState<number | null>(null);
@@ -245,10 +247,39 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
         </div>
       )}
       
-      {/* DUMMY LISTS */}
+      {/* 5.5 SIGNALS LIST */}
       {activeTab === "signals_list" && (
-        <div className="bg-white p-6 rounded-[2.5rem] border border-neutral-100 shadow-sm text-center">
-          <p className="text-neutral-500 font-bold">List Data Sinyal (Sesi 10 Menit) sedang dalam pembaruan.</p>
+        <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2">
+          {signals.length === 0 && (
+            <div className="bg-white p-6 rounded-[2.5rem] border border-neutral-100 shadow-sm text-center">
+              <p className="text-neutral-500 font-bold">Belum ada sinyal manual aktif.</p>
+            </div>
+          )}
+          {signals.map(s => (
+            <div key={s.id} className="bg-white p-5 rounded-[2rem] border border-neutral-100 shadow-sm flex flex-col gap-3">
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-black text-[1.05rem] tracking-tight">{s.type === "driver_ngetem" ? "Sinyal Ngetem" : "Sinyal Antar"}</p>
+                    <span className="text-[0.65rem] font-black bg-neutral-900 text-white px-1.5 py-0.5 rounded-md">+{s.count}</span>
+                  </div>
+                  <p className="text-[0.7rem] text-neutral-400 font-bold tracking-wide">Exp: {new Date(s.expires_at).toLocaleTimeString()}</p>
+                </div>
+                <button 
+                  onClick={async () => {
+                    if (confirm("Hapus sinyal manual ini?")) {
+                      const { deleteManualSignal } = await import("@/app/admin/actions/admin_data");
+                      await deleteManualSignal(s.id);
+                      setSignals(prev => prev.filter(x => x.id !== s.id));
+                    }
+                  }}
+                  className="px-3 py-2 rounded-xl bg-red-50 text-red-600 text-[0.75rem] font-bold hover:bg-red-100 transition-colors shrink-0"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -314,35 +345,10 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 />
               </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  if (navigator.geolocation) {
-                    setLoading(true);
-                    navigator.geolocation.getCurrentPosition(
-                      (pos) => {
-                        setLat(pos.coords.latitude);
-                        setLng(pos.coords.longitude);
-                        setLoading(false);
-                      },
-                      () => {
-                        alert("Gagal mendapatkan lokasi. Pastikan izin lokasi aktif.");
-                        setLoading(false);
-                      },
-                      { enableHighAccuracy: true, timeout: 10000 }
-                    );
-                  }
-                }}
-                className="w-full flex items-center justify-center gap-2 py-3 mb-2 bg-blue-50 text-blue-700 font-bold rounded-2xl border border-blue-100 active:scale-[0.98] transition-all text-[0.85rem]"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
-                Gunakan Lokasi Saya Saat Ini
-              </button>
-
-              <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, addr, ar) => {
-                setLat(newLat); setLng(newLng); setAddress(addr); setArea(ar);
-              }} />
-
+              <div className="grid grid-cols-2 gap-3">
+                <input name="area" required value={area} onChange={e => setArea(e.target.value)} placeholder="Kecamatan / Area (Wajib)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold" />
+                <input value={`${lat || ''}, ${lng || ''}`} readOnly placeholder="Koordinat" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] text-neutral-500 font-mono focus:outline-none" />
+              </div>
               {merchantMode === "detail" && (
                 <>
                   <select name="category" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold">
@@ -474,34 +480,10 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                   className="w-full px-5 py-3 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] focus:outline-none"
                 />
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (navigator.geolocation) {
-                    setLoading(true);
-                    navigator.geolocation.getCurrentPosition(
-                      (pos) => {
-                        setLat(pos.coords.latitude);
-                        setLng(pos.coords.longitude);
-                        setLoading(false);
-                      },
-                      () => {
-                        alert("Gagal mendapatkan lokasi. Pastikan izin lokasi aktif.");
-                        setLoading(false);
-                      },
-                      { enableHighAccuracy: true, timeout: 10000 }
-                    );
-                  }
-                }}
-                className="w-full flex items-center justify-center gap-2 py-3 mb-2 bg-blue-50 text-blue-700 font-bold rounded-2xl border border-blue-100 active:scale-[0.98] transition-all text-[0.85rem]"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
-                Gunakan Lokasi Saya Saat Ini
-              </button>
-
-              <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, addr, ar) => {
-                setLat(newLat); setLng(newLng); setAddress(addr); setArea(ar);
-              }} />
+              <div className="grid grid-cols-2 gap-3">
+                <input name="area" required value={area} onChange={e => setArea(e.target.value)} placeholder="Kecamatan / Area (Wajib)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold" />
+                <input value={`${lat || ''}, ${lng || ''}`} readOnly placeholder="Koordinat" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] text-neutral-500 font-mono focus:outline-none" />
+              </div>
 
               {/* Seller-specific fields — no food delivery data */}
               <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 space-y-3">
@@ -694,9 +676,33 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
               if (error) alert(error.message);
               else alert("Sinyal berhasil ditambahkan!");
             }} className="space-y-4">
-              <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng) => {
-                setLat(newLat); setLng(newLng);
-              }} />
+              <div className="flex flex-col gap-1.5 mb-2">
+                <input 
+                  type="text" 
+                  placeholder="Paste Link Gmaps / Titik Koordinat (-6.xxx, 106.xxx)" 
+                  onChange={async (e) => {
+                    const val = e.target.value;
+                    if (!val.trim()) return;
+                    if (val.includes("http") || val.includes("goo.gl") || val.includes("maps")) {
+                      setLoading(true);
+                      const { resolveGmapsLink } = await import("@/app/admin/actions/signals");
+                      const coords = await resolveGmapsLink(val);
+                      setLoading(false);
+                      if (coords.lat && coords.lng) { setLat(coords.lat); setLng(coords.lng); }
+                      else alert("Gagal mendeteksi koordinat.");
+                      return;
+                    }
+                    const coords = val.split(",");
+                    if (coords.length >= 2) {
+                      const newLat = parseFloat(coords[0].replace(/[^0-9.-]/g, ""));
+                      const newLng = parseFloat(coords[1].replace(/[^0-9.-]/g, ""));
+                      if (!isNaN(newLat) && !isNaN(newLng)) { setLat(newLat); setLng(newLng); }
+                    }
+                  }}
+                  className="w-full px-5 py-3 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] focus:outline-none"
+                />
+              </div>
+              <input value={`${lat || ''}, ${lng || ''}`} readOnly placeholder="Koordinat" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] text-neutral-500 font-mono focus:outline-none" />
               
               <div className="grid grid-cols-2 gap-4">
                 <select name="type" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold">
@@ -726,9 +732,36 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
           }} className="space-y-4">
             <input name="name" required placeholder="Spot Name" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold outline-none focus:border-neutral-900 focus:bg-white" />
             
-            <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, addr, ar) => {
-              setLat(newLat); setLng(newLng); setArea(ar);
-            }} />
+            <div className="flex flex-col gap-1.5 mb-2">
+              <input 
+                type="text" 
+                placeholder="Paste Link Gmaps / Titik Koordinat (-6.xxx, 106.xxx)" 
+                onChange={async (e) => {
+                  const val = e.target.value;
+                  if (!val.trim()) return;
+                  if (val.includes("http") || val.includes("goo.gl") || val.includes("maps")) {
+                    setLoading(true);
+                    const { resolveGmapsLink } = await import("@/app/admin/actions/signals");
+                    const coords = await resolveGmapsLink(val);
+                    setLoading(false);
+                    if (coords.lat && coords.lng) { setLat(coords.lat); setLng(coords.lng); }
+                    else alert("Gagal mendeteksi koordinat.");
+                    return;
+                  }
+                  const coords = val.split(",");
+                  if (coords.length >= 2) {
+                    const newLat = parseFloat(coords[0].replace(/[^0-9.-]/g, ""));
+                    const newLng = parseFloat(coords[1].replace(/[^0-9.-]/g, ""));
+                    if (!isNaN(newLat) && !isNaN(newLng)) { setLat(newLat); setLng(newLng); }
+                  }
+                }}
+                className="w-full px-5 py-3 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] focus:outline-none"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <input name="area" required value={area} onChange={e => setArea(e.target.value)} placeholder="Kecamatan / Area (Wajib)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold" />
+              <input value={`${lat || ''}, ${lng || ''}`} readOnly placeholder="Koordinat" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] text-neutral-500 font-mono focus:outline-none" />
+            </div>
 
             <div className="grid grid-cols-2 gap-3">
               <select name="quality" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold">
@@ -988,7 +1021,17 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
               fd.append("lng", String(editingMerchant.lng ?? ""));
               fd.append("area", editingMerchant.area);
               fd.append("address", editingMerchant.address || "");
-              const res = await upsertMerchant(fd);
+              
+              const isSeller = ["Paket", "Toko/Seller", "Seller SPX"].includes(editingMerchant.category);
+              let res;
+              if (isSeller) {
+                const { upsertSeller } = await import("@/app/admin/actions/signals");
+                res = await upsertSeller(fd);
+              } else {
+                const resMod = await upsertMerchant(fd);
+                res = resMod;
+              }
+              
               setLoading(false);
               if (res.success) {
                 const updated = await getAllMerchants();
@@ -996,28 +1039,58 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 setEditingMerchant(null);
               } else alert(res.error);
             }} className="space-y-3">
-              <input name="name" required defaultValue={editingMerchant.name} placeholder="Nama Resto" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold outline-none" />
-              <select name="category" defaultValue={editingMerchant.category} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold">
-                <option value="Makanan">🍱 Food</option>
-                <option value="Minuman">🥤 Drink</option>
-                <option value="Snack">🍟 Snack</option>
-                <option value="Paket">📦 Package</option>
-              </select>
-              <div className="grid grid-cols-2 gap-3">
-                <input name="rating" type="number" step="0.1" defaultValue={editingMerchant.rating ?? ""} placeholder="Rating (e.g. 4.5)" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
-                <input name="reviews" type="number" defaultValue={editingMerchant.reviews ?? ""} placeholder="Review Count" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
-              </div>
-              <div className="flex gap-4 items-center py-1">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" name="promo_active" defaultChecked={editingMerchant.promo_active} className="w-5 h-5 rounded-lg" />
-                  <span className="text-[0.85rem] font-bold">Promo</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" name="pickup_fast" defaultChecked={editingMerchant.fast_pickup || editingMerchant.pickup_fast} className="w-5 h-5 rounded-lg" />
-                  <span className="text-[0.85rem] font-bold">Fast Pickup</span>
-                </label>
-              </div>
-              <input name="promo_percent" type="number" defaultValue={editingMerchant.promo_percent ?? ""} placeholder="Promo % (e.g. 20)" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+              {(() => {
+                const isSeller = ["Paket", "Toko/Seller", "Seller SPX"].includes(editingMerchant.category);
+                return (
+                  <>
+                    {isSeller ? (
+                      <>
+                        <input name="name" required defaultValue={editingMerchant.name} placeholder="Nama Toko Seller / Ekspedisi" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold outline-none" />
+                        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 space-y-3 mt-2 mb-2">
+                          <p className="text-[0.7rem] font-black uppercase tracking-widest text-amber-700">📦 Data Seller / SPX</p>
+                          <select name="category" defaultValue={editingMerchant.category} className="w-full px-4 py-3 rounded-xl bg-white border border-amber-200 text-[0.9rem] font-semibold">
+                            <option value="Paket">📦 SPX / Paket Ekspedisi</option>
+                            <option value="Toko/Seller">🏪 Seller Online / Reseller</option>
+                          </select>
+                          <div>
+                            <p className="text-[0.65rem] font-black text-amber-600 uppercase tracking-widest mb-1.5">Volume Paket / Antrian</p>
+                            <select name="volume" defaultValue={editingMerchant.notes?.includes("Sepi") ? "Sepi" : editingMerchant.notes?.includes("Ramai") ? "Ramai" : "Normal"} className="w-full px-4 py-3 rounded-xl bg-white border border-amber-200 text-[0.9rem] font-semibold">
+                              <option value="Sepi">🟢 Sepi — Antrian kosong</option>
+                              <option value="Normal">🟡 Normal — Antrian biasa</option>
+                              <option value="Ramai">🔴 Ramai — Antrian panjang</option>
+                            </select>
+                          </div>
+                          <textarea name="notes" defaultValue={editingMerchant.notes || ""} placeholder="Catatan (opsional) — misal: antri padat jam 16-18, dropoff cepat, dll" className="w-full px-4 py-3 rounded-xl bg-white border border-amber-200 text-[0.85rem] resize-none" rows={2} />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <input name="name" required defaultValue={editingMerchant.name} placeholder="Nama Resto" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold outline-none" />
+                        <select name="category" defaultValue={editingMerchant.category} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold">
+                          <option value="Makanan">🍱 Food</option>
+                          <option value="Minuman">🥤 Drink</option>
+                          <option value="Snack">🍟 Snack</option>
+                        </select>
+                        <div className="grid grid-cols-2 gap-3">
+                          <input name="rating" type="number" step="0.1" defaultValue={editingMerchant.rating ?? ""} placeholder="Rating (e.g. 4.5)" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+                          <input name="reviews" type="number" defaultValue={editingMerchant.reviews ?? ""} placeholder="Review Count" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+                        </div>
+                        <div className="flex gap-4 items-center py-1">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="promo_active" defaultChecked={editingMerchant.promo_active} className="w-5 h-5 rounded-lg" />
+                            <span className="text-[0.85rem] font-bold">Promo</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="pickup_fast" defaultChecked={editingMerchant.fast_pickup || editingMerchant.pickup_fast} className="w-5 h-5 rounded-lg" />
+                            <span className="text-[0.85rem] font-bold">Fast Pickup</span>
+                          </label>
+                        </div>
+                        <input name="promo_percent" type="number" defaultValue={editingMerchant.promo_percent ?? ""} placeholder="Promo % (e.g. 20)" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+                      </>
+                    )}
+                  </>
+                );
+              })()}
               <label className="flex items-center gap-3 bg-neutral-50 rounded-2xl px-4 py-3 border border-neutral-200 cursor-pointer">
                 <input 
                   type="checkbox" 

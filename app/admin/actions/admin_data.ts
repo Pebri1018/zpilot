@@ -174,3 +174,29 @@ export async function replyFeedback(feedbackId: string, message: string, status:
     return { error: e.message || "Unknown error" };
   }
 }
+
+export async function getManualSignals() {
+  const isAdmin = await verifyAdmin();
+  if (!isAdmin) return [];
+  const supabase = getServiceClient();
+  const { data } = await supabase
+    .from("admin_manual_signals")
+    .select("*")
+    .gt("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false });
+  return data || [];
+}
+
+export async function deleteManualSignal(id: string) {
+  const isAdmin = await verifyAdmin();
+  if (!isAdmin) return { error: "Unauthorized" };
+  const supabase = getServiceClient();
+  const { error } = await supabase
+    .from("admin_manual_signals")
+    .delete()
+    .eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/admin");
+  revalidatePath("/radar");
+  return { success: true };
+}

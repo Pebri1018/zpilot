@@ -366,7 +366,7 @@ function RadarContent() {
   }, []);
 
   const bestHotspot = hotspots.length > 0 ? hotspots[0] : null;
-  const ZONE_COLOR: Record<string, string> = { PELUANG: "#059669", MENARIK: "#EA580C", RAMAI: "#DC2626", KOMPETISI: "#BE123C", SEPI: "#9CA3AF" };
+  const ZONE_COLOR: Record<string, string> = { PELUANG: "#059669", BERGERAK: "#EA580C", KOMPETITIF: "#BE123C", HINDARI: "#9CA3AF" };
   const bestColor = bestHotspot ? ZONE_COLOR[bestHotspot.label] || "#6B7280" : "#6B7280";
 
   return (

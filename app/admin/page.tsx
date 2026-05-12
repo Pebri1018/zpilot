@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { verifyAdmin, getBroadcasts } from "./actions";
 import { getAllMerchants } from "./actions/signals";
 import { getAllNgetemSpots } from "./actions/notes";
-import { getFeedbackList, getUserList, getAdminStats } from "./actions/admin_data";
+import { getFeedbackList, getUserList, getAdminStats, getManualSignals } from "./actions/admin_data";
 import { getHotspots } from "@/app/actions/hotspot";
 import { AdminClient } from "./AdminClient";
 
@@ -12,14 +12,15 @@ export default async function AdminPage() {
   const isAdmin = await verifyAdmin();
   if (!isAdmin) redirect("/");
 
-  const [broadcasts, initialMerchants, initialSpots, initialUsers, initialFeedback, stats, hotspots] = await Promise.all([
+  const [broadcasts, initialMerchants, initialSpots, initialUsers, initialFeedback, stats, hotspots, manualSignals] = await Promise.all([
     getBroadcasts(),
     getAllMerchants(),
     getAllNgetemSpots(),
     getUserList(),
     getFeedbackList(),
     getAdminStats(),
-    getHotspots()
+    getHotspots(),
+    getManualSignals()
   ]);
 
   return (
@@ -42,6 +43,7 @@ export default async function AdminPage() {
           initialFeedback={initialFeedback}
           stats={stats}
           hotspots={hotspots}
+          initialSignals={manualSignals}
         />
       </div>
     </div>

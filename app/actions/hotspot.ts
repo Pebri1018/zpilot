@@ -41,7 +41,7 @@ export type HotspotZone = {
   lat: number;
   lng: number;
   score: number;
-  label: "RAMAI" | "MENARIK" | "SEPI" | "PELUANG" | "KOMPETISI";
+  label: "PELUANG" | "BERGERAK" | "KOMPETITIF" | "HINDARI";
   antar_drivers: number;
   ngetem_drivers: number;
   merchant_count: number;
@@ -112,21 +112,29 @@ export async function getHotspots(): Promise<HotspotZone[]> {
       });
 
       // 4. Calculate Score
-      // (merchant ramai di zona) + (driver antar tinggi) - (driver ngetem terlalu padat)
-      const score = (merchantCount * 5) + (antarCount * 3) - (ngetemCount * 2);
+      // zone_score = (driver_antar * 5) + (merchant_active * 3) - (driver_ngetem * 4) - (manual_waiting_cluster * 3)
+      let manualNgetemCount = 0;
+      manualSignals?.forEach(ms => {
+        if (!ms.lat || !ms.lng) return;
+        const dist = getDistance(zone.lat, zone.lng, ms.lat, ms.lng);
+        if (dist <= ZONE_RADIUS_KM && ms.type === "driver_ngetem") manualNgetemCount += (ms.count || 1);
+      });
+
+      const score = (antarCount * 5) + (merchantCount * 3) - (ngetemCount * 4) - (manualNgetemCount * 3);
       
-      let label: HotspotZone["label"] = "SEPI";
+      let label: HotspotZone["label"] = "HINDARI";
       
-      // Jika terlalu banyak ngetem: status = Kompetisi Tinggi
-      // Jika merchant aktif tinggi tapi driver sedikit: status = Peluang Emas
-      if (ngetemCount >= 3 && ngetemCount > merchantCount * 2) {
-        label = "KOMPETISI";
-      } else if (merchantCount >= 2 && ngetemCount <= 1) {
+      // If many waiting drivers but no deliveries: mark as Kompetisi Tinggi
+      if (ngetemCount >= 3 && antarCount === 0) {
+        label = "KOMPETITIF";
+      } else if (score >= 12) {
         label = "PELUANG";
-      } else if (score >= 15) {
-        label = "RAMAI";
-      } else if (score >= 8) {
-        label = "MENARIK";
+      } else if (score >= 5) {
+        label = "BERGERAK";
+      } else if (score >= 0) {
+        label = "KOMPETITIF";
+      } else {
+        label = "HINDARI";
       }
 
       return {
