@@ -50,6 +50,7 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
 
   function ZoomTracker() {
     useMapEvents({
+      zoom: (e) => setZoom(e.target.getZoom()),
       zoomend: (e) => setZoom(e.target.getZoom()),
     });
     return null;
@@ -143,7 +144,7 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
               }
             };
             const size = getPinSize(m.type);
-            const showLabel = !m.type.startsWith("driver_") && zoom >= 14;
+            const showLabel = !m.type.startsWith("driver_") && zoom >= 15;
 
             const pinIcon = L.divIcon({
             className: "bg-transparent",

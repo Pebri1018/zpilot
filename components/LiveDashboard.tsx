@@ -279,28 +279,22 @@ export function LiveDashboard() {
             <Link href="/radar" className="text-[0.7rem] font-bold text-blue-600">Lihat Peta →</Link>
           </div>
           <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-5 px-5 no-scrollbar">
-            {merchants.slice(0, 8).map(m => {
-              const getIcon = (cat: string) => {
-                const c = (cat || "").toLowerCase();
-                if (c.includes("minum") || c.includes("kopi") || c.includes("coffee") || c.includes("cafe")) return "🥤";
-                if (c.includes("snack") || c.includes("roti") || c.includes("bakery") || c.includes("martabak")) return "🥨";
-                if (c.includes("ayam") || c.includes("fast")) return "🍗";
-                return "🍽️";
-              };
-              return (
-              <div key={m.id} className="shrink-0 w-[110px] bg-white dark:bg-neutral-900 rounded-2xl p-3 border border-neutral-100 dark:border-white/10 shadow-sm">
-                <div className="w-10 h-10 rounded-xl mb-2 flex items-center justify-center bg-orange-50 dark:bg-orange-950/30">
-                  <span className="text-[1.2rem] font-black">{getIcon(m.category)}</span>
+            {merchants.slice(0, 8).map(m => (
+              <div key={m.id} className="shrink-0 w-[140px] bg-gradient-to-b from-white to-neutral-50 dark:from-neutral-900 dark:to-neutral-950 rounded-[1.2rem] p-3.5 border border-neutral-200/60 dark:border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between min-h-[110px] relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/10 blur-2xl rounded-full -mr-8 -mt-8 pointer-events-none"></div>
+                <div>
+                  <p className="text-[0.85rem] font-black text-neutral-900 dark:text-neutral-100 line-clamp-2 leading-snug tracking-tight relative z-10">{m.name}</p>
+                  <p className="text-[0.65rem] font-bold text-neutral-500 mt-1 line-clamp-1">{m.area}</p>
                 </div>
-                <p className="text-[0.78rem] font-black text-neutral-900 dark:text-neutral-100 line-clamp-2 leading-tight">{m.name}</p>
-                <div className="flex flex-wrap gap-1 mt-1.5">
-                  {m.is_flash_sale && <span className="text-[0.55rem] font-black bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 px-1.5 py-0.5 rounded">⚡ FLASH</span>}
-                  {m.promo_active && <span className="text-[0.55rem] font-black bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-1.5 py-0.5 rounded">PROMO</span>}
-                  <span className="text-[0.55rem] font-bold bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 px-1.5 py-0.5 rounded">{m.busy_level}</span>
+                <div className="flex flex-wrap gap-1.5 mt-3 relative z-10">
+                  {m.is_flash_sale && <span className="text-[0.6rem] font-black bg-rose-500 text-white px-2 py-0.5 rounded-md shadow-sm">⚡ FLASH</span>}
+                  {m.promo_active && <span className="text-[0.6rem] font-black bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-2 py-0.5 rounded-md">PROMO</span>}
+                  <span className={`text-[0.6rem] font-black px-2 py-0.5 rounded-md ${m.live_score && m.live_score >= 66 ? 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400' : m.live_score && m.live_score >= 41 ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400' : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'}`}>
+                    {m.live_score && m.live_score >= 66 ? "Ramai" : m.live_score && m.live_score >= 41 ? "Panas" : "Standby"}
+                  </span>
                 </div>
               </div>
-            );
-            })}
+            ))}
           </div>
         </div>
       )}

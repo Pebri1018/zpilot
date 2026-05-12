@@ -367,14 +367,16 @@ export default function RadarPage() {
       )}
 
       {/* COMPACT LEGEND — floating left */}
-      <div className="absolute bottom-[calc(11.5rem+env(safe-area-inset-bottom))] left-3 z-[500] pointer-events-none">
+      <div className="absolute bottom-[calc(14rem+env(safe-area-inset-bottom))] left-3 z-[500] pointer-events-none">
         <div className="bg-neutral-950/75 backdrop-blur-md rounded-2xl p-2.5 shadow-xl border border-white/10 space-y-1.5">
           {[
             { color: "#000", border: "border-2 border-white", label: "Kamu" },
             { color: "#4F46E5", label: "Ngetem" },
             { color: "#EC4899", label: "Antar" },
-            { color: "#EF4444", label: "Resto Ramai" },
-            { color: "#F97316", label: "Resto Sedang" },
+            { color: "#991B1B", label: "Sangat Sibuk" },
+            { color: "#EF4444", label: "Ramai" },
+            { color: "#F97316", label: "Mulai Panas" },
+            { color: "#3B82F6", label: "Bergerak" },
             { color: "#8B5CF6", label: "Spot" },
           ].map(({ color, border, label }) => (
             <div key={label} className="flex items-center gap-2">
