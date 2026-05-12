@@ -99,7 +99,7 @@ export async function getRecommendationV2(
         badge: "High"
       };
     }
-    if (currentHotspot.label === "RAMAI" || currentHotspot.label === "MENARIK") {
+    if (currentHotspot.label === "BERGERAK") {
       return {
         action: "STAY",
         title: isID ? "Zona Bagus" : "Good Zone",
@@ -110,7 +110,7 @@ export async function getRecommendationV2(
         badge: "High"
       };
     }
-    if (currentHotspot.label === "KOMPETISI") {
+    if (currentHotspot.label === "KOMPETITIF") {
       const target = (topHotspot && topHotspot.id !== currentHotspot.id) ? topHotspot.name : secondHotspot?.name || "area lain";
       return {
         action: "MOVE",

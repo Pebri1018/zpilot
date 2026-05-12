@@ -24,11 +24,10 @@ function getMovement(h: HotspotZone): { arrow: string; color: string } {
 }
 
 const ZONE_STYLE: Record<string, { bg: string; text: string; label: string }> = {
-  PELUANG:   { bg: "bg-emerald-100", text: "text-emerald-700", label: "Peluang" },
-  MENARIK:   { bg: "bg-orange-100",  text: "text-orange-700",  label: "Menarik" },
-  RAMAI:     { bg: "bg-red-100",     text: "text-red-700",     label: "Padat"   },
-  KOMPETISI: { bg: "bg-rose-100",    text: "text-rose-800",    label: "Hindari" },
-  SEPI:      { bg: "bg-neutral-100", text: "text-neutral-500", label: "Sepi"    },
+  PELUANG:    { bg: "bg-emerald-100", text: "text-emerald-700", label: "Peluang" },
+  BERGERAK:   { bg: "bg-orange-100",  text: "text-orange-700",  label: "Bergerak" },
+  KOMPETITIF: { bg: "bg-rose-100",    text: "text-rose-800",    label: "Kompetitif" },
+  HINDARI:    { bg: "bg-neutral-100", text: "text-neutral-500", label: "Hindari" },
 };
 
 export default function TrenPage() {
