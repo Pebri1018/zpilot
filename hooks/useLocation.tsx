@@ -146,7 +146,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
               area = addr.city || addr.town || addr.county || "Unknown Area";
             }
             
-            geocodeCache.set(cacheKey, area);
+            if (area) geocodeCache.set(cacheKey, area);
           } catch (err) {}
         }
 
