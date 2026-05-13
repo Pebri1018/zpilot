@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/client";
 import { recordSessionOpen, recordZoneChange, recordActiveMinute } from "@/app/actions/analytics";
 import { updateDriverStatus } from "@/app/akun/actions";
 
+const geocodeCache = new Map<string, string>();
+
 export type LocationState = {
   latitude: number | null;
   longitude: number | null;
@@ -113,22 +115,40 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
 
         // Reverse geocode in background
         let area = stateRef.current.areaName;
-        try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
-            { headers: { "Accept-Language": "id" } }
-          );
-          const data = await response.json();
-          const addr = data.address || {};
-          // Build a specific label: Road + neighbourhood
-          const street = addr.road || addr.pedestrian || addr.path || addr.footway || null;
-          const sub = addr.neighbourhood || addr.hamlet || addr.suburb || addr.village || null;
-          if (street && sub) {
-            area = `${street}, ${sub}`;
-          } else {
-            area = street || sub || addr.county || "Unknown Area";
-          }
-        } catch (err) {}
+        const cacheKey = `${Math.round(latitude * 10000) / 10000},${Math.round(longitude * 10000) / 10000}`;
+        
+        if (geocodeCache.has(cacheKey)) {
+          area = geocodeCache.get(cacheKey)!;
+        } else {
+          try {
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+              { headers: { "Accept-Language": "id" } }
+            );
+            const data = await response.json();
+            const addr = data.address || {};
+            
+            const road = addr.road || addr.pedestrian || addr.path || addr.footway || null;
+            const neighbourhood = addr.neighbourhood || addr.hamlet || null;
+            const suburb = addr.suburb || addr.village || null;
+            const district = addr.district || addr.city_district || addr.subdistrict || null;
+
+            const parts: string[] = [];
+            if (road) parts.push(road);
+            if (neighbourhood) parts.push(neighbourhood);
+            else if (suburb) parts.push(suburb);
+            
+            if (parts.length < 2 && district) parts.push(district);
+
+            if (parts.length > 0) {
+              area = parts.join(", ");
+            } else {
+              area = addr.city || addr.town || addr.county || "Unknown Area";
+            }
+            
+            geocodeCache.set(cacheKey, area);
+          } catch (err) {}
+        }
 
         if (area && area !== prevAreaRef.current) {
           if (prevAreaRef.current !== null) recordZoneChange(area).catch(console.error);

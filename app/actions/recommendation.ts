@@ -165,12 +165,14 @@ export async function getRecommendationV2(
     };
   }
 
-  // 7. Data Confidence Low
+  // 7. Data Confidence Low (Fallback Mode)
   if (hotspots.length === 0 || (topHotspot && topHotspot.score < 20)) {
     return {
       action: "STAY",
-      title: isID ? "Data Minim" : "Low Data",
-      reason: isID ? "Data belum cukup, pantau 10 menit lagi." : "Not enough data, monitor for 10 more mins.",
+      title: isID ? "Data Komunitas Minim" : "Low Community Data",
+      reason: isID 
+        ? "Data komunitas masih minim di sini. Coba geser ke kluster jalan utama, jelajahi 15-20 menit, atau cari kecamatan terdekat yang lebih aktif." 
+        : "Community data still low here. Try main road clusters, explore for 15-20 mins, or look for nearby districts with stronger activity.",
       color: "#9CA3AF",
       badge: "Low"
     };
