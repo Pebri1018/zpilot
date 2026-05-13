@@ -169,7 +169,7 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
                 <div className="min-w-[150px] p-1">
                   <p className="text-[0.95rem] font-black text-neutral-900 leading-tight mb-1.5">
                     {m.type.startsWith("driver_") 
-                      ? (isAdmin ? `${m.label} (#${m.driver_id || m.id.slice(0, 6)})` : `Driver #${m.driver_id || m.id.slice(0, 6)}`)
+                      ? (isAdmin ? `${m.label} (#${m.driver_id || m.id.slice(0, 6)})` : `Driver #${m.id.slice(0, 6)}`)
                       : m.label}
                   </p>
                   

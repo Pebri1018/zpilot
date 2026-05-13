@@ -672,14 +672,16 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                   <span className={`text-[0.6rem] font-black uppercase tracking-widest px-2 py-1 rounded-lg shrink-0 ${compStatus === 'Complete' ? 'bg-emerald-100 text-emerald-700' : compStatus === 'Partial' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>{compStatus}</span>
                 </div>
                 
-                <div className="flex gap-2">
-                  <div className={`px-2.5 py-1.5 rounded-xl text-[0.65rem] font-black tracking-wide ${m.promo_active || m.promo_percent ? 'bg-green-50 text-green-700' : 'bg-neutral-100 text-neutral-400'}`}>
-                    💰 {m.promo_active || m.promo_percent ? "PROMO ACTIVE" : "NO PROMO"}
+                {!["Paket", "Toko/Seller", "Seller SPX"].includes(m.category) && (
+                  <div className="flex gap-2">
+                    <div className={`px-2.5 py-1.5 rounded-xl text-[0.65rem] font-black tracking-wide ${m.promo_active || m.promo_percent ? 'bg-green-50 text-green-700' : 'bg-neutral-100 text-neutral-400'}`}>
+                      💰 {m.promo_active || m.promo_percent ? "PROMO ACTIVE" : "NO PROMO"}
+                    </div>
+                    <div className={`px-2.5 py-1.5 rounded-xl text-[0.65rem] font-black tracking-wide ${m.fast_pickup ? 'bg-blue-50 text-blue-700' : 'bg-neutral-100 text-neutral-400'}`}>
+                      ⚡ {m.fast_pickup ? "FAST PICKUP" : "NO PICKUP"}
+                    </div>
                   </div>
-                  <div className={`px-2.5 py-1.5 rounded-xl text-[0.65rem] font-black tracking-wide ${m.fast_pickup ? 'bg-blue-50 text-blue-700' : 'bg-neutral-100 text-neutral-400'}`}>
-                    ⚡ {m.fast_pickup ? "FAST PICKUP" : "NO PICKUP"}
-                  </div>
-                </div>
+                )}
 
                 <div className="flex gap-2 pt-2 mt-1">
                   <button 
