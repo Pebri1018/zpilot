@@ -178,13 +178,21 @@ export type ZoneStatsResult = {
   driverCount: number;
 };
 
-export async function getZoneStats(areaName: string | null): Promise<ZoneStatsResult> {
+export async function getZoneStats(areaName: string | null, lat?: number | null, lng?: number | null): Promise<ZoneStatsResult> {
   const supabase = await createClient();
   const hour = new Date().getHours();
   
   let driverCountInArea = 0;
   let pesaing: "Padat" | "Sedang" | "Longgar" = "Data Minim" as any;
   let orderan: "Potensi Tinggi" | "Potensi Sedang" | "Data Minim" = "Data Minim";
+
+  const getDist = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  };
 
   if (areaName) {
     // 1. Calculate Pesaing
@@ -209,6 +217,22 @@ export async function getZoneStats(areaName: string | null): Promise<ZoneStatsRe
         .eq("area_name", areaName)
         .gte("updated_at", fifteenMinsAgo);
       driverCountInArea = count || 0;
+    }
+
+    // Include admin manual signals within 5km
+    if (lat && lng) {
+      const { data: adminSignals } = await supabase
+        .from("admin_manual_signals")
+        .select("*")
+        .gt("expires_at", now);
+
+      if (adminSignals) {
+        const signalsInArea = adminSignals.filter(s => {
+          return getDist(lat, lng, s.lat, s.lng) <= 5;
+        });
+        const totalManualDrivers = signalsInArea.reduce((acc, s) => acc + s.count, 0);
+        driverCountInArea += totalManualDrivers;
+      }
     }
 
     if (driverCountInArea >= 5) pesaing = "Padat";

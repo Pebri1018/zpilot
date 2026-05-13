@@ -105,7 +105,7 @@ export function LiveDashboard() {
       const idleMinutes = status === "Ngetem" && ngetemStartTime ? Math.floor((now - ngetemStartTime) / 60000) : 0;
       const [merchantsResult, statsResult, hotspotResult] = await Promise.all([
         getActiveMerchants(areaName),
-        getZoneStats(areaName),
+        getZoneStats(areaName, latitude, longitude),
         getHotspots()
       ]);
 
