@@ -25,6 +25,7 @@ export type RadarMarker = {
   lng: number;
   type: "driver_ngetem" | "driver_antar" | "merchant_sepi" | "merchant_bergerak" | "merchant_mulaipanas" | "merchant_ramai" | "merchant_sangatsibuk" | "merchant_tutup" | "spot" | "seller";
   label: string;
+  driver_id?: string;
   live_status?: string;
   antar_nearby?: number;
   ngetem_nearby?: number;
@@ -105,7 +106,7 @@ function RadarContent() {
         // 1. Fetch active (non-Offline) drivers from users table
         const { data: drivers, error: dErr } = await supabase
           .from("users")
-          .select("id, last_lat, last_lng, status, nama")
+          .select("id, last_lat, last_lng, status, nama, driver_id")
           .not("last_lat", "is", null);
 
         if (dErr) {
@@ -169,7 +170,8 @@ function RadarContent() {
             lat: d.last_lat,
             lng: d.last_lng,
             type: d.status === "Ngetem" ? "driver_ngetem" : "driver_antar",
-            label: d.nama || "Driver"
+            label: d.nama || "Driver",
+            driver_id: d.driver_id || null
           });
         });
 
