@@ -43,6 +43,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
   const [users, setUsers] = useState(initialUsers);
   const [signals, setSignals] = useState(initialSignals);
   const [editingMerchant, setEditingMerchant] = useState<any | null>(null);
+  const [editingSpot, setEditingSpot] = useState<any | null>(null);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
@@ -212,19 +213,27 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                   </div>
                   <p className="text-[0.75rem] text-neutral-400 font-bold">{s.area}</p>
                 </div>
-                <button
-                  onClick={async () => {
-                    if (confirm("Hapus spot ini?")) {
-                      const { deleteNgetemSpot } = await import("./actions/notes");
-                      const res = await deleteNgetemSpot(s.id);
-                      if (res.success) setSpots(spots.filter(sp => sp.id !== s.id));
-                      else alert(res.error);
-                    }
-                  }}
-                  className="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setEditingSpot(s)}
+                    className="w-8 h-8 rounded-full bg-neutral-100 text-neutral-600 flex items-center justify-center hover:bg-neutral-200 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (confirm("Hapus spot ini?")) {
+                        const { deleteNgetemSpot } = await import("./actions/notes");
+                        const res = await deleteNgetemSpot(s.id);
+                        if (res.success) setSpots(spots.filter(sp => sp.id !== s.id));
+                        else alert(res.error);
+                      }
+                    }}
+                    className="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-2 mt-1">
                 <div className="bg-neutral-50 rounded-xl p-2.5">
@@ -1050,8 +1059,6 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
             </div>
             <form action={async (fd) => {
               setLoading(true);
-              fd.append("lat", String(editingMerchant.lat ?? ""));
-              fd.append("lng", String(editingMerchant.lng ?? ""));
               fd.append("area", editingMerchant.area);
               fd.append("address", editingMerchant.address || "");
               
@@ -1076,6 +1083,16 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 const isSeller = ["Paket", "Toko/Seller", "Seller SPX"].includes(editingMerchant.category);
                 return (
                   <>
+                    <div className="grid grid-cols-2 gap-3 mb-2">
+                      <div>
+                        <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1 pl-1">Latitude</p>
+                        <input name="lat" type="number" step="any" defaultValue={editingMerchant.lat ?? ""} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+                      </div>
+                      <div>
+                        <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1 pl-1">Longitude</p>
+                        <input name="lng" type="number" step="any" defaultValue={editingMerchant.lng ?? ""} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+                      </div>
+                    </div>
                     {isSeller ? (
                       <>
                         <input name="name" required defaultValue={editingMerchant.name} placeholder="Nama Toko Seller / Ekspedisi" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold outline-none" />
@@ -1202,6 +1219,70 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 <span>Hapus</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* EDIT SPOT MODAL */}
+      {editingSpot && (
+        <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] p-6 shadow-2xl animate-in slide-in-from-bottom-4 duration-200 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-[1.1rem] font-black">Edit Spot Mangkal</h3>
+              <button onClick={() => setEditingSpot(null)} className="w-9 h-9 rounded-xl bg-neutral-100 flex items-center justify-center">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <form action={async (fd) => {
+              setLoading(true);
+              const { updateNgetemSpot } = await import("./actions/notes");
+              const res = await updateNgetemSpot(editingSpot.id, fd);
+              setLoading(false);
+              if (res.success) {
+                const { getAllNgetemSpots } = await import("./actions/notes");
+                const updated = await getAllNgetemSpots();
+                setSpots(updated);
+                setEditingSpot(null);
+              } else alert(res.error);
+            }} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3 mb-2">
+                <div>
+                  <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1 pl-1">Latitude</p>
+                  <input name="lat" type="number" step="any" defaultValue={editingSpot.lat ?? ""} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+                </div>
+                <div>
+                  <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1 pl-1">Longitude</p>
+                  <input name="lng" type="number" step="any" defaultValue={editingSpot.lng ?? ""} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+                </div>
+              </div>
+              <div>
+                <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1 pl-1">Nama Spot</p>
+                <input name="name" required defaultValue={editingSpot.name} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+              </div>
+              <div>
+                <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1 pl-1">Area</p>
+                <input name="area" required defaultValue={editingSpot.area} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+              </div>
+              <div>
+                <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1 pl-1">Kualitas</p>
+                <select name="quality" defaultValue={editingSpot.quality} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]">
+                  <option value="Bagus">Bagus</option>
+                  <option value="Sedang">Sedang</option>
+                  <option value="Kurang">Kurang</option>
+                </select>
+              </div>
+              <div>
+                <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1 pl-1">Jam Terbaik</p>
+                <input name="best_hours" defaultValue={editingSpot.best_hours ?? ""} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+              </div>
+              <div>
+                <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1 pl-1">Catatan</p>
+                <textarea name="notes" defaultValue={editingSpot.notes || ""} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] resize-none" rows={2} />
+              </div>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setEditingSpot(null)} className="flex-1 py-3 rounded-2xl bg-neutral-100 font-bold text-neutral-600">Batal</button>
+                <button type="submit" disabled={loading} className="flex-1 py-3 rounded-2xl bg-neutral-900 font-bold text-white disabled:opacity-50">Simpan</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

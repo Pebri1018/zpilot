@@ -271,16 +271,16 @@ export function LiveDashboard() {
       </div>
 
       {/* STATS PILLS */}
-      <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-        <div className="shrink-0 bg-white dark:bg-neutral-900 rounded-xl px-3 py-2 shadow-sm border border-neutral-100 dark:border-white/10 flex flex-col items-center min-w-[80px]">
+      <div className="flex gap-2 pb-1">
+        <div className="flex-1 bg-white dark:bg-neutral-900 rounded-xl px-3 py-2 shadow-sm border border-neutral-100 dark:border-white/10 flex flex-col items-center min-w-[80px]">
           <p className="text-[0.6rem] font-bold uppercase text-neutral-400 tracking-wide">Order</p>
           <p className={`text-[0.85rem] font-black leading-tight ${zoneStats.orderan.includes("Tinggi") ? "text-emerald-600 dark:text-emerald-400" : "text-neutral-700 dark:text-neutral-300"}`}>{zoneStats.orderan.replace("Potensi ", "")}</p>
         </div>
-        <div className="shrink-0 bg-white dark:bg-neutral-900 rounded-xl px-3 py-2 shadow-sm border border-neutral-100 dark:border-white/10 flex flex-col items-center min-w-[80px]">
+        <div className="flex-1 bg-white dark:bg-neutral-900 rounded-xl px-3 py-2 shadow-sm border border-neutral-100 dark:border-white/10 flex flex-col items-center min-w-[80px]">
           <p className="text-[0.6rem] font-bold uppercase text-neutral-400 tracking-wide">Saingan</p>
           <p className={`text-[0.85rem] font-black leading-tight ${zoneStats.pesaing === "Padat" ? "text-red-600 dark:text-red-400" : "text-neutral-700 dark:text-neutral-300"}`}>{zoneStats.pesaing}</p>
         </div>
-        <div className="shrink-0 bg-white dark:bg-neutral-900 rounded-xl px-3 py-2 shadow-sm border border-neutral-100 dark:border-white/10 flex flex-col items-center min-w-[80px]">
+        <div className="flex-1 bg-white dark:bg-neutral-900 rounded-xl px-3 py-2 shadow-sm border border-neutral-100 dark:border-white/10 flex flex-col items-center min-w-[80px]">
           <p className="text-[0.6rem] font-bold uppercase text-neutral-400 tracking-wide">Driver</p>
           <p className="text-[0.85rem] font-black leading-tight text-neutral-700 dark:text-neutral-300">{zoneStats.driverCount}</p>
         </div>

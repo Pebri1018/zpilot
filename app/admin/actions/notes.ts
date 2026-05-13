@@ -98,3 +98,37 @@ export async function deleteNgetemSpot(id: string) {
   revalidatePath("/admin");
   return { success: true };
 }
+
+export async function updateNgetemSpot(id: string, formData: FormData) {
+  const isAdmin = await verifyAdmin();
+  if (!isAdmin) return { error: "Unauthorized" };
+
+  const name = String(formData.get("name") || "");
+  const area = String(formData.get("area") || "");
+  const lat = formData.get("lat") ? Number(formData.get("lat")) : null;
+  const lng = formData.get("lng") ? Number(formData.get("lng")) : null;
+  const quality = String(formData.get("quality") || "Bagus");
+  const best_hours = String(formData.get("best_hours") || "");
+  const notes = String(formData.get("notes") || "");
+
+  if (!name.trim() || !area.trim()) return { error: "Nama dan area wajib diisi" };
+
+  const supabase = getServiceClient();
+  const { error } = await supabase.from("ngetem_spots").update({
+    name,
+    area,
+    lat: lat && !isNaN(lat) ? lat : null,
+    lng: lng && !isNaN(lng) ? lng : null,
+    quality,
+    best_hours: best_hours || null,
+    notes: notes || null,
+  }).eq("id", id);
+
+  if (error) {
+    console.error("Error updating ngetem spot:", error);
+    return { error: error.message };
+  }
+
+  revalidatePath("/admin");
+  return { success: true };
+}
