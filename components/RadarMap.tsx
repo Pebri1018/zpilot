@@ -14,6 +14,7 @@ type RadarMapProps = {
   longitude: number | null;
   markers?: RadarMarker[];
   hotspots?: HotspotZone[];
+  isAdmin?: boolean;
 };
 
 function RecenterAutomatically({ lat, lng }: { lat: number; lng: number }) {
@@ -43,7 +44,7 @@ function MyLocationButton({ lat, lng }: { lat: number | null; lng: number | null
   );
 }
 
-export default function RadarMap({ latitude, longitude, markers = [], hotspots = [] }: RadarMapProps) {
+export default function RadarMap({ latitude, longitude, markers = [], hotspots = [], isAdmin = false }: RadarMapProps) {
   const { t } = useLanguage();
   const [mounted, setMounted] = useState(false);
   const [zoom, setZoom] = useState(16);
@@ -166,7 +167,11 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
             >
               <Popup className="radar-popup">
                 <div className="min-w-[150px] p-1">
-                  <p className="text-[0.95rem] font-black text-neutral-900 leading-tight mb-1.5">{m.label}</p>
+                  <p className="text-[0.95rem] font-black text-neutral-900 leading-tight mb-1.5">
+                    {m.type.startsWith("driver_") 
+                      ? (isAdmin ? `${m.label} (#${m.id.slice(0, 6)})` : `Driver #${m.id.slice(0, 6)}`)
+                      : m.label}
+                  </p>
                   
                   {m.type.startsWith("merchant_") ? (
                     <div className="flex flex-col gap-0.5 mb-2">
@@ -194,26 +199,28 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
                     </div>
                   )}
                   
-                  <div className="flex flex-col gap-1 mt-1">
-                    <a
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${m.lat},${m.lng}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-1.5 w-full py-1.5 bg-neutral-900 text-white rounded-lg text-[0.65rem] font-bold active:scale-95 transition-all shadow-sm"
-                    >
-                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                      Google Maps
-                    </a>
-                    <a
-                      href={`https://waze.com/ul?ll=${m.lat},${m.lng}&navigate=yes`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-1.5 w-full py-1.5 bg-[#05C8F7] text-white rounded-lg text-[0.65rem] font-bold active:scale-95 transition-all shadow-sm"
-                    >
-                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm1 14.93V15a1 1 0 00-2 0v1.93A8.001 8.001 0 014.07 9H6a1 1 0 000-2H4.07A8.001 8.001 0 0111 3.07V5a1 1 0 002 0V3.07A8.001 8.001 0 0119.93 9H18a1 1 0 000 2h1.93A8.001 8.001 0 0113 16.93z"/></svg>
-                      Waze
-                    </a>
-                  </div>
+                  {!(m.type.startsWith("driver_") && !isAdmin) && (
+                    <div className="flex flex-col gap-1 mt-1">
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${m.lat},${m.lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-1.5 w-full py-1.5 bg-neutral-900 text-white rounded-lg text-[0.65rem] font-bold active:scale-95 transition-all shadow-sm"
+                      >
+                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                        Google Maps
+                      </a>
+                      <a
+                        href={`https://waze.com/ul?ll=${m.lat},${m.lng}&navigate=yes`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-1.5 w-full py-1.5 bg-[#05C8F7] text-white rounded-lg text-[0.65rem] font-bold active:scale-95 transition-all shadow-sm"
+                      >
+                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm1 14.93V15a1 1 0 00-2 0v1.93A8.001 8.001 0 014.07 9H6a1 1 0 000-2H4.07A8.001 8.001 0 0111 3.07V5a1 1 0 002 0V3.07A8.001 8.001 0 0119.93 9H18a1 1 0 000 2h1.93A8.001 8.001 0 0113 16.93z"/></svg>
+                        Waze
+                      </a>
+                    </div>
+                  )}
                 </div>
               </Popup>
             </Marker>
