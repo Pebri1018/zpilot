@@ -87,77 +87,91 @@ export async function getRecommendationV2(
   const isPeak = isLunchPeak || isDinnerPeak;
 
   // 5. Current zone intelligence
+  // 5. Current zone intelligence
   if (currentHotspot) {
-    if (currentHotspot.label === "PELUANG") {
+    const target = (topHotspot && topHotspot.id !== currentHotspot.id) ? topHotspot.name : (secondHotspot?.name || "area lain");
+    
+    if (currentHotspot.label === "PELUANG EMAS") {
       return {
         action: "STAY",
-        title: isID ? "Zona Peluang!" : "Opportunity Zone!",
+        title: isID ? "Peluang Emas!" : "Golden Opportunity!",
         reason: isID
-          ? `${currentHotspot.merchant_count} merchant di radius terdekat mulai panas. Bertahan 10 menit lagi.`
-          : `${currentHotspot.merchant_count} merchants nearby getting hot. Hold for 10 mins.`,
+          ? `${currentHotspot.name} sangat potensial. ${currentHotspot.reason}.`
+          : `${currentHotspot.name} is highly potential. ${currentHotspot.reason}.`,
         color: "#10B981",
         badge: "High"
       };
     }
-    if (currentHotspot.label === "BERGERAK") {
-      return {
-        action: "STAY",
-        title: isID ? "Zona Bagus" : "Good Zone",
-        reason: isID
-          ? `${currentHotspot.merchant_count} merchant sangat sibuk di area ini. Bertahan 10-15 menit lagi.`
-          : `${currentHotspot.merchant_count} merchants very busy here. Hold for 10-15 mins.`,
-        color: "#3B82F6",
-        badge: "High"
-      };
-    }
-    if (currentHotspot.label === "KOMPETITIF") {
-      const target = (topHotspot && topHotspot.id !== currentHotspot.id) ? topHotspot.name : secondHotspot?.name || "area lain";
+    if (currentHotspot.label === "JEBAKAN KERUMUNAN") {
       return {
         action: "MOVE",
-        title: isID ? "Zona Terlalu Padat" : "Overcrowded Zone",
+        title: isID ? "Jebakan Kerumunan" : "Crowd Trap",
         reason: isID
-          ? `Terlalu banyak driver ngetem di spot ini. Geser ke ${target}.`
-          : `Too many drivers idling here. Shift to ${target}.`,
+          ? `${currentHotspot.name} penuh ngetem, hindari kerumunan. Geser ke ${target}.`
+          : `${currentHotspot.name} is full of idling drivers. Move to ${target}.`,
         targetZone: target,
         color: "#EF4444",
         badge: "High"
       };
     }
+    if (currentHotspot.label === "BAGUS SEKARANG") {
+      return {
+        action: "STAY",
+        title: isID ? "Bagus Sekarang" : "Good Now",
+        reason: isID
+          ? `${currentHotspot.name} aktif. ${currentHotspot.reason}.`
+          : `${currentHotspot.name} is active. ${currentHotspot.reason}.`,
+        color: "#059669",
+        badge: "High"
+      };
+    }
+    if (currentHotspot.label === "KOMPETITIF") {
+      return {
+        action: "MOVE",
+        title: isID ? "Pesaing Padat" : "High Competition",
+        reason: isID
+          ? `${currentHotspot.name} ramai driver, peluang turun. Geser ${target}.`
+          : `${currentHotspot.name} is crowded with drivers. Shift to ${target}.`,
+        targetZone: target,
+        color: "#F59E0B",
+        badge: "Medium"
+      };
+    }
+    if (currentHotspot.label === "HINDARI SEMENTARA") {
+      return {
+        action: "MOVE",
+        title: isID ? "Hindari Sementara" : "Avoid For Now",
+        reason: isID
+          ? `${currentHotspot.name} kurang potensial saat ini. Coba geser ke ${target}.`
+          : `${currentHotspot.name} is less potential now. Try moving to ${target}.`,
+        targetZone: target,
+        color: "#9CA3AF",
+        badge: "Low"
+      };
+    }
   }
 
-  // 6. General peak hour suggestion with real data
-  if (isPeak && merchantCount > 0 && topHotspot) {
+  // 6. Fallback if not in a hotspot but there is a top hotspot
+  if (topHotspot && topHotspot.score >= 40) {
     return {
-      action: "STAY",
-      title: isID ? (isLunchPeak ? "Jam Makan Siang" : "Jam Makan Malam") : (isLunchPeak ? "Lunch Rush" : "Dinner Rush"),
+      action: "MOVE",
+      title: isID ? "Zona Rekomendasi" : "Recommended Zone",
       reason: isID
-        ? `${isLunchPeak ? "11–13" : "17–19"} adalah jam sibuk. Ada ${merchantCount} merchant aktif. ${topHotspot.name} sedang panas.`
-        : `${isLunchPeak ? "11–13" : "17–19"} is peak. ${merchantCount} active merchants. ${topHotspot.name} is hot.`,
-      color: "#10B981",
+        ? `${topHotspot.name} sedang bagus (${topHotspot.label}). Bergerak sekarang.`
+        : `${topHotspot.name} is looking good (${topHotspot.label}). Move now.`,
+      targetZone: topHotspot.name,
+      color: "#3B82F6",
       badge: "Medium"
     };
   }
 
-  if (isNight) {
+  // 7. Data Confidence Low
+  if (hotspots.length === 0 || (topHotspot && topHotspot.score < 20)) {
     return {
       action: "STAY",
-      title: isID ? "Malam Aktif" : "Active Night",
-      reason: isID
-        ? "Waktu rawan orderan malam (martabak/nasi goreng). Area kos-kosan sangat direkomendasikan."
-        : "Night cravings time. Dorm areas are highly recommended.",
-      color: "#6366F1",
-      badge: "Low"
-    };
-  }
-
-  if (isLatNight) {
-    return {
-      action: "STAY",
-      title: isID ? "Dini Hari" : "Late Night",
-      reason: isID
-        ? "Volume orderan biasanya turun dini hari. Fokus ke area kos-kosan atau 24 jam."
-        : "Order volume tends to drop at night. Focus on dorm areas or 24h spots.",
-      color: "#6366F1",
+      title: isID ? "Data Minim" : "Low Data",
+      reason: isID ? "Data belum cukup, pantau 10 menit lagi." : "Not enough data, monitor for 10 more mins.",
+      color: "#9CA3AF",
       badge: "Low"
     };
   }
@@ -165,7 +179,7 @@ export async function getRecommendationV2(
   // Default
   return {
     action: "STAY",
-    title: isID ? "Standby" : "Standby",
+    title: isID ? "Pilot Siaga" : "Pilot Standby",
     reason: isID ? "Memantau pergerakan pasar. Tetap waspada." : "Monitoring market. Stay alert.",
     color: "#10B981",
     badge: "Low"

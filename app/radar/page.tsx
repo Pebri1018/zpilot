@@ -482,11 +482,11 @@ function RadarContent() {
         <div className="bg-neutral-950/85 backdrop-blur-xl rounded-3xl p-4 shadow-2xl border border-white/10">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-[0.55rem] font-black uppercase tracking-widest text-white/40">Zona Terbaik Sekarang</p>
+              <p className="text-[0.55rem] font-black uppercase tracking-widest text-white/40">Zona Paling Efisien Sekarang</p>
               <p className="text-[1.05rem] font-black text-white leading-tight">{bestHotspot?.name || "Memindai..."}</p>
               {bestHotspot && (
                 <p className="text-[0.7rem] font-bold mt-0.5" style={{ color: bestColor }}>
-                  {bestHotspot.label} · {bestHotspot.merchant_count} resto · {bestHotspot.ngetem_drivers} ngetem
+                  {bestHotspot.reason || bestHotspot.label}
                 </p>
               )}
             </div>

@@ -41,17 +41,18 @@ export type HotspotZone = {
   lat: number;
   lng: number;
   score: number;
-  label: "PELUANG" | "BERGERAK" | "KOMPETITIF" | "HINDARI";
+  label: "PELUANG EMAS" | "BAGUS SEKARANG" | "NORMAL" | "KOMPETITIF" | "HINDARI SEMENTARA" | "JEBAKAN KERUMUNAN";
   antar_drivers: number;
   ngetem_drivers: number;
   merchant_count: number;
+  reason?: string;
 };
 
 export async function getHotspots(): Promise<HotspotZone[]> {
   try {
     const supabase = getServiceClient();
-    const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
     const now = new Date().toISOString();
+    
     // 1. Fetch active drivers (last 60 min, not Offline)
     const { data: drivers, error: dErr } = await supabase
       .from("users")
@@ -62,7 +63,7 @@ export async function getHotspots(): Promise<HotspotZone[]> {
 
     if (dErr) console.error("hotspot drivers error:", dErr.message);
 
-    // 2. Fetch active merchants (no expires_at filter — just check is_active)
+    // 2. Fetch active merchants
     const { data: merchants, error: mErr } = await supabase
       .from("merchant_signals")
       .select("lat, lng")
@@ -71,15 +72,18 @@ export async function getHotspots(): Promise<HotspotZone[]> {
 
     if (mErr) console.error("hotspot merchants error:", mErr.message);
 
-    // 2.5 Fetch manual signals
+    // 3. Fetch manual signals
     const { data: manualSignals, error: msErr } = await supabase
       .from("admin_manual_signals")
       .select("lat, lng, count, type")
-      .gt("expires_at", new Date().toISOString());
+      .gt("expires_at", now);
 
     if (msErr) console.error("hotspot manual signals error:", msErr.message);
 
-    // 3. Process each zone
+    const hour = new Date().getHours();
+    const day = new Date().getDay();
+
+    // 4. Process each zone
     const hotspots: HotspotZone[] = PREDEFINED_ZONES.map(zone => {
       let antarCount = 0;
       let ngetemCount = 0;
@@ -111,30 +115,73 @@ export async function getHotspots(): Promise<HotspotZone[]> {
         if (dist <= ZONE_RADIUS_KM) merchantCount++;
       });
 
-      // 4. Calculate Score
-      // zone_score = (driver_antar * 5) + (merchant_active * 3) - (driver_ngetem * 4) - (manual_waiting_cluster * 3)
-      let manualNgetemCount = 0;
-      manualSignals?.forEach(ms => {
-        if (!ms.lat || !ms.lng) return;
-        const dist = getDistance(zone.lat, zone.lng, ms.lat, ms.lng);
-        if (dist <= ZONE_RADIUS_KM && ms.type === "driver_ngetem") manualNgetemCount += (ms.count || 1);
-      });
+      // --- HOTSPOT V2 LOGIC ---
+      
+      // Time Bonus System
+      let timeBonus = 0;
+      if (hour >= 6 && hour < 9) timeBonus = 3;
+      else if (hour >= 11 && hour < 14) timeBonus = 5;
+      else if (hour >= 17 && hour < 21) timeBonus = 5;
+      else if (hour >= 22 || hour < 1) timeBonus = 4;
 
-      const score = (antarCount * 5) + (merchantCount * 3) - (ngetemCount * 4) - (manualNgetemCount * 3);
+      // Yogyakarta Area Behavior Rules
+      let areaBonus = 0;
+      let reason = "Permintaan normal";
       
-      let label: HotspotZone["label"] = "HINDARI";
+      if (zone.id === "seturan") {
+        if ((hour >= 11 && hour < 14) || (hour >= 17 && hour < 21) || (hour >= 22 || hour < 1)) {
+          areaBonus = 5;
+          reason = "Banyak kos, kuat di jam makan & malam";
+        } else {
+          reason = "Persaingan tinggi di sini";
+        }
+      } else if (zone.id === "babarsari") {
+        areaBonus = 3;
+        reason = "Permintaan stabil, zona aman";
+      } else if (zone.id === "gejayan") {
+        if ((hour >= 11 && hour < 14) || (hour >= 17 && hour < 21)) {
+          areaBonus = 4;
+          reason = "Pergerakan cepat di jam makan";
+        }
+      } else if (zone.id === "ugm") {
+        if (day >= 1 && day <= 5 && hour >= 11 && hour < 14) {
+          areaBonus = 5;
+          reason = "Makan siang kampus kuat (weekday)";
+        }
+      } else if (zone.id === "jakal") {
+        if (hour >= 19 || hour < 1) {
+          areaBonus = 5;
+          reason = "Aktif di malam hari";
+        }
+      } else if (zone.id === "kota") {
+        if (day === 0 || day === 6) {
+          areaBonus = 4;
+          reason = "Kuat di akhir pekan (wisata)";
+        }
+      }
+
+      const movementSpike = antarCount >= 2 ? 3 : 0;
+      const clusterPenalty = ngetemCount >= 5 ? 5 : 0;
+
+      // Base Formula
+      const score = (antarCount * 6) + (merchantCount * 2) + (movementSpike * 4) + (timeBonus * 5) - (ngetemCount * 5) - (clusterPenalty * 4) + areaBonus;
       
-      // If many waiting drivers but no deliveries: mark as Kompetisi Tinggi
-      if (ngetemCount >= 3 && antarCount === 0) {
-        label = "KOMPETITIF";
-      } else if (score >= 12) {
-        label = "PELUANG";
-      } else if (score >= 5) {
-        label = "BERGERAK";
-      } else if (score >= 0) {
+      let label: HotspotZone["label"] = "NORMAL";
+      
+      // False Hotspot Detection
+      if (ngetemCount >= 5 && antarCount <= 1) {
+        label = "JEBAKAN KERUMUNAN";
+        reason = "Penuh ngetem, hindari kerumunan";
+      } else if (score >= 80) {
+        label = "PELUANG EMAS";
+      } else if (score >= 60) {
+        label = "BAGUS SEKARANG";
+      } else if (score >= 40) {
+        label = "NORMAL";
+      } else if (score >= 20) {
         label = "KOMPETITIF";
       } else {
-        label = "HINDARI";
+        label = "HINDARI SEMENTARA";
       }
 
       return {
@@ -143,7 +190,8 @@ export async function getHotspots(): Promise<HotspotZone[]> {
         label,
         antar_drivers: antarCount,
         ngetem_drivers: ngetemCount,
-        merchant_count: merchantCount
+        merchant_count: merchantCount,
+        reason
       };
     });
 
@@ -152,7 +200,7 @@ export async function getHotspots(): Promise<HotspotZone[]> {
   } catch (error) {
     console.error("getHotspots error:", error);
     return PREDEFINED_ZONES.map(z => ({
-      ...z, score: 0, label: "HINDARI", antar_drivers: 0, ngetem_drivers: 0, merchant_count: 0
+      ...z, score: 0, label: "HINDARI SEMENTARA", antar_drivers: 0, ngetem_drivers: 0, merchant_count: 0, reason: "Data error"
     }));
   }
 }
