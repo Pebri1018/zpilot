@@ -443,14 +443,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                     <div id="promo_percent_container" style={{ display: "none" }}>
                       <input name="promo_percent" type="number" placeholder="Promo Percent (e.g. 20, 40)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
                     </div>
-                    <div>
-                      <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Live Status / Kepadatan</p>
-                      <select name="volume" defaultValue="Normal" className="w-full px-4 py-3 rounded-xl bg-white border border-neutral-200 text-[0.9rem] font-semibold">
-                        <option value="Sepi">🟢 Sepi — Antrian kosong</option>
-                        <option value="Normal">🟡 Normal — Antrian biasa</option>
-                        <option value="Ramai">🔴 Ramai — Antrian panjang</option>
-                      </select>
-                    </div>
+
                   </div>
                 </>
               )}
