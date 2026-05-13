@@ -390,7 +390,7 @@ function RadarContent() {
 
       {/* MAP — takes full screen */}
       <div className="absolute inset-0">
-        <RadarMap latitude={mapLat} longitude={mapLng} markers={markers} hotspots={hotspots} />
+        <RadarMap latitude={mapLat} longitude={mapLng} markers={markers} hotspots={hotspots} isAdmin={isAdmin} />
       </div>
 
       {/* TOP LEFT — Zone pill */}
