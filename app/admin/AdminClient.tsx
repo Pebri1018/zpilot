@@ -431,10 +431,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                         }} className="w-5 h-5 rounded-lg border-neutral-300 text-neutral-900 focus:ring-0" />
                         <span className="text-[0.85rem] font-bold text-neutral-600 group-hover:text-neutral-900 transition-colors">{t("promo")}</span>
                       </label>
-                      <label className="flex items-center gap-2 cursor-pointer group">
-                        <input type="checkbox" name="pickup_fast" className="w-5 h-5 rounded-lg border-neutral-300 text-neutral-900 focus:ring-0" />
-                        <span className="text-[0.85rem] font-bold text-neutral-600 group-hover:text-neutral-900 transition-colors">{t("fast_pickup")}</span>
-                      </label>
+
                       <label className="flex items-center gap-2 cursor-pointer group">
                         <input type="checkbox" name="free_shipping" className="w-5 h-5 rounded-lg border-neutral-300 text-neutral-900 focus:ring-0" />
                         <span className="text-[0.85rem] font-bold text-neutral-600 group-hover:text-neutral-900 transition-colors">Diskon Ongkir</span>
@@ -1142,10 +1139,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                             <input type="checkbox" name="promo_active" defaultChecked={editingMerchant.promo_active} className="w-5 h-5 rounded-lg" />
                             <span className="text-[0.85rem] font-bold">Promo</span>
                           </label>
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" name="pickup_fast" defaultChecked={editingMerchant.fast_pickup || editingMerchant.pickup_fast} className="w-5 h-5 rounded-lg" />
-                            <span className="text-[0.85rem] font-bold">Fast Pickup</span>
-                          </label>
+
                         </div>
                         <input name="promo_percent" type="number" defaultValue={editingMerchant.promo_percent ?? ""} placeholder="Promo % (e.g. 20)" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
                         <div className="mt-2">
