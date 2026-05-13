@@ -44,6 +44,24 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
   const [signals, setSignals] = useState(initialSignals);
   const [editingMerchant, setEditingMerchant] = useState<any | null>(null);
   const [editingSpot, setEditingSpot] = useState<any | null>(null);
+  const [editLat, setEditLat] = useState<number | null>(null);
+  const [editLng, setEditLng] = useState<number | null>(null);
+  const [editSpotLat, setEditSpotLat] = useState<number | null>(null);
+  const [editSpotLng, setEditSpotLng] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (editingMerchant) {
+      setEditLat(editingMerchant.lat);
+      setEditLng(editingMerchant.lng);
+    }
+  }, [editingMerchant]);
+
+  useEffect(() => {
+    if (editingSpot) {
+      setEditSpotLat(editingSpot.lat);
+      setEditSpotLng(editingSpot.lng);
+    }
+  }, [editingSpot]);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
@@ -1083,15 +1101,14 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 const isSeller = ["Paket", "Toko/Seller", "Seller SPX"].includes(editingMerchant.category);
                 return (
                   <>
-                    <div className="grid grid-cols-2 gap-3 mb-2">
-                      <div>
-                        <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1 pl-1">Latitude</p>
-                        <input name="lat" type="number" step="any" defaultValue={editingMerchant.lat ?? ""} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
-                      </div>
-                      <div>
-                        <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1 pl-1">Longitude</p>
-                        <input name="lng" type="number" step="any" defaultValue={editingMerchant.lng ?? ""} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
-                      </div>
+                    <input type="hidden" name="lat" value={editLat ?? ""} />
+                    <input type="hidden" name="lng" value={editLng ?? ""} />
+                    <div className="mb-3">
+                      <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1 pl-1">Lokasi Presisi</p>
+                      <LocationPicker initialLat={editingMerchant.lat} initialLng={editingMerchant.lng} onLocationSelect={(newLat, newLng) => {
+                        setEditLat(newLat);
+                        setEditLng(newLng);
+                      }} />
                     </div>
                     {isSeller ? (
                       <>
@@ -1244,15 +1261,14 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 setEditingSpot(null);
               } else alert(res.error);
             }} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3 mb-2">
-                <div>
-                  <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1 pl-1">Latitude</p>
-                  <input name="lat" type="number" step="any" defaultValue={editingSpot.lat ?? ""} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
-                </div>
-                <div>
-                  <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1 pl-1">Longitude</p>
-                  <input name="lng" type="number" step="any" defaultValue={editingSpot.lng ?? ""} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
-                </div>
+              <input type="hidden" name="lat" value={editSpotLat ?? ""} />
+              <input type="hidden" name="lng" value={editSpotLng ?? ""} />
+              <div className="mb-3">
+                <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1 pl-1">Lokasi Presisi</p>
+                <LocationPicker initialLat={editingSpot.lat} initialLng={editingSpot.lng} onLocationSelect={(newLat, newLng) => {
+                  setEditSpotLat(newLat);
+                  setEditSpotLng(newLng);
+                }} />
               </div>
               <div>
                 <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1 pl-1">Nama Spot</p>
