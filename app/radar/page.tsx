@@ -89,7 +89,7 @@ function RadarContent() {
     try {
       const supabase = createClient();
       const now = new Date();
-      const activeLimit = new Date(now.getTime() - 60 * 60000).toISOString(); // 60 min window
+      const activeLimit = new Date(now.getTime() - 15 * 60000).toISOString(); // 15 min window for real-time radar
 
         const { data: sessionData } = await supabase.auth.getSession();
         const currentUserId = sessionData?.session?.user?.id;
@@ -107,7 +107,8 @@ function RadarContent() {
         const { data: drivers, error: dErr } = await supabase
           .from("users")
           .select("id, last_lat, last_lng, status, nama, driver_id")
-          .not("last_lat", "is", null);
+          .not("last_lat", "is", null)
+          .gte("last_active", activeLimit);
 
         if (dErr) {
           console.error("RADAR DEBUG: Supabase error fetching driver_locations:", dErr);

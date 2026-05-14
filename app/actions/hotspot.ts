@@ -59,7 +59,7 @@ export async function getHotspots(): Promise<HotspotZone[]> {
       .select("last_lat, last_lng, status")
       .not("last_lat", "is", null)
       .neq("status", "Offline")
-      .gte("last_active", new Date(Date.now() - 60 * 60 * 1000).toISOString());
+      .gte("last_active", new Date(Date.now() - 20 * 60 * 1000).toISOString());
 
     if (dErr) console.error("hotspot drivers error:", dErr.message);
 
