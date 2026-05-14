@@ -428,26 +428,18 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                       </div>
                     </div>
                     <input name="closed_days" placeholder="Hari Libur (opsional, misal: Senin, Minggu)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold mt-1" />
-                  </div>
-
                   <div className="flex flex-col gap-3 pt-2">
                     <div className="flex gap-5">
-                      <label className="flex items-center gap-2 cursor-pointer group">
-                        <input type="checkbox" name="promo_active" id="promo_active" defaultChecked={false} onChange={(e) => {
-                          const input = document.getElementById("promo_percent_container");
-                          if (input) input.style.display = e.target.checked ? "block" : "none";
-                        }} className="w-5 h-5 rounded-lg border-neutral-300 text-neutral-900 focus:ring-0" />
-                        <span className="text-[0.85rem] font-bold text-neutral-600 group-hover:text-neutral-900 transition-colors">{t("promo")}</span>
-                      </label>
-
                       <label className="flex items-center gap-2 cursor-pointer group">
                         <input type="checkbox" name="free_shipping" className="w-5 h-5 rounded-lg border-neutral-300 text-neutral-900 focus:ring-0" />
                         <span className="text-[0.85rem] font-bold text-neutral-600 group-hover:text-neutral-900 transition-colors">Diskon Ongkir</span>
                       </label>
                     </div>
-                    <div id="promo_percent_container" style={{ display: "none" }}>
-                      <input name="promo_percent" type="number" placeholder="Promo Percent (e.g. 20, 40)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
+                    <div>
+                      <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Promo Persen (%)</p>
+                      <input name="promo_percent" type="number" placeholder="Contoh: 20, 40" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold" />
                     </div>
+                  </div>
 
                   </div>
                 </>
@@ -1118,14 +1110,10 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                           <input name="rating" type="number" step="0.1" defaultValue={editingMerchant.rating ?? ""} placeholder="Rating (e.g. 4.5)" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
                           <input name="reviews" type="number" defaultValue={editingMerchant.reviews ?? ""} placeholder="Review Count" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
                         </div>
-                        <div className="flex gap-4 items-center py-1">
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" name="promo_active" defaultChecked={editingMerchant.promo_active} className="w-5 h-5 rounded-lg" />
-                            <span className="text-[0.85rem] font-bold">Promo</span>
-                          </label>
-
+                        <div className="mt-1">
+                          <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Promo Persen (%)</p>
+                          <input name="promo_percent" type="number" defaultValue={editingMerchant.promo_percent ?? ""} placeholder="Contoh: 20" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
                         </div>
-                        <input name="promo_percent" type="number" defaultValue={editingMerchant.promo_percent ?? ""} placeholder="Promo % (e.g. 20)" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
                       </>
                     )}
                   </>

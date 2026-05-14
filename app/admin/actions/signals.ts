@@ -52,8 +52,8 @@ export async function upsertMerchant(formData: FormData) {
 
   const name = String(formData.get("name") || "").trim();
   const category = String(formData.get("category") || "Makanan");
-  const promo_active = formData.get("promo_active") === "on";
   const promo_percent = formData.get("promo_percent") ? Number(formData.get("promo_percent")) : 0;
+  const promo_active = promo_percent > 0;
   const latStr = String(formData.get("lat"));
   const lngStr = String(formData.get("lng"));
   const lat = latStr && latStr !== "null" ? Number(latStr) : null;
