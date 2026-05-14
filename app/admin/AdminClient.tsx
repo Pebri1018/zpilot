@@ -660,7 +660,22 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                       <input name="promo_percent" type="number" defaultValue={detectedData.promo} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-bold outline-none" />
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-[0.1em] mb-1.5 ml-1">Jam Buka</p>
+                      <input name="open_time" type="time" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-bold outline-none" />
+                    </div>
+                    <div>
+                      <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-[0.1em] mb-1.5 ml-1">Jam Tutup</p>
+                      <input name="close_time" type="time" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-bold outline-none" />
+                    </div>
+                  </div>
                   <div className="flex gap-4 py-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" name="is_open_24h" className="w-5 h-5 rounded-lg accent-blue-600" />
+                      <span className="text-[0.8rem] font-bold text-neutral-600">Buka 24 Jam</span>
+                    </label>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input type="checkbox" name="free_shipping" defaultChecked={true} className="w-5 h-5 rounded-lg accent-blue-600" />
                       <span className="text-[0.8rem] font-bold text-neutral-600">Gratis Ongkir</span>
