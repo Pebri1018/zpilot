@@ -125,10 +125,17 @@ export function LiveDashboard({ isDemo = false }: { isDemo?: boolean }) {
     }
   }, [status, latitude, longitude]);
 
+  const hasLoggedAntar = useRef(false);
+
   // Log "Antar" signals & Fetch Personal History
   useEffect(() => {
     if (status === "Antar" && latitude && longitude && areaName) {
-      saveUserSignal("antar", latitude, longitude, areaName);
+      if (!hasLoggedAntar.current) {
+        saveUserSignal("antar", latitude, longitude, areaName);
+        hasLoggedAntar.current = true;
+      }
+    } else if (status !== "Antar") {
+      hasLoggedAntar.current = false;
     }
     
     const fetchPersonal = async () => {
@@ -283,7 +290,16 @@ export function LiveDashboard({ isDemo = false }: { isDemo?: boolean }) {
               <div className="w-2 h-2 bg-white rounded-full animate-ping" />
               <p className="text-[0.7rem] font-black text-red-100 uppercase tracking-[0.2em]">Sinyal Idle {idleMinutes}m</p>
             </div>
-            <button onClick={() => setNgetemStartTime(Date.now())} className="text-[0.65rem] font-black text-red-200 hover:text-white transition-colors">TUTUP</button>
+            <button 
+              onClick={() => {
+                const now = Date.now();
+                setNgetemStartTime(now);
+                localStorage.setItem("ztips_ngetem_start", now.toString());
+              }} 
+              className="text-[0.65rem] font-black text-red-200 hover:text-white transition-colors"
+            >
+              TUTUP
+            </button>
           </div>
           <div>
             <p className="text-[1.1rem] font-black text-white leading-tight">Sudah 15 menit tanpa pergerakan.</p>
