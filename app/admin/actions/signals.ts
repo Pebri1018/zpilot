@@ -68,6 +68,9 @@ export async function upsertMerchant(formData: FormData) {
   const is_open_24h = formData.get("is_open_24h") === "on";
   const closed_days = String(formData.get("closed_days") || "").trim() || null;
   const volume = String(formData.get("volume") || "Normal");
+  const platform = String(formData.get("platform") || "ZPILOT");
+  const external_id = String(formData.get("external_id") || "").trim() || null;
+  const priority = Number(formData.get("priority") || 0);
 
   if (!name || !area) return { error: "Nama resto dan area wajib diisi" };
 
@@ -125,6 +128,9 @@ export async function upsertMerchant(formData: FormData) {
       live_score,
       live_status,
       manual_admin_boost_until,
+      platform,
+      external_id,
+      priority,
       updated_at: new Date().toISOString(),
       expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
     },
@@ -270,6 +276,9 @@ export type MerchantSignal = {
   open_time?: string | null;
   close_time?: string | null;
   closed_days?: string | null;
+  platform?: string | null;
+  external_id?: string | null;
+  priority?: number | null;
 };
 
 // Haversine distance in km

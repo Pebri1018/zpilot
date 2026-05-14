@@ -48,6 +48,13 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
   const [editLng, setEditLng] = useState<number | null>(null);
   const [editSpotLat, setEditSpotLat] = useState<number | null>(null);
   const [editSpotLng, setEditSpotLng] = useState<number | null>(null);
+  const [importText, setImportText] = useState("");
+  const [importData, setImportData] = useState<any>(null);
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
+  const [area, setArea] = useState("");
+  const [address, setAddress] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (editingMerchant) {
@@ -220,6 +227,14 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 <span className="text-[1.2rem]">📡</span>
                 <span className="text-[0.95rem] font-semibold">Data Sinyal Manual (10 Menit)</span>
                 <svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              </button>
+              <button onClick={() => setActiveTab("import_shopee")} className="w-full flex items-center gap-3 px-5 py-4.5 text-left hover:bg-neutral-50 active:bg-neutral-100 transition bg-amber-50/30">
+                <span className="text-[1.2rem]">🔗</span>
+                <div className="flex flex-col">
+                  <span className="text-[0.95rem] font-bold text-amber-600">Import ShopeeFood</span>
+                  <span className="text-[0.65rem] font-bold text-amber-400 uppercase tracking-tight">Auto Parse Link / Text</span>
+                </div>
+                <svg className="w-4 h-4 text-amber-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </button>
             </div>
           </div>
@@ -450,6 +465,138 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
               </button>
             </form>
           </div>
+        </div>
+      {/* 2.0 IMPORT SHOPEEFOOD */}
+      {activeTab === "import_shopee" && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
+          {!importData ? (
+            <div className="bg-white p-6 rounded-[2.5rem] border border-neutral-100 shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center text-[1.5rem]">🔗</div>
+                <div>
+                  <h3 className="text-[1.1rem] font-black tracking-tight">Import via Link</h3>
+                  <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest">ShopeeFood Smart Parser</p>
+                </div>
+              </div>
+              
+              <p className="text-[0.8rem] font-bold text-neutral-500 mb-3 px-1">Paste teks shared atau link ShopeeFood di bawah:</p>
+              <textarea 
+                className="w-full px-5 py-4 rounded-[1.5rem] bg-neutral-50 border border-neutral-200 text-[0.9rem] font-medium min-h-[140px] focus:bg-white focus:border-amber-400 transition-all outline-none"
+                placeholder="Contoh: https://app.shopeepay.co.id/universal-link/now-food/shop/22174531"
+                value={importText}
+                onChange={(e) => setImportText(e.target.value)}
+              />
+              
+              <button 
+                onClick={() => {
+                  if (!importText.trim()) return;
+                  const shopIdMatch = importText.match(/\/shop\/(\d+)/);
+                  const nameMatch = importText.match(/Cobain deh (.+?) di ShopeeFood/i) || importText.match(/(.+) di ShopeeFood/i);
+                  
+                  if (!shopIdMatch && !importText.includes("shopee")) {
+                    alert("Link tidak dikenali sebagai ShopeeFood");
+                    return;
+                  }
+
+                  setImportData({
+                    name: nameMatch ? nameMatch[1].trim() : "",
+                    external_id: shopIdMatch ? shopIdMatch[1] : "",
+                    platform: "ShopeeFood",
+                    category: "Makanan"
+                  });
+                }}
+                className="w-full mt-4 bg-amber-500 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all"
+              >
+                Fetch Merchant Data
+              </button>
+            </div>
+          ) : (
+            <div className="bg-white p-6 rounded-[2.5rem] border border-neutral-100 shadow-sm animate-in zoom-in-95">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-[1.1rem] font-black tracking-tight">Prefilled Form</h3>
+                <button onClick={() => setImportData(null)} className="text-[0.75rem] font-bold text-neutral-400 bg-neutral-100 px-3 py-1.5 rounded-xl">Batal</button>
+              </div>
+
+              <form action={async (fd) => {
+                setLoading(true);
+                fd.append("lat", String(lat)); fd.append("lng", String(lng)); fd.append("area", area); fd.append("address", address);
+                fd.append("external_id", importData.external_id);
+                fd.append("platform", importData.platform);
+                const res = await upsertMerchant(fd);
+                setLoading(false);
+                if (res.success) {
+                  const updated = await getAllMerchants();
+                  setMerchants(updated);
+                  setImportData(null);
+                  setImportText("");
+                  alert("Merchant Imported Successfully!");
+                } else alert(res.error);
+              }} className="space-y-4">
+                <div>
+                  <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Nama Merchant</p>
+                  <input name="name" defaultValue={importData.name} required className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Category</p>
+                    <select name="category" defaultValue={importData.category} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold">
+                      <option value="Makanan">🍔 Makanan</option>
+                      <option value="Minuman">🥤 Minuman</option>
+                      <option value="Snack">🍿 Snack</option>
+                    </select>
+                  </div>
+                  <div>
+                    <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Priority</p>
+                    <input name="priority" type="number" defaultValue="0" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold" />
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Promo Persen (%)</p>
+                  <input name="promo_percent" type="number" defaultValue="0" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold" />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-1 pl-1">Set Lokasi</p>
+                  <input 
+                    type="text" 
+                    placeholder="Link Gmaps / Koordinat (-6.xxx, 106.xxx)" 
+                    onChange={async (e) => {
+                      const val = e.target.value;
+                      if (!val.trim()) return;
+                      if (val.includes("http")) {
+                        const coords = await resolveGmapsLink(val);
+                        if (coords.lat && coords.lng) { setLat(coords.lat); setLng(coords.lng); }
+                      } else {
+                        const coords = val.split(",");
+                        if (coords.length >= 2) {
+                          const newLat = parseFloat(coords[0].replace(/[^0-9.-]/g, ""));
+                          const newLng = parseFloat(coords[1].replace(/[^0-9.-]/g, ""));
+                          if (!isNaN(newLat) && !isNaN(newLng)) { setLat(newLat); setLng(newLng); }
+                        }
+                      }
+                    }}
+                    className="w-full px-5 py-3 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] focus:outline-none mb-2"
+                  />
+                  <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, addr, ar) => {
+                    setLat(newLat); setLng(newLng);
+                    if (addr) setAddress(addr);
+                    if (ar) setArea(ar);
+                  }} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <input name="area" required value={area} onChange={e => setArea(e.target.value)} placeholder="Area (Wajib)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold" />
+                  <input value={`${lat || ''}, ${lng || ''}`} readOnly placeholder="Koordinat" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] text-neutral-500 font-mono" />
+                </div>
+
+                <button disabled={loading} className="w-full mt-4 bg-neutral-900 text-white font-black py-4 rounded-2xl shadow-xl active:scale-95 transition-all disabled:opacity-50">
+                  {loading ? "Saving..." : "Save Imported Merchant"}
+                </button>
+              </form>
+            </div>
+          )}
         </div>
       )}
 
