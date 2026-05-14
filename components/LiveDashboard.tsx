@@ -9,6 +9,7 @@ import { getHotspots, type HotspotZone } from "@/app/actions/hotspot";
 import { DriverStatusSelector } from "./DriverStatusSelector";
 import { NgetemTimer } from "./NgetemTimer";
 import { useLanguage } from "@/context/LanguageContext";
+import { saveUserSignal, getPersonalHotspots, type PersonalHotspot } from "@/app/actions/personal_intelligence";
 
 const MERCHANT_CACHE_KEY = "ztips_merchants_cache";
 const MERCHANT_CACHE_TTL = 30 * 60 * 1000;
@@ -67,6 +68,8 @@ export function LiveDashboard({ isDemo = false }: { isDemo?: boolean }) {
     pesaing: "Longgar" as any,
     driverCount: 0
   });
+  const [personalHotspots, setPersonalHotspots] = useState<PersonalHotspot[]>([]);
+  const [showFeedbackToast, setShowFeedbackToast] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 30000);
@@ -121,6 +124,19 @@ export function LiveDashboard({ isDemo = false }: { isDemo?: boolean }) {
       localStorage.removeItem("ztips_ngetem_start");
     }
   }, [status, latitude, longitude]);
+
+  // Log "Antar" signals & Fetch Personal History
+  useEffect(() => {
+    if (status === "Antar" && latitude && longitude && areaName) {
+      saveUserSignal("antar", latitude, longitude, areaName);
+    }
+    
+    const fetchPersonal = async () => {
+      const phs = await getPersonalHotspots();
+      setPersonalHotspots(phs);
+    };
+    fetchPersonal();
+  }, [status, latitude, longitude, areaName]);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -364,6 +380,60 @@ export function LiveDashboard({ isDemo = false }: { isDemo?: boolean }) {
           <p className="text-[0.85rem] font-black leading-tight text-neutral-700 dark:text-neutral-300">{zoneStats.driverCount}</p>
         </div>
       </div>
+
+      {/* QUICK FEEDBACK */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-[2rem] p-5 shadow-lg relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 blur-2xl rounded-full -mr-12 -mt-12 pointer-events-none"></div>
+        <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/70 mb-1">Gacor Hari Ini?</p>
+        <p className="text-[0.95rem] font-bold text-white mb-4 leading-tight">Bagikan lokasimu ke radar personal & komunitas.</p>
+        <button 
+          onClick={async () => {
+            if (latitude && longitude && areaName) {
+              await saveUserSignal("feedback", latitude, longitude, areaName);
+              setShowFeedbackToast(true);
+              setTimeout(() => setShowFeedbackToast(false), 3000);
+              // Refetch
+              const phs = await getPersonalHotspots();
+              setPersonalHotspots(phs);
+            }
+          }}
+          className="bg-white text-blue-600 text-[0.85rem] font-black px-6 py-3 rounded-2xl active:scale-95 transition-all shadow-sm flex items-center gap-2"
+        >
+          📍 Titik Ini Gacor!
+        </button>
+        {showFeedbackToast && (
+          <div className="absolute inset-0 bg-white/95 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
+            <p className="text-blue-600 font-black text-center">Terima kasih! Sinyal tersimpan.</p>
+          </div>
+        )}
+      </div>
+
+      {/* PERSONAL INTELLIGENCE */}
+      {personalHotspots.length > 0 && (
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <p className="text-[0.65rem] font-black uppercase tracking-widest text-neutral-400 mb-2 px-1">Zona Cocok Untuk Akunmu</p>
+          <div className="grid grid-cols-1 gap-2">
+            {personalHotspots.map((ph, idx) => (
+              <Link 
+                href={`/radar?lat=${ph.lat}&lng=${ph.lng}`} 
+                key={`ph-${idx}`}
+                className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl px-4 py-3 border border-blue-100 dark:border-blue-800/30 flex items-center justify-between active:scale-[0.98] transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white dark:bg-neutral-800 flex items-center justify-center shadow-sm">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </div>
+                  <div>
+                    <p className="text-[0.9rem] font-black text-neutral-900 dark:text-neutral-100 leading-tight">{ph.area}</p>
+                    <p className="text-[0.65rem] font-bold text-blue-600 dark:text-blue-400 mt-0.5">{ph.count}x histori gacor</p>
+                  </div>
+                </div>
+                <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* NGETEM TIMER COMPONENT */}
       <NgetemTimer />
