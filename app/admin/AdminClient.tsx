@@ -563,6 +563,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                       const val = e.target.value;
                       if (!val.trim()) return;
                       if (val.includes("http")) {
+                        const { resolveGmapsLink } = await import("@/app/admin/actions/signals");
                         const coords = await resolveGmapsLink(val);
                         if (coords.lat && coords.lng) { setLat(coords.lat); setLng(coords.lng); }
                       } else {
