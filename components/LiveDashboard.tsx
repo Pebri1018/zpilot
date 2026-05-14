@@ -70,6 +70,7 @@ export function LiveDashboard({ isDemo = false }: { isDemo?: boolean }) {
   });
   const [personalHotspots, setPersonalHotspots] = useState<PersonalHotspot[]>([]);
   const [showFeedbackToast, setShowFeedbackToast] = useState(false);
+  const [showFeedbackCard, setShowFeedbackCard] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 30000);
@@ -127,17 +128,35 @@ export function LiveDashboard({ isDemo = false }: { isDemo?: boolean }) {
 
   const hasLoggedAntar = useRef(false);
 
-  // Log "Antar" signals & Fetch Personal History
+  // Log "Antar" signals & Fetch Personal History & Manage Feedback Card
   useEffect(() => {
     if (status === "Antar" && latitude && longitude && areaName) {
       if (!hasLoggedAntar.current) {
         saveUserSignal("antar", latitude, longitude, areaName);
         hasLoggedAntar.current = true;
+        
+        // Increment delivery count for feedback
+        const count = parseInt(localStorage.getItem("ztips_delivery_count") || "0") + 1;
+        localStorage.setItem("ztips_delivery_count", count.toString());
       }
     } else if (status !== "Antar") {
       hasLoggedAntar.current = false;
     }
     
+    // Check if feedback card should show
+    const checkFeedback = () => {
+      const lastTime = parseInt(localStorage.getItem("ztips_last_feedback") || "0");
+      const count = parseInt(localStorage.getItem("ztips_delivery_count") || "0");
+      const oneHour = 60 * 60 * 1000;
+      
+      if (Date.now() - lastTime > oneHour || count >= 2) {
+        setShowFeedbackCard(true);
+      } else {
+        setShowFeedbackCard(false);
+      }
+    };
+    checkFeedback();
+
     const fetchPersonal = async () => {
       const phs = await getPersonalHotspots();
       setPersonalHotspots(phs);
@@ -397,32 +416,51 @@ export function LiveDashboard({ isDemo = false }: { isDemo?: boolean }) {
         </div>
       </div>
 
-      {/* QUICK FEEDBACK */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-[2rem] p-5 shadow-lg relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 blur-2xl rounded-full -mr-12 -mt-12 pointer-events-none"></div>
-        <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/70 mb-1">Gacor Hari Ini?</p>
-        <p className="text-[0.95rem] font-bold text-white mb-4 leading-tight">Bagikan lokasimu ke radar personal & komunitas.</p>
-        <button 
-          onClick={async () => {
-            if (latitude && longitude && areaName) {
-              await saveUserSignal("feedback", latitude, longitude, areaName);
-              setShowFeedbackToast(true);
-              setTimeout(() => setShowFeedbackToast(false), 3000);
-              // Refetch
-              const phs = await getPersonalHotspots();
-              setPersonalHotspots(phs);
-            }
-          }}
-          className="bg-white text-blue-600 text-[0.85rem] font-black px-6 py-3 rounded-2xl active:scale-95 transition-all shadow-sm flex items-center gap-2"
-        >
-          📍 Titik Ini Gacor!
-        </button>
-        {showFeedbackToast && (
-          <div className="absolute inset-0 bg-white/95 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
-            <p className="text-blue-600 font-black text-center">Terima kasih! Sinyal tersimpan.</p>
+      {/* QUICK FEEDBACK (Conditional) */}
+      {showFeedbackCard && (
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-[2rem] p-5 shadow-lg relative overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 blur-2xl rounded-full -mr-12 -mt-12 pointer-events-none"></div>
+          <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/70 mb-1">Cek Status Lapangan</p>
+          <p className="text-[1rem] font-bold text-white mb-4 leading-tight">Gimana kondisi di {areaName || "titik ini"}?</p>
+          <div className="flex gap-2">
+            <button 
+              onClick={async () => {
+                if (latitude && longitude && areaName) {
+                  await saveUserSignal("feedback_gacor", latitude, longitude, areaName);
+                  localStorage.setItem("ztips_last_feedback", Date.now().toString());
+                  localStorage.setItem("ztips_delivery_count", "0");
+                  setShowFeedbackToast(true);
+                  setTimeout(() => { setShowFeedbackToast(false); setShowFeedbackCard(false); }, 2000);
+                  const phs = await getPersonalHotspots();
+                  setPersonalHotspots(phs);
+                }
+              }}
+              className="flex-1 bg-white text-blue-600 text-[0.8rem] font-black py-3.5 rounded-2xl active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2"
+            >
+              🚀 Gacor!
+            </button>
+            <button 
+              onClick={async () => {
+                if (latitude && longitude && areaName) {
+                  await saveUserSignal("feedback_sepi", latitude, longitude, areaName);
+                  localStorage.setItem("ztips_last_feedback", Date.now().toString());
+                  localStorage.setItem("ztips_delivery_count", "0");
+                  setShowFeedbackToast(true);
+                  setTimeout(() => { setShowFeedbackToast(false); setShowFeedbackCard(false); }, 2000);
+                }
+              }}
+              className="flex-1 bg-blue-700/40 text-white text-[0.8rem] font-black py-3.5 rounded-2xl active:scale-95 transition-all border border-white/10 flex items-center justify-center gap-2"
+            >
+              😴 Sepi
+            </button>
           </div>
-        )}
-      </div>
+          {showFeedbackToast && (
+            <div className="absolute inset-0 bg-white/95 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
+              <p className="text-blue-600 font-black text-center">Berhasil! Sinyal tersimpan.</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* PERSONAL INTELLIGENCE */}
       {personalHotspots.length > 0 && (
