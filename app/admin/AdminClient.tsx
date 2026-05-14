@@ -48,13 +48,70 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
   const [editLng, setEditLng] = useState<number | null>(null);
   const [editSpotLat, setEditSpotLat] = useState<number | null>(null);
   const [editSpotLng, setEditSpotLng] = useState<number | null>(null);
-  const [importText, setImportText] = useState("");
-  const [importData, setImportData] = useState<any>(null);
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
   const [area, setArea] = useState("");
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [detectedData, setDetectedData] = useState<any>(null);
+
+  const parseShopeeScreenshotText = (text: string) => {
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    let name = "";
+    let rating = 0;
+    let promo = 0;
+    let freeDelivery = false;
+    let eta = 0;
+    let category = "Makanan";
+
+    for (let i = 0; i < Math.min(lines.length, 15); i++) {
+      const line = lines[i];
+      if (line.match(/ShopeeFood/i) || line.match(/Voucher/i) || line.match(/Promo/i) || line.match(/Diskon/i)) continue;
+      if (line.length > 4 && !line.match(/^\d+\.?\d*$/) && !line.includes(":")) {
+        name = line;
+        break;
+      }
+    }
+
+    const ratingMatch = text.match(/([345]\.[0-9])/);
+    if (ratingMatch) rating = parseFloat(ratingMatch[1]);
+
+    const promoMatch = text.match(/(\d+)%/);
+    if (promoMatch) promo = parseInt(promoMatch[1]);
+
+    if (text.toLowerCase().includes("gratis ongkir") || text.toLowerCase().includes("ongkir rp0") || text.toLowerCase().includes("free delivery")) {
+      freeDelivery = true;
+    }
+
+    const etaMatch = text.match(/(\d+)\s*(menit|mins)/i);
+    if (etaMatch) eta = parseInt(etaMatch[1]);
+
+    const lower = text.toLowerCase();
+    if (lower.includes("minuman") || lower.includes("drink") || lower.includes("kopi") || lower.includes("tea") || lower.includes("boba")) category = "Minuman";
+    else if (lower.includes("snack") || lower.includes("cemilan") || lower.includes("keripik") || lower.includes("roti")) category = "Snack";
+
+    return { name, rating, promo, freeDelivery, eta, category };
+  };
+
+  const handleImageUpload = async (file: File) => {
+    setOcrLoading(true);
+    setPreviewImage(URL.createObjectURL(file));
+    try {
+      const { createWorker } = await import("tesseract.js");
+      const worker = await createWorker('ind');
+      const { data: { text } } = await worker.recognize(file);
+      await worker.terminate();
+      const parsed = parseShopeeScreenshotText(text);
+      setDetectedData(parsed);
+    } catch (e) {
+      console.error("OCR Error", e);
+      alert("Gagal membaca gambar.");
+    } finally {
+      setOcrLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (editingMerchant) {
@@ -223,13 +280,13 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 <span className="text-[0.95rem] font-semibold">Data Sinyal Manual (10 Menit)</span>
                 <svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </button>
-              <button onClick={() => setActiveTab("import_shopee")} className="w-full flex items-center gap-3 px-5 py-4.5 text-left hover:bg-neutral-50 active:bg-neutral-100 transition bg-amber-50/30">
-                <span className="text-[1.2rem]">🔗</span>
+              <button onClick={() => setActiveTab("screenshot_import")} className="w-full flex items-center gap-3 px-5 py-4.5 text-left hover:bg-neutral-50 active:bg-neutral-100 transition bg-blue-50/30">
+                <span className="text-[1.2rem]">📸</span>
                 <div className="flex flex-col">
-                  <span className="text-[0.95rem] font-bold text-amber-600">Import ShopeeFood</span>
-                  <span className="text-[0.65rem] font-bold text-amber-400 uppercase tracking-tight">Auto Parse Link / Text</span>
+                  <span className="text-[0.95rem] font-bold text-blue-600">Import via Screenshot</span>
+                  <span className="text-[0.65rem] font-bold text-blue-400 uppercase tracking-tight">Auto OCR ShopeeFood</span>
                 </div>
-                <svg className="w-4 h-4 text-amber-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                <svg className="w-4 h-4 text-blue-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </button>
             </div>
           </div>
@@ -463,136 +520,153 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
         </div>
       )}
 
-      {/* 2.0 IMPORT SHOPEEFOOD */}
-      {activeTab === "import_shopee" && (
+      {/* 2.0 IMPORT VIA SCREENSHOT */}
+      {activeTab === "screenshot_import" && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
-          {!importData ? (
-            <div className="bg-white p-6 rounded-[2.5rem] border border-neutral-100 shadow-sm">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center text-[1.5rem]">🔗</div>
-                <div>
-                  <h3 className="text-[1.1rem] font-black tracking-tight">Import via Link</h3>
-                  <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest">ShopeeFood Smart Parser</p>
+          {!detectedData ? (
+            <div className="bg-white p-6 rounded-[2.5rem] border border-neutral-100 shadow-sm text-center">
+              <div className="w-16 h-16 rounded-3xl bg-blue-50 flex items-center justify-center mx-auto mb-4 text-[1.8rem]">📸</div>
+              <h3 className="text-[1.1rem] font-black mb-1">Add by Screenshot</h3>
+              <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-6 px-4">Upload Screenshot ShopeeFood untuk Auto-Fill data</p>
+              
+              <div 
+                className={`relative border-2 border-dashed rounded-[2rem] p-10 transition-all ${ocrLoading ? 'border-blue-400 bg-blue-50/30' : 'border-neutral-200 hover:border-blue-400 hover:bg-neutral-50'}`}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={async (e) => {
+                  e.preventDefault();
+                  const file = e.dataTransfer.files[0];
+                  if (file) handleImageUpload(file);
+                }}
+              >
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  className="absolute inset-0 opacity-0 cursor-pointer" 
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImageUpload(file);
+                  }}
+                />
+                <div className="flex flex-col items-center">
+                  {ocrLoading ? (
+                    <>
+                      <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                      <p className="text-[0.85rem] font-black text-blue-600">Membaca Gambar...</p>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-10 h-10 text-neutral-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                      <p className="text-[0.85rem] font-bold text-neutral-500">Ketuk atau seret gambar ke sini</p>
+                    </>
+                  )}
                 </div>
               </div>
-              
-              <p className="text-[0.8rem] font-bold text-neutral-500 mb-3 px-1">Paste teks shared atau link ShopeeFood di bawah:</p>
-              <textarea 
-                className="w-full px-5 py-4 rounded-[1.5rem] bg-neutral-50 border border-neutral-200 text-[0.9rem] font-medium min-h-[140px] focus:bg-white focus:border-amber-400 transition-all outline-none"
-                placeholder="Contoh: https://app.shopeepay.co.id/universal-link/now-food/shop/22174531"
-                value={importText}
-                onChange={(e) => setImportText(e.target.value)}
-              />
-              
-              <button 
-                onClick={() => {
-                  if (!importText.trim()) return;
-                  const shopIdMatch = importText.match(/\/shop\/(\d+)/);
-                  const nameMatch = importText.match(/Cobain deh (.+?) di ShopeeFood/i) || importText.match(/(.+) di ShopeeFood/i);
-                  
-                  if (!shopIdMatch && !importText.includes("shopee")) {
-                    alert("Link tidak dikenali sebagai ShopeeFood");
-                    return;
-                  }
-
-                  setImportData({
-                    name: nameMatch ? nameMatch[1].trim() : "",
-                    external_id: shopIdMatch ? shopIdMatch[1] : "",
-                    platform: "ShopeeFood",
-                    category: "Makanan"
-                  });
-                }}
-                className="w-full mt-4 bg-amber-500 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all"
-              >
-                Fetch Merchant Data
-              </button>
             </div>
           ) : (
-            <div className="bg-white p-6 rounded-[2.5rem] border border-neutral-100 shadow-sm animate-in zoom-in-95">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-[1.1rem] font-black tracking-tight">Prefilled Form</h3>
-                <button onClick={() => setImportData(null)} className="text-[0.75rem] font-bold text-neutral-400 bg-neutral-100 px-3 py-1.5 rounded-xl">Batal</button>
-              </div>
-
-              <form action={async (fd) => {
-                setLoading(true);
-                fd.append("lat", String(lat)); fd.append("lng", String(lng)); fd.append("area", area); fd.append("address", address);
-                fd.append("external_id", importData.external_id);
-                fd.append("platform", importData.platform);
-                const res = await upsertMerchant(fd);
-                setLoading(false);
-                if (res.success) {
-                  const updated = await getAllMerchants();
-                  setMerchants(updated);
-                  setImportData(null);
-                  setImportText("");
-                  alert("Merchant Imported Successfully!");
-                } else alert(res.error);
-              }} className="space-y-4">
-                <div>
-                  <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Nama Merchant</p>
-                  <input name="name" defaultValue={importData.name} required className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold" />
+            <div className="space-y-6">
+              <div className="bg-white p-5 rounded-[2.5rem] border border-neutral-100 shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between mb-4 px-1">
+                  <h3 className="text-[1rem] font-black">Data Terdeteksi</h3>
+                  <button onClick={() => { setDetectedData(null); setPreviewImage(null); }} className="text-[0.7rem] font-bold text-red-500 bg-red-50 px-3 py-1.5 rounded-xl">Ganti Gambar</button>
                 </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Category</p>
-                    <select name="category" defaultValue={importData.category} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold">
-                      <option value="Makanan">🍔 Makanan</option>
-                      <option value="Minuman">🥤 Minuman</option>
-                      <option value="Snack">🍿 Snack</option>
-                    </select>
+                {previewImage && (
+                  <div className="aspect-[4/3] rounded-2xl overflow-hidden mb-4 border border-neutral-100">
+                    <img src={previewImage} className="w-full h-full object-contain bg-neutral-900" alt="Preview" />
                   </div>
+                )}
+                
+                <form action={async (fd) => {
+                  setLoading(true);
+                  fd.append("lat", String(lat)); fd.append("lng", String(lng)); fd.append("area", area); fd.append("address", address);
+                  const res = await upsertMerchant(fd);
+                  setLoading(false);
+                  if (res.success) {
+                    const updated = await getAllMerchants();
+                    setMerchants(updated);
+                    setDetectedData(null); setPreviewImage(null);
+                    alert("Merchant Berhasil Ditambahkan!");
+                  } else alert(res.error);
+                }} className="space-y-4">
                   <div>
-                    <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Priority</p>
-                    <input name="priority" type="number" defaultValue="0" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold" />
+                    <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-[0.1em] mb-1.5 ml-1">Nama Merchant</p>
+                    <input name="name" defaultValue={detectedData.name} required className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-bold focus:bg-white transition-all outline-none" />
                   </div>
-                </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-[0.1em] mb-1.5 ml-1">Kategori</p>
+                      <select name="category" defaultValue={detectedData.category} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-bold outline-none">
+                        <option value="Makanan">🍱 Makanan</option>
+                        <option value="Minuman">🥤 Minuman</option>
+                        <option value="Snack">🍿 Snack</option>
+                      </select>
+                    </div>
+                    <div>
+                      <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-[0.1em] mb-1.5 ml-1">Rating</p>
+                      <input name="rating" type="number" step="0.1" defaultValue={detectedData.rating} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-bold outline-none" />
+                    </div>
+                  </div>
 
-                <div>
-                  <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Promo Persen (%)</p>
-                  <input name="promo_percent" type="number" defaultValue="0" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold" />
-                </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-[0.1em] mb-1.5 ml-1">Promo (%)</p>
+                      <input name="promo_percent" type="number" defaultValue={detectedData.promo} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-bold outline-none" />
+                    </div>
+                    <div>
+                      <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-[0.1em] mb-1.5 ml-1">ETA (Menit)</p>
+                      <input name="eta_minutes" type="number" defaultValue={detectedData.eta} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-bold outline-none" />
+                    </div>
+                  </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-1 pl-1">Set Lokasi</p>
-                  <input 
-                    type="text" 
-                    placeholder="Link Gmaps / Koordinat (-6.xxx, 106.xxx)" 
-                    onChange={async (e) => {
-                      const val = e.target.value;
-                      if (!val.trim()) return;
-                      if (val.includes("http")) {
-                        const { resolveGmapsLink } = await import("@/app/admin/actions/signals");
-                        const coords = await resolveGmapsLink(val);
-                        if (coords.lat && coords.lng) { setLat(coords.lat); setLng(coords.lng); }
-                      } else {
-                        const coords = val.split(",");
-                        if (coords.length >= 2) {
-                          const newLat = parseFloat(coords[0].replace(/[^0-9.-]/g, ""));
-                          const newLng = parseFloat(coords[1].replace(/[^0-9.-]/g, ""));
-                          if (!isNaN(newLat) && !isNaN(newLng)) { setLat(newLat); setLng(newLng); }
+                  <div className="flex gap-4 py-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" name="free_shipping" defaultChecked={detectedData.freeDelivery} className="w-5 h-5 rounded-lg accent-blue-600" />
+                      <span className="text-[0.8rem] font-bold text-neutral-600">Gratis Ongkir</span>
+                    </label>
+                  </div>
+
+                  <hr className="border-neutral-100 my-2" />
+
+                  <div className="flex flex-col gap-1.5">
+                    <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-1 pl-1">Set Lokasi (Manual)</p>
+                    <input 
+                      type="text" 
+                      placeholder="Link Gmaps / Koordinat (-6.xxx, 106.xxx)" 
+                      onChange={async (e) => {
+                        const val = e.target.value;
+                        if (!val.trim()) return;
+                        if (val.includes("http")) {
+                          const { resolveGmapsLink } = await import("@/app/admin/actions/signals");
+                          const coords = await resolveGmapsLink(val);
+                          if (coords.lat && coords.lng) { setLat(coords.lat); setLng(coords.lng); }
+                        } else {
+                          const coords = val.split(",");
+                          if (coords.length >= 2) {
+                            const newLat = parseFloat(coords[0].replace(/[^0-9.-]/g, ""));
+                            const newLng = parseFloat(coords[1].replace(/[^0-9.-]/g, ""));
+                            if (!isNaN(newLat) && !isNaN(newLng)) { setLat(newLat); setLng(newLng); }
+                          }
                         }
-                      }
-                    }}
-                    className="w-full px-5 py-3 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] focus:outline-none mb-2"
-                  />
-                  <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, addr, ar) => {
-                    setLat(newLat); setLng(newLng);
-                    if (addr) setAddress(addr);
-                    if (ar) setArea(ar);
-                  }} />
-                </div>
+                      }}
+                      className="w-full px-5 py-3 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] focus:outline-none mb-2"
+                    />
+                    <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, addr, ar) => {
+                      setLat(newLat); setLng(newLng);
+                      if (addr) setAddress(addr);
+                      if (ar) setArea(ar);
+                    }} />
+                  </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <input name="area" required value={area} onChange={e => setArea(e.target.value)} placeholder="Area (Wajib)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold" />
-                  <input value={`${lat || ''}, ${lng || ''}`} readOnly placeholder="Koordinat" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] text-neutral-500 font-mono" />
-                </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <input name="area" required value={area} onChange={e => setArea(e.target.value)} placeholder="Area (Wajib)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-bold" />
+                    <input value={`${lat || ''}, ${lng || ''}`} readOnly placeholder="Koordinat" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] text-neutral-500 font-mono" />
+                  </div>
 
-                <button disabled={loading} className="w-full mt-4 bg-neutral-900 text-white font-black py-4 rounded-2xl shadow-xl active:scale-95 transition-all disabled:opacity-50">
-                  {loading ? "Saving..." : "Save Imported Merchant"}
-                </button>
-              </form>
+                  <button disabled={loading} className="w-full mt-6 bg-neutral-900 text-white font-black py-4 rounded-2xl shadow-xl active:scale-95 transition-all disabled:opacity-50 text-[1.1rem]">
+                    {loading ? "Menyimpan..." : "Konfirmasi & Simpan Resto"}
+                  </button>
+                </form>
+              </div>
             </div>
           )}
         </div>

@@ -71,6 +71,7 @@ export async function upsertMerchant(formData: FormData) {
   const platform = String(formData.get("platform") || "ZPILOT");
   const external_id = String(formData.get("external_id") || "").trim() || null;
   const priority = Number(formData.get("priority") || 0);
+  const eta_minutes = formData.get("eta_minutes") ? Number(formData.get("eta_minutes")) : null;
 
   if (!name || !area) return { error: "Nama resto dan area wajib diisi" };
 
@@ -131,6 +132,7 @@ export async function upsertMerchant(formData: FormData) {
       platform,
       external_id,
       priority,
+      eta_minutes,
       updated_at: new Date().toISOString(),
       expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
     },
