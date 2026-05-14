@@ -70,11 +70,6 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
     }
   }, [editingSpot]);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
-  const [lat, setLat] = useState<number | null>(null);
-  const [lng, setLng] = useState<number | null>(null);
-  const [area, setArea] = useState<string>("");
-  const [address, setAddress] = useState("");
-  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterLevel, setFilterLevel] = useState("All");
   const [completenessFilter, setCompletenessFilter] = useState("all");
