@@ -109,8 +109,8 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
         {/* Render Hotspot Zones behind markers */}
         {hotspots.map((h) => {
           let color = "#6B7280"; 
-          if (h.label === "PELUANG EMAS") color = "#10B981"; 
-          else if (h.label === "BAGUS SEKARANG") color = "#059669"; 
+          if (h.label === "PELUANG EMAS") color = "#2563EB"; 
+          else if (h.label === "BAGUS SEKARANG") color = "#1D4ED8"; 
           else if (h.label === "KOMPETITIF") color = "#F97316"; 
           else if (h.label === "HINDARI SEMENTARA") color = "#9CA3AF"; 
           else if (h.label === "JEBAKAN KERUMUNAN") color = "#EF4444";

@@ -98,7 +98,7 @@ export async function getRecommendationV2(
         reason: isID
           ? `${currentHotspot.name} sangat potensial. ${currentHotspot.reason}.`
           : `${currentHotspot.name} is highly potential. ${currentHotspot.reason}.`,
-        color: "#10B981",
+        color: "#2563EB",
         badge: "High"
       };
     }
@@ -121,7 +121,7 @@ export async function getRecommendationV2(
         reason: isID
           ? `${currentHotspot.name} aktif. ${currentHotspot.reason}.`
           : `${currentHotspot.name} is active. ${currentHotspot.reason}.`,
-        color: "#059669",
+        color: "#1D4ED8",
         badge: "High"
       };
     }
@@ -183,7 +183,7 @@ export async function getRecommendationV2(
     action: "STAY",
     title: isID ? "ZPilot AI Siaga" : "ZPilot AI Standby",
     reason: isID ? "Memantau pergerakan pasar. Tetap waspada." : "Monitoring market. Stay alert.",
-    color: "#10B981",
+    color: "#2563EB",
     badge: "Low"
   };
 }

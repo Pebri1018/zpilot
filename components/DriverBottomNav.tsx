@@ -10,7 +10,7 @@ export function DriverBottomNav() {
 
   const items = [
     { 
-      href: "/", 
+      href: "/beranda", 
       label: t("home"),
       icon: (
         <svg className="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

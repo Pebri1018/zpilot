@@ -34,8 +34,8 @@ function getActionColors(action: string, color: string) {
   if (action === "MOVE") return { bg: "bg-red-600", text: "text-white", border: "border-red-500", pill: "bg-red-700", accent: "#DC2626" };
   if (action === "OFFLINE") return { bg: "bg-neutral-700", text: "text-white", border: "border-neutral-600", pill: "bg-neutral-800", accent: "#374151" };
   if (action === "BUSY") return { bg: "bg-amber-500", text: "text-white", border: "border-amber-400", pill: "bg-amber-600", accent: "#D97706" };
-  // STAY — use green
-  return { bg: "bg-emerald-600", text: "text-white", border: "border-emerald-500", pill: "bg-emerald-700", accent: "#059669" };
+  // STAY — use blue
+  return { bg: "bg-blue-600", text: "text-white", border: "border-blue-500", pill: "bg-blue-700", accent: "#2563EB" };
 }
 
 // Keep cache state outside component to survive remounts
@@ -56,7 +56,7 @@ export function LiveDashboard() {
     action: "STAY" as const,
     title: "Standby",
     reason: "Memuat data...",
-    color: "#10B981"
+    color: "#2563EB"
   });
   const [merchants, setMerchants] = useState<MerchantSignal[]>([]);
   const [nearestHotspot, setNearestHotspot] = useState<(HotspotZone & { dist: number }) | null>(globalNearestHotspot);
@@ -200,19 +200,16 @@ export function LiveDashboard() {
 
       {/* TOP BAR */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-white shadow-sm overflow-hidden border border-neutral-100 flex items-center justify-center">
-            <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
-          </div>
-          <div>
-            <h1 className="text-[1.3rem] font-black tracking-tight text-neutral-900 dark:text-white leading-none">ZPILOT</h1>
-            <p className="text-[0.68rem] font-black text-neutral-400 uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
-              <span className="inline-block w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+        <div className="flex-1 min-w-0 pr-4">
+          <p className="text-[0.62rem] font-black text-neutral-400 uppercase tracking-[0.15em] mb-1">Lokasi Driver</p>
+          <div className="flex items-start gap-2">
+            <span className="inline-block w-2 h-2 bg-blue-500 rounded-full animate-pulse mt-1.5 shrink-0" />
+            <p className="text-[1.1rem] font-black text-neutral-900 dark:text-white leading-tight">
               {areaName || (loading ? "Mencari lokasi..." : "—")}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           <p className="text-[0.75rem] font-black text-neutral-400">{formattedTime}</p>
           <DriverStatusSelector />
         </div>
@@ -282,7 +279,7 @@ export function LiveDashboard() {
       <div className="flex gap-2 pb-1">
         <div className="flex-1 bg-white dark:bg-neutral-900 rounded-xl px-3 py-2 shadow-sm border border-neutral-100 dark:border-white/10 flex flex-col items-center min-w-[80px]">
           <p className="text-[0.6rem] font-bold uppercase text-neutral-400 tracking-wide">Order</p>
-          <p className={`text-[0.85rem] font-black leading-tight ${zoneStats.orderan.includes("Tinggi") ? "text-emerald-600 dark:text-emerald-400" : "text-neutral-700 dark:text-neutral-300"}`}>{zoneStats.orderan.replace("Potensi ", "")}</p>
+          <p className={`text-[0.85rem] font-black leading-tight ${zoneStats.orderan.includes("Tinggi") ? "text-blue-600 dark:text-blue-400" : "text-neutral-700 dark:text-neutral-300"}`}>{zoneStats.orderan.replace("Potensi ", "")}</p>
         </div>
         <div className="flex-1 bg-white dark:bg-neutral-900 rounded-xl px-3 py-2 shadow-sm border border-neutral-100 dark:border-white/10 flex flex-col items-center min-w-[80px]">
           <p className="text-[0.6rem] font-bold uppercase text-neutral-400 tracking-wide">Saingan</p>

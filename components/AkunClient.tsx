@@ -89,7 +89,7 @@ export function AkunClient({ email, nama, kota, platform, driverId, zpilotId, ro
           onClick={copyZpilotId}
           className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[0.75rem] font-bold transition-all active:scale-90 ${
             copied
-              ? "bg-green-500 text-white"
+              ? "bg-blue-500 text-white"
               : "bg-white/10 text-white hover:bg-white/20"
           }`}
         >

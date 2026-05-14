@@ -58,8 +58,25 @@ export function AuthForm({ disabled = false }: Props) {
       if (error) {
         setMessage({ type: "error", text: translateError(error.message) });
       } else {
-        router.push("/");
-        router.refresh();
+        // Fetch user role
+        const { data: { user: authedUser } } = await supabase.auth.getUser();
+        if (authedUser) {
+          const { data: userData } = await supabase
+            .from("users")
+            .select("role")
+            .eq("id", authedUser.id)
+            .maybeSingle();
+          
+          if (userData?.role === "admin") {
+            router.push("/admin");
+          } else {
+            router.push("/beranda");
+          }
+          router.refresh();
+        } else {
+          router.push("/beranda");
+          router.refresh();
+        }
       }
     } catch (err) {
       setMessage({ type: "error", text: "Terjadi kesalahan. Coba lagi." });
@@ -107,7 +124,18 @@ export function AuthForm({ disabled = false }: Props) {
 
       // If auto-logged in (no confirm needed), just redirect
       if (data.session) {
-        router.push("/");
+        // Fetch user role for new signup (usually 'user' but better be safe)
+        const { data: userData } = await supabase
+          .from("users")
+          .select("role")
+          .eq("id", newUserId)
+          .maybeSingle();
+
+        if (userData?.role === "admin") {
+          router.push("/admin");
+        } else {
+          router.push("/beranda");
+        }
         router.refresh();
       } else {
         // Show confirmation screen
@@ -149,7 +177,7 @@ export function AuthForm({ disabled = false }: Props) {
           className={`mb-5 rounded-2xl px-4 py-3 text-[0.9rem] font-medium ${
             message.type === "error"
               ? "bg-red-50 text-red-700 border border-red-100"
-              : "bg-green-50 text-green-700 border border-green-100"
+              : "bg-blue-50 text-blue-700 border border-blue-100"
           }`}
           role="alert"
         >
@@ -334,7 +362,7 @@ export function AuthForm({ disabled = false }: Props) {
       {/* SUCCESS CONFIRMATION SCREEN */}
       {isSuccess && (
         <div className="text-center animate-in zoom-in-95 duration-300 py-6 bg-white rounded-3xl border border-neutral-100 shadow-sm p-8">
-          <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-5">
+          <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-5">
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
             </svg>

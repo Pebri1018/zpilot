@@ -12,7 +12,7 @@ function isPublicPath(pathname: string): boolean {
 }
 
 function isProtectedAppPath(pathname: string): boolean {
-  const protectedExact = ["/", "/radar", "/riwayat", "/akun", "/tren", "/admin", "/founder", ONBOARDING_PATH];
+  const protectedExact = ["/", "/beranda", "/radar", "/riwayat", "/akun", "/tren", "/admin", "/founder", ONBOARDING_PATH];
   return protectedExact.some((p) =>
     p === "/" ? pathname === "/" : pathname === p || pathname.startsWith(`${p}/`),
   );
@@ -59,10 +59,11 @@ export async function middleware(request: NextRequest) {
   }
 
   let needsOnboarding = false;
+  let userRole = "user";
   if (user) {
     const { data, error } = await supabase
       .from("users")
-      .select("onboarding_completed")
+      .select("onboarding_completed, role")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -71,15 +72,29 @@ export async function middleware(request: NextRequest) {
       needsOnboarding = true;
     } else {
       needsOnboarding = !data?.onboarding_completed;
+      userRole = data?.role || "user";
     }
   }
 
-  if (user && pathname === LOGIN_PATH) {
+  // 1. Role-based access control
+  if (user && userRole !== "admin" && pathname.startsWith("/admin")) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = needsOnboarding ? ONBOARDING_PATH : "/";
+    redirectUrl.pathname = "/beranda";
     return NextResponse.redirect(redirectUrl);
   }
 
+  // 2. Redirect from login if already authed
+  if (user && pathname === LOGIN_PATH) {
+    const redirectUrl = request.nextUrl.clone();
+    if (needsOnboarding) {
+      redirectUrl.pathname = ONBOARDING_PATH;
+    } else {
+      redirectUrl.pathname = userRole === "admin" ? "/admin" : "/beranda";
+    }
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  // 3. Onboarding logic
   if (
     user &&
     needsOnboarding &&
@@ -93,7 +108,7 @@ export async function middleware(request: NextRequest) {
 
   if (user && !needsOnboarding && pathname === ONBOARDING_PATH) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/";
+    redirectUrl.pathname = userRole === "admin" ? "/admin" : "/beranda";
     return NextResponse.redirect(redirectUrl);
   }
 

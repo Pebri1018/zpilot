@@ -24,8 +24,8 @@ function getMovement(h: HotspotZone): { arrow: string; color: string } {
 }
 
 const ZONE_STYLE: Record<string, { bg: string; text: string; label: string }> = {
-  "PELUANG EMAS":    { bg: "bg-emerald-100", text: "text-emerald-700", label: "Peluang Emas" },
-  "BAGUS SEKARANG":  { bg: "bg-emerald-50",  text: "text-emerald-600", label: "Bagus" },
+  "PELUANG EMAS":    { bg: "bg-blue-100",    text: "text-blue-700",    label: "Peluang Emas" },
+  "BAGUS SEKARANG":  { bg: "bg-blue-50",     text: "text-blue-600",    label: "Bagus" },
   "NORMAL":          { bg: "bg-blue-50",     text: "text-blue-600",    label: "Normal" },
   "KOMPETITIF":      { bg: "bg-orange-100",  text: "text-orange-700",  label: "Kompetitif" },
   "HINDARI SEMENTARA": { bg: "bg-neutral-100", text: "text-neutral-500", label: "Hindari" },
@@ -94,7 +94,7 @@ export default function TrenPage() {
               <h1 className="text-[1.25rem] font-black tracking-tight leading-none">ZPilot Intelligence</h1>
               <p className={`text-[0.75rem] font-bold ${timeCtx.color} flex items-center gap-1 mt-1`}>
                 {timeCtx.emoji} {timeCtx.label}
-                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse ml-1 inline-block" />
+                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse ml-1 inline-block" />
               </p>
             </div>
           </div>
@@ -118,7 +118,7 @@ export default function TrenPage() {
           {/* Stats pills */}
           {stats && (
             <div className="flex gap-2 mt-3">
-              <span className={`text-[0.72rem] font-black px-3 py-1 rounded-full ${stats.orderan.includes("Tinggi") ? "bg-emerald-500 text-white" : "bg-white/10 text-white/70"}`}>
+              <span className={`text-[0.72rem] font-black px-3 py-1 rounded-full ${stats.orderan.includes("Tinggi") ? "bg-blue-600 text-white" : "bg-white/10 text-white/70"}`}>
                 Order: {stats.orderan.replace("Potensi ", "")}
               </span>
               <span className={`text-[0.72rem] font-black px-3 py-1 rounded-full ${stats.pesaing === "Padat" ? "bg-red-500 text-white" : "bg-white/10 text-white/70"}`}>
@@ -133,7 +133,7 @@ export default function TrenPage() {
           <div className="flex items-center justify-between mb-2 px-1">
             <p className="text-[0.65rem] font-black uppercase tracking-widest text-neutral-400">Zona Efisien Sekarang</p>
             <span className="text-[0.6rem] font-bold text-neutral-400 bg-white rounded-full px-2 py-0.5 border border-neutral-200 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" /> LIVE
+              <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" /> LIVE
             </span>
           </div>
           <div className="flex flex-col gap-1.5">
