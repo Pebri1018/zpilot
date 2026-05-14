@@ -18,6 +18,10 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "ZPILOT",
   },
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export const viewport: Viewport = {

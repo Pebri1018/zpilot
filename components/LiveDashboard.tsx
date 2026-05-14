@@ -200,12 +200,17 @@ export function LiveDashboard() {
 
       {/* TOP BAR */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-[1.4rem] font-black tracking-tight text-neutral-900 dark:text-white">ZPILOT</h1>
-          <p className="text-[0.72rem] font-black text-neutral-400 uppercase tracking-widest flex items-center gap-1.5">
-            <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            {areaName || (loading ? "Mencari lokasi..." : "—")}
-          </p>
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl bg-white shadow-sm overflow-hidden border border-neutral-100 flex items-center justify-center">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
+          </div>
+          <div>
+            <h1 className="text-[1.3rem] font-black tracking-tight text-neutral-900 dark:text-white leading-none">ZPILOT</h1>
+            <p className="text-[0.68rem] font-black text-neutral-400 uppercase tracking-widest flex items-center gap-1.5 mt-0.5">
+              <span className="inline-block w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+              {areaName || (loading ? "Mencari lokasi..." : "—")}
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <p className="text-[0.75rem] font-black text-neutral-400">{formattedTime}</p>

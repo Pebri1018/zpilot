@@ -17,8 +17,8 @@ export default async function LoginPage({ searchParams }: Props) {
       <div className="mx-auto w-full max-w-sm flex-1 flex flex-col justify-center py-12">
 
         <div className="mb-10 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-[1.25rem] bg-neutral-900 shadow-lg mb-4">
-            <span className="text-white text-2xl font-black tracking-tighter">Z</span>
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-[1.5rem] bg-white shadow-sm mb-4 overflow-hidden border border-neutral-100">
+            <img src="/logo.png" alt="ZPILOT Logo" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-[1.75rem] font-bold tracking-[-0.02em] text-neutral-900">
             ZPILOT

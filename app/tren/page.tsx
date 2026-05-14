@@ -86,12 +86,17 @@ export default function TrenPage() {
       {/* STICKY HEADER */}
       <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3 bg-[#f2f2f4] dark:bg-neutral-950 sticky top-0 z-20">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-[1.3rem] font-black tracking-tight">ZPilot Intelligence</h1>
-            <p className={`text-[0.8rem] font-bold ${timeCtx.color} flex items-center gap-1`}>
-              {timeCtx.emoji} {timeCtx.label}
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse ml-1 inline-block" />
-            </p>
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-white shadow-sm overflow-hidden border border-neutral-100 flex items-center justify-center">
+              <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
+            </div>
+            <div>
+              <h1 className="text-[1.25rem] font-black tracking-tight leading-none">ZPilot Intelligence</h1>
+              <p className={`text-[0.75rem] font-bold ${timeCtx.color} flex items-center gap-1 mt-1`}>
+                {timeCtx.emoji} {timeCtx.label}
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse ml-1 inline-block" />
+              </p>
+            </div>
           </div>
           <div className="text-right">
             <p className="text-[0.62rem] font-bold text-neutral-400 uppercase">Area</p>
