@@ -790,12 +790,12 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 className="w-full px-5 py-3 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] focus:outline-none"
               />
             </div>
+            <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, addr, ar) => {
+              setLat(newLat); setLng(newLng);
+              if (ar) setArea(ar);
+            }} />
             <div className="grid grid-cols-2 gap-3">
               <input name="area" required value={area} onChange={e => setArea(e.target.value)} placeholder="Kecamatan / Area (Wajib)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-semibold" />
-              <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, addr, ar) => {
-                setLat(newLat); setLng(newLng);
-                if (ar) setArea(ar);
-              }} />
               <input value={`${lat || ''}, ${lng || ''}`} readOnly placeholder="Koordinat" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] text-neutral-500 font-mono focus:outline-none" />
             </div>
 
