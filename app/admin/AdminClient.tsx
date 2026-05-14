@@ -75,12 +75,18 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
   const merchantFormRef = useRef<HTMLFormElement>(null);
 
   const getCompleteness = (m: MerchantSignal) => {
+    const isSeller = ["Paket", "Toko/Seller", "Seller SPX"].includes(m.category);
     const hasLocation = !!m.lat && !!m.lng;
     const hasCategory = !!m.category && m.category !== "";
-    const hasPromo = m.promo_active === true || m.promo_percent !== null;
-    const hasPickup = m.fast_pickup === true;
+    
+    if (isSeller) {
+      return (hasLocation && hasCategory) ? "Complete" : "Partial";
+    }
 
-    if (hasLocation && hasCategory && hasPromo && hasPickup) return "Complete";
+    const hasPromo = m.promo_active === true || m.promo_percent !== null;
+    // Pickup removed per user request
+
+    if (hasLocation && hasCategory && hasPromo) return "Complete";
     if (hasLocation && hasCategory) return "Partial";
     return "Basic";
   };
@@ -604,7 +610,6 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                   <option value="Basic">Basic</option>
                   <option value="missing_promo">Missing Promo</option>
                   <option value="missing_category">Missing Category</option>
-                  <option value="missing_pickup">Missing Pickup</option>
                 </select>
                 <select 
                   value={sortBy} 
@@ -628,9 +633,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
               .filter(m => {
                 if (completenessFilter === "all") return true;
                 const status = getCompleteness(m);
-                if (completenessFilter === "missing_promo") return !m.promo_active && m.promo_percent === null;
                 if (completenessFilter === "missing_category") return !m.category;
-                if (completenessFilter === "missing_pickup") return !m.fast_pickup;
                 return status === completenessFilter;
               })
               .sort((a, b) => {
@@ -663,12 +666,8 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 </div>
                 
                 {!["Paket", "Toko/Seller", "Seller SPX"].includes(m.category) && (
-                  <div className="flex gap-2">
                     <div className={`px-2.5 py-1.5 rounded-xl text-[0.65rem] font-black tracking-wide ${m.promo_active || m.promo_percent ? 'bg-green-50 text-green-700' : 'bg-neutral-100 text-neutral-400'}`}>
                       💰 {m.promo_active || m.promo_percent ? "PROMO ACTIVE" : "NO PROMO"}
-                    </div>
-                    <div className={`px-2.5 py-1.5 rounded-xl text-[0.65rem] font-black tracking-wide ${m.fast_pickup ? 'bg-blue-50 text-blue-700' : 'bg-neutral-100 text-neutral-400'}`}>
-                      ⚡ {m.fast_pickup ? "FAST PICKUP" : "NO PICKUP"}
                     </div>
                   </div>
                 )}
@@ -1142,14 +1141,6 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
 
                         </div>
                         <input name="promo_percent" type="number" defaultValue={editingMerchant.promo_percent ?? ""} placeholder="Promo % (e.g. 20)" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
-                        <div className="mt-2">
-                          <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Live Status / Kepadatan</p>
-                          <select name="volume" defaultValue={editingMerchant.live_status === "Sangat Sibuk" ? "Ramai" : editingMerchant.live_status === "Sepi" ? "Sepi" : "Normal"} className="w-full px-4 py-3 rounded-xl bg-white border border-neutral-200 text-[0.9rem] font-semibold">
-                            <option value="Sepi">🟢 Sepi — Antrian kosong</option>
-                            <option value="Normal">🟡 Normal — Antrian biasa</option>
-                            <option value="Ramai">🔴 Ramai — Antrian panjang</option>
-                          </select>
-                        </div>
                       </>
                     )}
                   </>

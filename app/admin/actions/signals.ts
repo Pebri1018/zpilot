@@ -54,7 +54,6 @@ export async function upsertMerchant(formData: FormData) {
   const category = String(formData.get("category") || "Makanan");
   const promo_active = formData.get("promo_active") === "on";
   const promo_percent = formData.get("promo_percent") ? Number(formData.get("promo_percent")) : 0;
-  const pickup_fast = formData.get("pickup_fast") === "on";
   const latStr = String(formData.get("lat"));
   const lngStr = String(formData.get("lng"));
   const lat = latStr && latStr !== "null" ? Number(latStr) : null;
@@ -82,7 +81,6 @@ export async function upsertMerchant(formData: FormData) {
     if (promo_percent >= 30) score += 10;                  // Big promo bonus
     else if (promo_percent > 0) score += 5;
   }
-  if (pickup_fast) score += 10;
   if (free_shipping) score += 8;
 
   // Strict mapping: High requires really good score (>= 60), Med requires >= 35
@@ -111,8 +109,6 @@ export async function upsertMerchant(formData: FormData) {
       busy_level,
       promo_active,
       promo_percent,
-      pickup_fast,
-      fast_pickup: pickup_fast,
       free_shipping,
       is_active: true,
       is_open_24h: is_open_24h || false,
