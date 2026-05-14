@@ -1005,7 +1005,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
           </div>
           
           <div className="bg-white rounded-[2rem] border border-neutral-100 shadow-sm overflow-hidden divide-y divide-neutral-100">
-            {merchants.map(m => (
+            {merchants.filter(m => ["Makanan", "Minuman", "Snack"].includes(m.category)).map(m => (
               <div key={m.id} className="p-5 flex items-center justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
