@@ -87,20 +87,13 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
     const promoMatch = text.match(/Diskon\s*(\d+)%/i) || text.match(/(\d+)%\s*Off/i);
     if (promoMatch) promo = parseInt(promoMatch[1]);
 
-    const etaMatch = text.match(/Tiba\s*dalam\s*(\d+)\s*menit/i) || text.match(/(\d+)\s*menit/i);
-    if (etaMatch) eta = parseInt(etaMatch[1]);
-
-    if (text.toLowerCase().includes("gratis ongkir") || text.toLowerCase().includes("ongkir rp0")) {
-      freeDelivery = true;
-    }
-
     if (ratingLineIdx >= 1) {
        const catLine = lines[ratingLineIdx - 1].toLowerCase();
        if (catLine.includes("minuman") || catLine.includes("drink") || catLine.includes("kopi") || catLine.includes("teh") || catLine.includes("boba")) category = "Minuman";
        else if (catLine.includes("snack") || catLine.includes("cemilan") || catLine.includes("keripik")) category = "Snack";
     }
 
-    return { name, rating, reviews, promo, freeDelivery, eta, category };
+    return { name, rating, reviews, promo, freeDelivery: true, category };
   };
 
   const handleImageUpload = async (file: File) => {
@@ -506,7 +499,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                   <div className="flex flex-col gap-3 pt-2">
                     <div className="flex gap-5">
                       <label className="flex items-center gap-2 cursor-pointer group">
-                        <input type="checkbox" name="free_shipping" className="w-5 h-5 rounded-lg border-neutral-300 text-neutral-900 focus:ring-0" />
+                        <input type="checkbox" name="free_shipping" defaultChecked={true} className="w-5 h-5 rounded-lg border-neutral-300 text-neutral-900 focus:ring-0" />
                         <span className="text-[0.85rem] font-bold text-neutral-600 group-hover:text-neutral-900 transition-colors">Diskon Ongkir</span>
                       </label>
                     </div>
@@ -625,16 +618,9 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                       <input name="promo_percent" type="number" defaultValue={detectedData.promo} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-bold outline-none" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-[0.1em] mb-1.5 ml-1">ETA (Menit)</p>
-                      <input name="eta_minutes" type="number" defaultValue={detectedData.eta} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-bold outline-none" />
-                    </div>
-                  </div>
-
                   <div className="flex gap-4 py-2">
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" name="free_shipping" defaultChecked={detectedData.freeDelivery} className="w-5 h-5 rounded-lg accent-blue-600" />
+                      <input type="checkbox" name="free_shipping" defaultChecked={true} className="w-5 h-5 rounded-lg accent-blue-600" />
                       <span className="text-[0.8rem] font-bold text-neutral-600">Gratis Ongkir</span>
                     </label>
                   </div>
