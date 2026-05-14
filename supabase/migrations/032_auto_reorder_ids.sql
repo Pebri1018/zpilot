@@ -1,63 +1,92 @@
 -- 032_auto_reorder_ids.sql
 
--- 1. Function to reorder merchant and spot IDs after deletion
+-- 1. Update the generation functions to be group-specific (no more skipping between types)
+CREATE OR REPLACE FUNCTION generate_merchant_short_id()
+RETURNS trigger AS $$
+DECLARE
+  year_suffix text;
+  type_prefix text;
+  next_seq integer;
+BEGIN
+  year_suffix := to_char(COALESCE(NEW.created_at, now()), 'YY');
+  IF NEW.category IN ('Makanan', 'Minuman', 'Snack') THEN type_prefix := '1'; ELSE type_prefix := '2'; END IF;
+
+  -- Get the next number for this specific year + type
+  SELECT COALESCE(MAX((right(short_id, 5))::integer), 0) + 1 INTO next_seq
+  FROM public.merchant_signals
+  WHERE left(short_id, 3) = (year_suffix || type_prefix);
+
+  NEW.short_id := year_suffix || type_prefix || lpad(next_seq::text, 5, '0');
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION generate_spot_short_id()
+RETURNS trigger AS $$
+DECLARE
+  year_suffix text;
+  type_prefix text;
+  next_seq integer;
+BEGIN
+  year_suffix := to_char(COALESCE(NEW.created_at, now()), 'YY');
+  type_prefix := '3';
+
+  SELECT COALESCE(MAX((right(short_id, 5))::integer), 0) + 1 INTO next_seq
+  FROM public.ngetem_spots
+  WHERE left(short_id, 3) = (year_suffix || type_prefix);
+
+  NEW.short_id := year_suffix || type_prefix || lpad(next_seq::text, 5, '0');
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 2. Function to reorder merchant and spot IDs after deletion (within their own group)
 CREATE OR REPLACE FUNCTION public.reorder_merchant_ids_after_delete()
 RETURNS trigger AS $$
 DECLARE
   deleted_seq_part integer;
-  current_val bigint;
+  deleted_prefix text;
   m RECORD;
 BEGIN
-  -- Extract sequence part (last 5 digits) of the deleted ID
+  deleted_prefix := left(OLD.short_id, 3);
   deleted_seq_part := (right(OLD.short_id, 5))::integer;
 
-  -- We update rows one by one in ASCENDING order of their sequence number
-  -- to avoid unique constraint violations (shifting into an empty slot).
-  
-  -- Re-order merchant_signals
-  FOR m IN 
-    SELECT id, short_id 
-    FROM public.merchant_signals 
-    WHERE (right(short_id, 5))::integer > deleted_seq_part
-    ORDER BY (right(short_id, 5))::integer ASC
-  LOOP
-    UPDATE public.merchant_signals
-    SET short_id = left(m.short_id, 3) || lpad(((right(m.short_id, 5))::integer - 1)::text, 5, '0')
-    WHERE id = m.id;
-  END LOOP;
-
-  -- Re-order ngetem_spots
-  FOR m IN 
-    SELECT id, short_id 
-    FROM public.ngetem_spots 
-    WHERE (right(short_id, 5))::integer > deleted_seq_part
-    ORDER BY (right(short_id, 5))::integer ASC
-  LOOP
-    UPDATE public.ngetem_spots
-    SET short_id = left(m.short_id, 3) || lpad(((right(m.short_id, 5))::integer - 1)::text, 5, '0')
-    WHERE id = m.id;
-  END LOOP;
-
-  -- Decrement the global sequence
-  SELECT last_value INTO current_val FROM public.merchant_id_seq;
-  IF current_val > 1 THEN
-    PERFORM setval('public.merchant_id_seq', current_val - 1, true);
-  ELSE
-    PERFORM setval('public.merchant_id_seq', 1, false);
+  -- ONLY update records with the SAME PREFIX (Year + Type)
+  IF OLD.short_id LIKE '__1%' OR OLD.short_id LIKE '__2%' THEN
+    FOR m IN 
+      SELECT id, short_id 
+      FROM public.merchant_signals 
+      WHERE left(short_id, 3) = deleted_prefix AND (right(short_id, 5))::integer > deleted_seq_part
+      ORDER BY (right(short_id, 5))::integer ASC
+    LOOP
+      UPDATE public.merchant_signals
+      SET short_id = deleted_prefix || lpad(((right(m.short_id, 5))::integer - 1)::text, 5, '0')
+      WHERE id = m.id;
+    END LOOP;
+  ELSIF OLD.short_id LIKE '__3%' THEN
+    FOR m IN 
+      SELECT id, short_id 
+      FROM public.ngetem_spots 
+      WHERE left(short_id, 3) = deleted_prefix AND (right(short_id, 5))::integer > deleted_seq_part
+      ORDER BY (right(short_id, 5))::integer ASC
+    LOOP
+      UPDATE public.ngetem_spots
+      SET short_id = deleted_prefix || lpad(((right(m.short_id, 5))::integer - 1)::text, 5, '0')
+      WHERE id = m.id;
+    END LOOP;
   END IF;
 
   RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
 
--- 2. Function to reorder user ztips_ids after deletion
+-- 3. Function to reorder user ztips_ids after deletion
 CREATE OR REPLACE FUNCTION public.reorder_user_ids_after_delete()
 RETURNS trigger AS $$
 DECLARE
   deleted_role_prefix text;
   deleted_seq_part integer;
   deleted_abs_seq integer;
-  current_val bigint;
   u RECORD;
   new_abs_seq integer;
 BEGIN
@@ -70,7 +99,6 @@ BEGIN
     deleted_abs_seq := deleted_seq_part + 99999;
   END IF;
 
-  -- Re-order users one by one in ASCENDING order of absolute sequence
   FOR u IN 
     SELECT id, ztips_id,
            (CASE WHEN left(ztips_id, 1) = '1' THEN (right(ztips_id, 5))::integer ELSE (right(ztips_id, 5))::integer + 99999 END) as abs_seq
@@ -86,88 +114,64 @@ BEGIN
     WHERE id = u.id;
   END LOOP;
 
-  -- Decrement user sequence
-  SELECT last_value INTO current_val FROM public.ztips_id_seq;
-  IF current_val > 1 THEN
-    PERFORM setval('public.ztips_id_seq', current_val - 1, true);
-  ELSE
-    PERFORM setval('public.ztips_id_seq', 1, false);
-  END IF;
-
   RETURN OLD;
 END;
 $$ LANGUAGE plpgsql;
 
--- 3. Create triggers
+-- 4. Triggers
 DROP TRIGGER IF EXISTS tr_reorder_merchants ON public.merchant_signals;
-CREATE TRIGGER tr_reorder_merchants
-AFTER DELETE ON public.merchant_signals
-FOR EACH ROW
-EXECUTE FUNCTION reorder_merchant_ids_after_delete();
+CREATE TRIGGER tr_reorder_merchants AFTER DELETE ON public.merchant_signals FOR EACH ROW EXECUTE FUNCTION reorder_merchant_ids_after_delete();
 
 DROP TRIGGER IF EXISTS tr_reorder_spots ON public.ngetem_spots;
-CREATE TRIGGER tr_reorder_spots
-AFTER DELETE ON public.ngetem_spots
-FOR EACH ROW
-EXECUTE FUNCTION reorder_merchant_ids_after_delete();
+CREATE TRIGGER tr_reorder_spots AFTER DELETE ON public.ngetem_spots FOR EACH ROW EXECUTE FUNCTION reorder_merchant_ids_after_delete();
 
 DROP TRIGGER IF EXISTS tr_reorder_users ON public.users;
-CREATE TRIGGER tr_reorder_users
-AFTER DELETE ON public.users
-FOR EACH ROW
-EXECUTE FUNCTION reorder_user_ids_after_delete();
+CREATE TRIGGER tr_reorder_users AFTER DELETE ON public.users FOR EACH ROW EXECUTE FUNCTION reorder_user_ids_after_delete();
 
--- 4. Initial Backfill: Re-sequence everything to remove current gaps
+-- 5. Backfill: Re-sequence per group
 DO $$
 DECLARE
   m RECORD;
   u RECORD;
-  seq_num bigint;
   year_suffix text;
   type_prefix text;
   role_prefix text;
-  padded_seq text;
+  group_prefix text;
+  seq_num integer;
 BEGIN
-  -- Clear all IDs first to avoid unique constraint violations during re-assignment
+  -- Clear
   UPDATE public.merchant_signals SET short_id = NULL;
   UPDATE public.ngetem_spots SET short_id = NULL;
   UPDATE public.users SET ztips_id = NULL;
 
-  -- Reset Merchant Sequence
-  ALTER SEQUENCE public.merchant_id_seq RESTART WITH 1;
-  
-  FOR m IN (
-    SELECT 'm' as tbl, id, category, created_at FROM public.merchant_signals
-    UNION ALL
-    SELECT 's' as tbl, id, 'Spot' as category, created_at FROM public.ngetem_spots
-    ORDER BY created_at ASC
-  ) LOOP
-    year_suffix := to_char(m.created_at, 'YY');
-    IF m.tbl = 'm' THEN
-      IF m.category IN ('Makanan', 'Minuman', 'Snack') THEN type_prefix := '1'; ELSE type_prefix := '2'; END IF;
-      seq_num := nextval('public.merchant_id_seq');
-      UPDATE public.merchant_signals SET short_id = year_suffix || type_prefix || lpad(seq_num::text, 5, '0') WHERE id = m.id;
-    ELSE
-      type_prefix := '3';
-      seq_num := nextval('public.merchant_id_seq');
-      UPDATE public.ngetem_spots SET short_id = year_suffix || type_prefix || lpad(seq_num::text, 5, '0') WHERE id = m.id;
-    END IF;
+  -- Re-sequence Merchant Signals by type group
+  FOR group_prefix IN SELECT DISTINCT to_char(created_at, 'YY') || (CASE WHEN category IN ('Makanan', 'Minuman', 'Snack') THEN '1' ELSE '2' END) FROM public.merchant_signals LOOP
+    seq_num := 1;
+    FOR m IN SELECT id FROM public.merchant_signals WHERE (to_char(created_at, 'YY') || (CASE WHEN category IN ('Makanan', 'Minuman', 'Snack') THEN '1' ELSE '2' END)) = group_prefix ORDER BY created_at ASC LOOP
+      UPDATE public.merchant_signals SET short_id = group_prefix || lpad(seq_num::text, 5, '0') WHERE id = m.id;
+      seq_num := seq_num + 1;
+    END LOOP;
   END LOOP;
 
-  -- Reset User Sequence
-  ALTER SEQUENCE public.ztips_id_seq RESTART WITH 1;
-  
+  -- Re-sequence Spots
+  FOR group_prefix IN SELECT DISTINCT to_char(created_at, 'YY') || '3' FROM public.ngetem_spots LOOP
+    seq_num := 1;
+    FOR m IN SELECT id FROM public.ngetem_spots WHERE (to_char(created_at, 'YY') || '3') = group_prefix ORDER BY created_at ASC LOOP
+      UPDATE public.ngetem_spots SET short_id = group_prefix || lpad(seq_num::text, 5, '0') WHERE id = m.id;
+      seq_num := seq_num + 1;
+    END LOOP;
+  END LOOP;
+
+  -- Re-sequence Users
+  seq_num := 1;
   FOR u IN SELECT id, created_at FROM public.users ORDER BY created_at ASC LOOP
     year_suffix := to_char(u.created_at, 'YY');
-    seq_num := nextval('public.ztips_id_seq');
     IF seq_num <= 99999 THEN
-      role_prefix := '1';
-      padded_seq := lpad(seq_num::text, 5, '0');
+      UPDATE public.users SET ztips_id = '1' || year_suffix || lpad(seq_num::text, 5, '0') WHERE id = u.id;
     ELSE
-      role_prefix := '2';
-      padded_seq := lpad((seq_num - 99999)::text, 5, '0');
+      UPDATE public.users SET ztips_id = '2' || year_suffix || lpad((seq_num - 99999)::text, 5, '0') WHERE id = u.id;
     END IF;
-    UPDATE public.users SET ztips_id = role_prefix || year_suffix || padded_seq WHERE id = u.id;
+    seq_num := seq_num + 1;
   END LOOP;
 END;
 $$;
