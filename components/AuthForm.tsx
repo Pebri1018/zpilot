@@ -116,7 +116,7 @@ export function AuthForm({ disabled = false }: Props) {
       }
 
       // Insert profile immediately (service role bypasses RLS)
-      const result = await createUserProfile(newUserId, { nama, kota, driverId, platform: "ShopeeFood" });
+      const result = await createUserProfile(newUserId, { nama, kota, driverId, platform: "Shopee" });
       if (result.error) {
         setMessage({ type: "error", text: `Profil gagal disimpan: ${result.error}` });
         return;

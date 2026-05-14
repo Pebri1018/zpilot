@@ -23,7 +23,7 @@ export async function createUserProfile(userId: string, data: { nama: string; ko
       nama: data.nama || "Driver",
       kota: data.kota || "Yogyakarta",
       driver_id: data.driverId || null,
-      platform: data.platform || "Lainnya",
+      platform: data.platform || "Shopee",
       onboarding_completed: true,
     },
     { onConflict: "id" }
