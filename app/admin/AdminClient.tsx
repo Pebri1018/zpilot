@@ -88,7 +88,11 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
       else if (ratingLineIdx >= 1) name = lines[ratingLineIdx - 1];
     }
 
-    const promoMatch = text.match(/Diskon\s*(\d+)%/i) || text.match(/(\d+)%\s*Off/i);
+    // More aggressive promo detection for ShopeeFood
+    const promoMatch = text.match(/Diskon\s*(?:s\/d\s*)?(\d+)\s*%/i) || 
+                       text.match(/(\d+)\s*%\s*Off/i) ||
+                       text.match(/Diskon\s*(\d+)/i) ||
+                       text.match(/(\d+)\s*%/);
     if (promoMatch) promo = parseInt(promoMatch[1]);
 
     if (ratingLineIdx >= 1) {
