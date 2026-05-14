@@ -77,7 +77,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
   const getCompleteness = (m: MerchantSignal) => {
     const hasLocation = !!m.lat && !!m.lng;
     const hasCategory = !!m.category && m.category !== "";
-    const hasPromo = m.promo_active === true || (m.promo_percent !== null && m.promo_percent > 0);
+    const hasPromo = m.promo_active === true || ((m.promo_percent ?? 0) > 0);
     const hasHours = m.is_open_24h || (!!m.open_time && !!m.close_time);
 
     if (hasLocation && hasCategory && hasPromo && hasHours) return "Complete";
