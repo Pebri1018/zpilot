@@ -24,10 +24,13 @@ function getMovement(h: HotspotZone): { arrow: string; color: string } {
 }
 
 const ZONE_STYLE: Record<string, { bg: string; text: string; label: string }> = {
-  PELUANG:    { bg: "bg-emerald-100", text: "text-emerald-700", label: "Peluang" },
-  BERGERAK:   { bg: "bg-orange-100",  text: "text-orange-700",  label: "Bergerak" },
-  KOMPETITIF: { bg: "bg-rose-100",    text: "text-rose-800",    label: "Kompetitif" },
-  HINDARI:    { bg: "bg-neutral-100", text: "text-neutral-500", label: "Hindari" },
+  "PELUANG EMAS":    { bg: "bg-emerald-100", text: "text-emerald-700", label: "Peluang Emas" },
+  "BAGUS SEKARANG":  { bg: "bg-emerald-50",  text: "text-emerald-600", label: "Bagus" },
+  "NORMAL":          { bg: "bg-blue-50",     text: "text-blue-600",    label: "Normal" },
+  "KOMPETITIF":      { bg: "bg-orange-100",  text: "text-orange-700",  label: "Kompetitif" },
+  "HINDARI SEMENTARA": { bg: "bg-neutral-100", text: "text-neutral-500", label: "Hindari" },
+  "JEBAKAN KERUMUNAN": { bg: "bg-red-100",     text: "text-red-700",     label: "Jebakan" },
+  "SEPI":            { bg: "bg-neutral-50",  text: "text-neutral-400", label: "Sepi" },
 };
 
 export default function TrenPage() {

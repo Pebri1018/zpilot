@@ -384,7 +384,14 @@ function RadarContent() {
   }, []);
 
   const bestHotspot = hotspots.length > 0 ? hotspots[0] : null;
-  const ZONE_COLOR: Record<string, string> = { PELUANG: "#059669", BERGERAK: "#EA580C", KOMPETITIF: "#BE123C", HINDARI: "#9CA3AF" };
+  const ZONE_COLOR: Record<string, string> = { 
+    "PELUANG EMAS": "#10B981", 
+    "BAGUS SEKARANG": "#059669", 
+    "NORMAL": "#3B82F6",
+    "KOMPETITIF": "#EA580C", 
+    "HINDARI SEMENTARA": "#9CA3AF",
+    "JEBAKAN KERUMUNAN": "#EF4444" 
+  };
   const bestColor = bestHotspot ? ZONE_COLOR[bestHotspot.label] || "#6B7280" : "#6B7280";
 
   return (

@@ -187,11 +187,12 @@ export function LiveDashboard() {
   const isIdle = idleMinutes >= 15 && status === "Ngetem";
 
   const zoneLabel: Record<string, { label: string; color: string; bg: string }> = {
-    "PELUANG":    { label: "Peluang", color: "text-emerald-700", bg: "bg-emerald-100" },
-    "MENARIK":    { label: "Menarik", color: "text-orange-700",  bg: "bg-orange-100"  },
-    "RAMAI":      { label: "Padat",   color: "text-red-700",     bg: "bg-red-100"     },
-    "KOMPETISI":  { label: "Hindari", color: "text-rose-800",    bg: "bg-rose-100"    },
-    "SEPI":       { label: "Sepi",    color: "text-neutral-500", bg: "bg-neutral-100" },
+    "PELUANG EMAS":    { label: "Peluang Emas", color: "text-emerald-700", bg: "bg-emerald-100" },
+    "BAGUS SEKARANG":  { label: "Bagus",         color: "text-emerald-600", bg: "bg-emerald-50"  },
+    "NORMAL":          { label: "Normal",        color: "text-blue-600",    bg: "bg-blue-50"     },
+    "KOMPETITIF":      { label: "Kompetitif",    color: "text-orange-700",  bg: "bg-orange-100"  },
+    "HINDARI SEMENTARA": { label: "Hindari",       color: "text-neutral-500", bg: "bg-neutral-100" },
+    "JEBAKAN KERUMUNAN": { label: "Jebakan",       color: "text-red-700",     bg: "bg-red-100"     },
   };
 
   return (
