@@ -669,7 +669,6 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                     <div className={`px-2.5 py-1.5 rounded-xl text-[0.65rem] font-black tracking-wide ${m.promo_active || m.promo_percent ? 'bg-green-50 text-green-700' : 'bg-neutral-100 text-neutral-400'}`}>
                       💰 {m.promo_active || m.promo_percent ? "PROMO ACTIVE" : "NO PROMO"}
                     </div>
-                  </div>
                 )}
 
                 <div className="flex gap-2 pt-2 mt-1">
