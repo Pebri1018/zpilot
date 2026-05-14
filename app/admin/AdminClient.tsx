@@ -61,38 +61,46 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
     let name = "";
     let rating = 0;
+    let reviews = 0;
     let promo = 0;
     let freeDelivery = false;
     let eta = 0;
     let category = "Makanan";
 
-    for (let i = 0; i < Math.min(lines.length, 15); i++) {
-      const line = lines[i];
-      if (line.match(/ShopeeFood/i) || line.match(/Voucher/i) || line.match(/Promo/i) || line.match(/Diskon/i)) continue;
-      if (line.length > 4 && !line.match(/^\d+\.?\d*$/) && !line.includes(":")) {
-        name = line;
-        break;
+    const ratingLineIdx = lines.findIndex(l => l.match(/[345]\.[0-9]\s*\(/));
+    if (ratingLineIdx !== -1) {
+      const line = lines[ratingLineIdx];
+      const rm = line.match(/([345]\.[0-9])/);
+      if (rm) rating = parseFloat(rm[1]);
+      
+      const rvm = line.match(/\(([\d,.]+)\s*(RB)?/i);
+      if (rvm) {
+        let val = parseFloat(rvm[1].replace(',', '.'));
+        if (rvm[2] && rvm[2].toUpperCase() === 'RB') val *= 1000;
+        reviews = Math.round(val);
       }
+
+      if (ratingLineIdx >= 2) name = lines[ratingLineIdx - 2];
+      else if (ratingLineIdx >= 1) name = lines[ratingLineIdx - 1];
     }
 
-    const ratingMatch = text.match(/([345]\.[0-9])/);
-    if (ratingMatch) rating = parseFloat(ratingMatch[1]);
-
-    const promoMatch = text.match(/(\d+)%/);
+    const promoMatch = text.match(/Diskon\s*(\d+)%/i) || text.match(/(\d+)%\s*Off/i);
     if (promoMatch) promo = parseInt(promoMatch[1]);
 
-    if (text.toLowerCase().includes("gratis ongkir") || text.toLowerCase().includes("ongkir rp0") || text.toLowerCase().includes("free delivery")) {
+    const etaMatch = text.match(/Tiba\s*dalam\s*(\d+)\s*menit/i) || text.match(/(\d+)\s*menit/i);
+    if (etaMatch) eta = parseInt(etaMatch[1]);
+
+    if (text.toLowerCase().includes("gratis ongkir") || text.toLowerCase().includes("ongkir rp0")) {
       freeDelivery = true;
     }
 
-    const etaMatch = text.match(/(\d+)\s*(menit|mins)/i);
-    if (etaMatch) eta = parseInt(etaMatch[1]);
+    if (ratingLineIdx >= 1) {
+       const catLine = lines[ratingLineIdx - 1].toLowerCase();
+       if (catLine.includes("minuman") || catLine.includes("drink") || catLine.includes("kopi") || catLine.includes("teh") || catLine.includes("boba")) category = "Minuman";
+       else if (catLine.includes("snack") || catLine.includes("cemilan") || catLine.includes("keripik")) category = "Snack";
+    }
 
-    const lower = text.toLowerCase();
-    if (lower.includes("minuman") || lower.includes("drink") || lower.includes("kopi") || lower.includes("tea") || lower.includes("boba")) category = "Minuman";
-    else if (lower.includes("snack") || lower.includes("cemilan") || lower.includes("keripik") || lower.includes("roti")) category = "Snack";
-
-    return { name, rating, promo, freeDelivery, eta, category };
+    return { name, rating, reviews, promo, freeDelivery, eta, category };
   };
 
   const handleImageUpload = async (file: File) => {
@@ -609,9 +617,15 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
+                      <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-[0.1em] mb-1.5 ml-1">Total Reviews</p>
+                      <input name="reviews" type="number" defaultValue={detectedData.reviews} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-bold outline-none" />
+                    </div>
+                    <div>
                       <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-[0.1em] mb-1.5 ml-1">Promo (%)</p>
                       <input name="promo_percent" type="number" defaultValue={detectedData.promo} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-bold outline-none" />
                     </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-[0.1em] mb-1.5 ml-1">ETA (Menit)</p>
                       <input name="eta_minutes" type="number" defaultValue={detectedData.eta} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-bold outline-none" />
