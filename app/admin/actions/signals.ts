@@ -72,6 +72,11 @@ export async function upsertMerchant(formData: FormData) {
   const external_id = String(formData.get("external_id") || "").trim() || null;
   const priority = Number(formData.get("priority") || 0);
   const eta_minutes = formData.get("eta_minutes") ? Number(formData.get("eta_minutes")) : null;
+  const special_hours_raw = String(formData.get("special_hours") || "{}");
+  let special_hours = {};
+  try {
+    special_hours = JSON.parse(special_hours_raw);
+  } catch(e) {}
 
   if (!name || !area) return { error: "Nama resto dan area wajib diisi" };
 
@@ -133,6 +138,7 @@ export async function upsertMerchant(formData: FormData) {
       external_id,
       priority,
       eta_minutes,
+      special_hours,
       updated_at: new Date().toISOString(),
       expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
     },
@@ -281,6 +287,7 @@ export type MerchantSignal = {
   platform?: string | null;
   external_id?: string | null;
   priority?: number | null;
+  special_hours?: Record<string, { open: string; close: string }> | null;
 };
 
 // Haversine distance in km
@@ -323,13 +330,24 @@ export async function getActiveMerchants(areaName: string | null): Promise<Merch
   const hour = jakartaTimeObj.getHours();
   const jakartaTime = jakartaTimeObj.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" });
   
+  const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+  const currentDayName = days[jakartaTimeObj.getDay()];
+
   result = result.filter(m => {
     if (m.is_open_24h) return true;
-    if (m.open_time && m.close_time) {
-      const isOvernight = m.open_time > m.close_time;
+    
+    let ot = m.open_time;
+    let ct = m.close_time;
+    if (m.special_hours && m.special_hours[currentDayName]) {
+       ot = m.special_hours[currentDayName].open;
+       ct = m.special_hours[currentDayName].close;
+    }
+
+    if (ot && ct) {
+      const isOvernight = ot > ct;
       return isOvernight
-        ? (jakartaTime >= m.open_time || jakartaTime < m.close_time)
-        : (jakartaTime >= m.open_time && jakartaTime < m.close_time);
+        ? (jakartaTime >= ot || jakartaTime < ct)
+        : (jakartaTime >= ot && jakartaTime < ct);
     }
     return true; 
   });

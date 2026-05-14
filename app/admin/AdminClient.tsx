@@ -56,6 +56,10 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
   const [ocrLoading, setOcrLoading] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [detectedData, setDetectedData] = useState<any>(null);
+  const [specialHours, setSpecialHours] = useState<Record<string, { open: string; close: string }>>({});
+  const [shDay, setShDay] = useState("Senin");
+  const [shOpen, setShOpen] = useState("");
+  const [shClose, setShClose] = useState("");
 
   const parseShopeeScreenshotText = (text: string) => {
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
@@ -118,6 +122,9 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
     if (editingMerchant) {
       setEditLat(editingMerchant.lat);
       setEditLng(editingMerchant.lng);
+      setSpecialHours(editingMerchant.special_hours || {});
+    } else {
+      setSpecialHours({});
     }
   }, [editingMerchant]);
 
@@ -496,6 +503,40 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                       </div>
                     </div>
                     <input name="closed_days" placeholder="Hari Libur (opsional, misal: Senin, Minggu)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-semibold mt-1" />
+                    
+                    <div className="bg-neutral-50 rounded-2xl p-4 border border-neutral-100 mt-2">
+                      <p className="text-[0.7rem] font-black text-neutral-400 uppercase tracking-widest mb-3">Jam Buka Khusus Hari Tertentu</p>
+                      <div className="flex flex-col gap-3">
+                        <div className="grid grid-cols-3 gap-2">
+                          <select value={shDay} onChange={e => setShDay(e.target.value)} className="px-3 py-2 rounded-xl border border-neutral-200 text-[0.8rem] font-bold">
+                            {["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"].map(d => <option key={d} value={d}>{d}</option>)}
+                          </select>
+                          <input type="time" value={shOpen} onChange={e => setShOpen(e.target.value)} className="px-3 py-2 rounded-xl border border-neutral-200 text-[0.8rem]" />
+                          <input type="time" value={shClose} onChange={e => setShClose(e.target.value)} className="px-3 py-2 rounded-xl border border-neutral-200 text-[0.8rem]" />
+                        </div>
+                        <button type="button" onClick={() => {
+                          if (shOpen && shClose) {
+                            setSpecialHours(prev => ({ ...prev, [shDay]: { open: shOpen, close: shClose } }));
+                            setShOpen(""); setShClose("");
+                          }
+                        }} className="w-full py-2 bg-neutral-200 text-neutral-700 text-[0.75rem] font-black rounded-xl hover:bg-neutral-300 transition-colors">Tambah Jam Khusus</button>
+                        
+                        <div className="space-y-2 mt-1">
+                          {Object.entries(specialHours).map(([day, times]) => (
+                            <div key={day} className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-neutral-100 shadow-sm">
+                              <span className="text-[0.8rem] font-bold">{day}: <span className="text-blue-600">{times.open} - {times.close}</span></span>
+                              <button type="button" onClick={() => {
+                                const newSh = { ...specialHours };
+                                delete newSh[day];
+                                setSpecialHours(newSh);
+                              }} className="text-red-500 font-bold text-[0.7rem]">Hapus</button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <input type="hidden" name="special_hours" value={JSON.stringify(specialHours)} />
+
                   <div className="flex flex-col gap-3 pt-2">
                     <div className="flex gap-5">
                       <label className="flex items-center gap-2 cursor-pointer group">
@@ -579,6 +620,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 <form action={async (fd) => {
                   setLoading(true);
                   fd.append("lat", String(lat)); fd.append("lng", String(lng)); fd.append("area", area); fd.append("address", address);
+                  fd.append("special_hours", JSON.stringify(specialHours));
                   const res = await upsertMerchant(fd);
                   setLoading(false);
                   if (res.success) {
@@ -623,6 +665,38 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                       <input type="checkbox" name="free_shipping" defaultChecked={true} className="w-5 h-5 rounded-lg accent-blue-600" />
                       <span className="text-[0.8rem] font-bold text-neutral-600">Gratis Ongkir</span>
                     </label>
+                  </div>
+
+                  <div className="bg-neutral-50 rounded-2xl p-4 border border-neutral-100 mb-2">
+                    <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-3">Jam Buka Khusus</p>
+                    <div className="flex flex-col gap-3">
+                      <div className="grid grid-cols-3 gap-2">
+                        <select value={shDay} onChange={e => setShDay(e.target.value)} className="px-3 py-2 rounded-xl border border-neutral-200 text-[0.8rem] font-bold">
+                          {["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"].map(d => <option key={d} value={d}>{d}</option>)}
+                        </select>
+                        <input type="time" value={shOpen} onChange={e => setShOpen(e.target.value)} className="px-3 py-2 rounded-xl border border-neutral-200 text-[0.8rem]" />
+                        <input type="time" value={shClose} onChange={e => setShClose(e.target.value)} className="px-3 py-2 rounded-xl border border-neutral-200 text-[0.8rem]" />
+                      </div>
+                      <button type="button" onClick={() => {
+                        if (shOpen && shClose) {
+                          setSpecialHours(prev => ({ ...prev, [shDay]: { open: shOpen, close: shClose } }));
+                          setShOpen(""); setShClose("");
+                        }
+                      }} className="w-full py-2 bg-neutral-200 text-neutral-700 text-[0.7rem] font-black rounded-xl">Tambah</button>
+                      
+                      <div className="space-y-2">
+                        {Object.entries(specialHours).map(([day, times]) => (
+                          <div key={day} className="flex items-center justify-between bg-white px-3 py-1.5 rounded-xl border border-neutral-100">
+                            <span className="text-[0.75rem] font-bold">{day}: {times.open}-{times.close}</span>
+                            <button type="button" onClick={() => {
+                              const newSh = { ...specialHours };
+                              delete newSh[day];
+                              setSpecialHours(newSh);
+                            }} className="text-red-500 font-bold text-[0.7rem]">X</button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
                   <hr className="border-neutral-100 my-2" />
