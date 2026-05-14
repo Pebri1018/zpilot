@@ -84,7 +84,7 @@ export default function TrenPage() {
       <header className="px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-3 bg-[#f2f2f4] dark:bg-neutral-950 sticky top-0 z-20">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-[1.3rem] font-black tracking-tight">Intel Pasar</h1>
+            <h1 className="text-[1.3rem] font-black tracking-tight">ZPilot Intelligence</h1>
             <p className={`text-[0.8rem] font-bold ${timeCtx.color} flex items-center gap-1`}>
               {timeCtx.emoji} {timeCtx.label}
               <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse ml-1 inline-block" />
@@ -123,7 +123,7 @@ export default function TrenPage() {
         {/* TOP ZONES */}
         <div>
           <div className="flex items-center justify-between mb-2 px-1">
-            <p className="text-[0.65rem] font-black uppercase tracking-widest text-neutral-400">Zona Terbaik Sekarang</p>
+            <p className="text-[0.65rem] font-black uppercase tracking-widest text-neutral-400">Zona Efisien Sekarang</p>
             <span className="text-[0.6rem] font-bold text-neutral-400 bg-white rounded-full px-2 py-0.5 border border-neutral-200 flex items-center gap-1">
               <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" /> LIVE
             </span>
@@ -179,7 +179,7 @@ export default function TrenPage() {
 
         {/* ADVICE */}
         <div className="bg-indigo-900 rounded-2xl px-4 py-4">
-          <p className="text-[0.62rem] font-black uppercase tracking-widest text-indigo-300 mb-1">💡 Saran Intel</p>
+          <p className="text-[0.62rem] font-black uppercase tracking-widest text-indigo-300 mb-1">💡 ZPilot Insight</p>
           <p className="text-[0.9rem] font-bold text-white leading-snug">{advice}</p>
         </div>
 

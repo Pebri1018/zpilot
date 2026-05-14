@@ -181,7 +181,7 @@ export async function getRecommendationV2(
   // Default
   return {
     action: "STAY",
-    title: isID ? "Pilot Siaga" : "Pilot Standby",
+    title: isID ? "ZPilot AI Siaga" : "ZPilot AI Standby",
     reason: isID ? "Memantau pergerakan pasar. Tetap waspada." : "Monitoring market. Stay alert.",
     color: "#10B981",
     badge: "Low"

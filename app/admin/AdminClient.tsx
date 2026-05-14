@@ -844,7 +844,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                   <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                     {u.ztips_id && (
                       <span className="inline-flex items-center gap-1 bg-neutral-900 text-white text-[0.65rem] font-black px-2 py-0.5 rounded-lg tracking-widest">
-                        {u.ztips_id}
+                        ZPILOT: {u.ztips_id}
                       </span>
                     )}
                     {u.driver_id && (

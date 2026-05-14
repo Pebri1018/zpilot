@@ -14,7 +14,7 @@ const RadarMap = dynamic(() => import("@/components/RadarMap"), {
   ssr: false,
   loading: () => (
     <div className="h-full w-full bg-[#f0f0f0] animate-pulse rounded-[1.25rem] flex items-center justify-center">
-      <span className="text-neutral-500 text-[0.8rem] font-bold uppercase tracking-widest">Scanning...</span>
+      <span className="text-neutral-500 text-[0.8rem] font-bold uppercase tracking-widest text-center px-6">Scanning ZPilot Radar...</span>
     </div>
   ),
 });

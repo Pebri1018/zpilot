@@ -1,4 +1,4 @@
-const STORAGE_KEY = "ztips_today_earnings";
+const STORAGE_KEY = "zpilot_today_earnings";
 
 export type TodayEarningsState = {
   date: string;

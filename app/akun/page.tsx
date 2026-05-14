@@ -41,7 +41,7 @@ export default async function AkunPage() {
           kota={profile?.kota ?? null}
           platform={profile?.platform ?? "ShopeeFood"}
           driverId={profile?.driver_id ?? null}
-          ztipsId={profile?.ztips_id ?? null}
+          zpilotId={profile?.ztips_id ?? null}
           role={profile?.role ?? "driver"}
           feedback={feedback ?? []}
         />

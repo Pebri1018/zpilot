@@ -21,13 +21,13 @@ export default async function LoginPage({ searchParams }: Props) {
             <span className="text-white text-2xl font-black tracking-tighter">Z</span>
           </div>
           <h1 className="text-[1.75rem] font-bold tracking-[-0.02em] text-neutral-900">
-            ZTIPS Pilot
+            ZPILOT
           </h1>
           <p className="mt-2 text-[0.95rem] font-semibold text-neutral-600">
-            Hyperlocal Intelligence Dashboard
+            Find better zones. Drive smarter.
           </p>
           <p className="mt-1 text-[0.8rem] text-neutral-500">
-            Lebih presisi dari sekadar heatmap bawaan aplikator.
+            AI Navigation Intelligence for Drivers.
           </p>
         </div>
 
@@ -53,7 +53,7 @@ export default async function LoginPage({ searchParams }: Props) {
         <AuthForm disabled={!supabaseReady} />
 
         <p className="mt-8 text-center text-[0.78rem] text-neutral-400 leading-relaxed">
-          Dengan masuk, kamu menyetujui syarat penggunaan layanan ZTIPS Pilot.
+          Dengan masuk, kamu menyetujui syarat penggunaan layanan ZPILOT.
         </p>
       </div>
     </div>

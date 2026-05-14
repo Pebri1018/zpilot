@@ -10,13 +10,13 @@ import "leaflet/dist/leaflet.css";
 const plusJakartaSans = Plus_Jakarta_Sans({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "ZTIPS Pilot",
-  description: "Pendamping lapangan untuk driver ShopeeFood",
+  title: "ZPILOT",
+  description: "AI Navigation Intelligence for Drivers",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "ZTIPS Pilot",
+    title: "ZPILOT",
   },
 };
 

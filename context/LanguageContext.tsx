@@ -33,8 +33,8 @@ const translations: Record<Language, Record<string, string>> = {
     rivals: "Pesaing",
     wait_timer: "Timer Ngetem",
     active_merchants: "Resto & Promo Aktif",
-    ai_pilot_suggest: "Saran AI Pilot",
-    open_radar: "Buka Radar",
+    ai_pilot_suggest: "Saran ZPilot AI",
+    open_radar: "Buka ZPilot Radar",
     refresh: "Perbarui",
     // Account Page
     logout: "Keluar Akun",
@@ -91,8 +91,8 @@ const translations: Record<Language, Record<string, string>> = {
     rivals: "Rivals",
     wait_timer: "Waiting Timer",
     active_merchants: "Active Merchants",
-    ai_pilot_suggest: "AI Pilot Suggestion",
-    open_radar: "Open Radar",
+    ai_pilot_suggest: "ZPilot AI Suggestion",
+    open_radar: "Open ZPilot Radar",
     refresh: "Refresh",
     // Account Page
     logout: "Log Out",

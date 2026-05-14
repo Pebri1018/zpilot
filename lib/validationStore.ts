@@ -11,7 +11,7 @@ export type ValidationRecord = {
   result: MoveOutcomeType | null;
 };
 
-const STORAGE_KEY = "ztips_validation_records";
+const STORAGE_KEY = "zpilot_validation_records";
 
 export function readValidationRecords(): ValidationRecord[] {
   if (typeof window === "undefined") return [];

@@ -200,12 +200,14 @@ export function LiveDashboard() {
       {/* TOP BAR */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[0.72rem] font-black text-neutral-400 uppercase tracking-widest">{formattedTime}</p>
-          <p className="text-[1rem] font-black text-neutral-900 dark:text-neutral-100 leading-tight mt-0.5 line-clamp-1 max-w-[200px]">
+          <h1 className="text-[1.4rem] font-black tracking-tight text-neutral-900 dark:text-white">ZPILOT</h1>
+          <p className="text-[0.72rem] font-black text-neutral-400 uppercase tracking-widest flex items-center gap-1.5">
+            <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse" />
             {areaName || (loading ? "Mencari lokasi..." : "—")}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <p className="text-[0.75rem] font-black text-neutral-400">{formattedTime}</p>
           <DriverStatusSelector />
         </div>
       </div>
@@ -292,7 +294,7 @@ export function LiveDashboard() {
       {/* TOP ZONES */}
       {topZones.length > 0 && (
         <div>
-          <p className="text-[0.65rem] font-black uppercase tracking-widest text-neutral-400 mb-2 px-1">Top Zona Sekarang</p>
+          <p className="text-[0.65rem] font-black uppercase tracking-widest text-neutral-400 mb-2 px-1">Zona Efisien Sekarang</p>
           <div className="flex flex-col gap-1.5">
             {topZones.map((z, i) => {
               const zl = zoneLabel[z.label] || { label: z.label, color: "text-neutral-600", bg: "bg-neutral-100" };
