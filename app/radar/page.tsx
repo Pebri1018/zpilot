@@ -291,11 +291,11 @@ function RadarContent() {
             const offsetLat = i === 0 ? 0 : (Math.random() - 0.5) * 0.0005;
             const offsetLng = i === 0 ? 0 : (Math.random() - 0.5) * 0.0005;
             newMarkers.push({
-              id: `manual_${ms.id}_${i}`,
+              id: ms.type === "driver_ngetem" ? `drv_man_${Math.random().toString(36).slice(2, 8)}` : `manual_${ms.id}_${i}`,
               lat: ms.lat + offsetLat,
               lng: ms.lng + offsetLng,
               type: ms.type === "driver_ngetem" ? "driver_ngetem" : "spot",
-              label: ms.type === "driver_ngetem" ? "Driver (Sistem)" : "Spot (Sistem)"
+              label: ms.type === "driver_ngetem" ? "Driver" : "Spot"
             });
           }
         });
