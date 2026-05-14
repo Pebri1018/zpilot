@@ -267,25 +267,23 @@ export function LiveDashboard({ isDemo = false }: { isDemo?: boolean }) {
         {recommendation.action !== "OFFLINE" && (
           <div className="flex gap-2 mt-4">
             {nearestHotspot && (
-              <button
-                onClick={isDemo ? () => setShowPremiumModal(true) : undefined}
-                className="flex-1 bg-white"
-              >
-                {isDemo ? (
-                  <span className="block w-full text-neutral-900 text-[0.8rem] font-black py-3 rounded-2xl text-center active:scale-95 transition-all shadow">
-                    Mulai Navigasi
-                  </span>
-                ) : (
-                  <a
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${nearestHotspot.lat},${nearestHotspot.lng}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full text-neutral-900 text-[0.8rem] font-black py-3 rounded-2xl text-center active:scale-95 transition-all shadow"
-                  >
-                    Mulai Navigasi
-                  </a>
-                )}
-              </button>
+              isDemo ? (
+                <button
+                  onClick={() => setShowPremiumModal(true)}
+                  className="flex-1 bg-white text-neutral-900 text-[0.8rem] font-black py-3 rounded-2xl text-center active:scale-95 transition-all shadow"
+                >
+                  Mulai Navigasi
+                </button>
+              ) : (
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${nearestHotspot.lat},${nearestHotspot.lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 bg-white text-neutral-900 text-[0.8rem] font-black py-3 rounded-2xl text-center active:scale-95 transition-all shadow"
+                >
+                  Mulai Navigasi
+                </a>
+              )
             )}
             <Link 
               href={isDemo ? "#" : "/radar"} 
