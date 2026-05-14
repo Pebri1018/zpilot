@@ -14,8 +14,8 @@ export function DriverStatusSelector() {
   ];
 
   return (
-    <div className="mb-6">
-      <h2 className="text-[0.75rem] font-bold uppercase tracking-[0.15em] text-neutral-400 mb-3 ml-2">
+    <div className="mb-2">
+      <h2 className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-neutral-400 mb-2 ml-1">
         {lang === "ID" ? "Status Saat Ini" : "Current Status"}
       </h2>
       <div className="flex gap-2 overflow-x-auto pb-2 -mx-5 px-5 no-scrollbar">

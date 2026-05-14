@@ -34,8 +34,8 @@ function getActionColors(action: string, color: string) {
   if (action === "MOVE") return { bg: "bg-red-600", text: "text-white", border: "border-red-500", pill: "bg-red-700", accent: "#DC2626" };
   if (action === "OFFLINE") return { bg: "bg-neutral-700", text: "text-white", border: "border-neutral-600", pill: "bg-neutral-800", accent: "#374151" };
   if (action === "BUSY") return { bg: "bg-amber-500", text: "text-white", border: "border-amber-400", pill: "bg-amber-600", accent: "#D97706" };
-  // STAY — use blue
-  return { bg: "bg-blue-600", text: "text-white", border: "border-blue-500", pill: "bg-blue-700", accent: "#2563EB" };
+  // STAY — use soft blue
+  return { bg: "bg-[#2d5af1]", text: "text-white", border: "border-blue-400/30", pill: "bg-black/20", accent: "#2d5af1" };
 }
 
 // Keep cache state outside component to survive remounts
@@ -198,21 +198,26 @@ export function LiveDashboard() {
   return (
     <div className="flex flex-col gap-4">
 
-      {/* TOP BAR */}
-      <div className="flex items-center justify-between">
-        <div className="flex-1 min-w-0 pr-4">
-          <p className="text-[0.62rem] font-black text-neutral-400 uppercase tracking-[0.15em] mb-1">Lokasi Driver</p>
+      {/* TOP BAR: LOCATION & TIME */}
+      <div className="flex items-start justify-between">
+        <div className="flex-1 min-w-0">
+          <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-[0.2em] mb-1">Lokasi Driver</p>
           <div className="flex items-start gap-2">
-            <span className="inline-block w-2 h-2 bg-blue-500 rounded-full animate-pulse mt-1.5 shrink-0" />
-            <p className="text-[1.1rem] font-black text-neutral-900 dark:text-white leading-tight">
+            <span className="inline-block w-2 h-2 bg-[#2d5af1] rounded-full animate-pulse mt-1.5 shrink-0" />
+            <p className="text-[1.15rem] font-black text-neutral-900 dark:text-white leading-tight">
               {areaName || (loading ? "Mencari lokasi..." : "—")}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <p className="text-[0.75rem] font-black text-neutral-400">{formattedTime}</p>
-          <DriverStatusSelector />
+        <div className="pl-4 text-right shrink-0">
+          <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-[0.2em] mb-1">Pukul</p>
+          <p className="text-[1rem] font-black text-neutral-700 dark:text-neutral-300">{formattedTime}</p>
         </div>
+      </div>
+
+      {/* STATUS SELECTOR: OWN ROW */}
+      <div className="-mt-1">
+        <DriverStatusSelector />
       </div>
 
       {/* IDLE ALERT */}
