@@ -5,29 +5,40 @@ CREATE OR REPLACE FUNCTION public.reorder_merchant_ids_after_delete()
 RETURNS trigger AS $$
 DECLARE
   deleted_seq_part integer;
-  deleted_prefix text;
   current_val bigint;
+  m RECORD;
 BEGIN
-  -- Extract prefix (YYT) and sequence part (last 5 digits)
-  deleted_prefix := left(OLD.short_id, 3);
+  -- Extract sequence part (last 5 digits) of the deleted ID
   deleted_seq_part := (right(OLD.short_id, 5))::integer;
 
-  -- Update all records in merchant_signals with higher sequence numbers
-  -- We don't filter by prefix here because the sequence is GLOBAL across all types
-  -- But wait, the user's requirement "0002 jadi 0001" implies they care about the numeric sequence.
-  -- Since merchant_id_seq is shared, we shift EVERYONE who came after, regardless of type prefix.
+  -- We update rows one by one in ASCENDING order of their sequence number
+  -- to avoid unique constraint violations (shifting into an empty slot).
   
-  -- Update merchant_signals
-  UPDATE public.merchant_signals
-  SET short_id = left(short_id, 3) || lpad(((right(short_id, 5))::integer - 1)::text, 5, '0')
-  WHERE (right(short_id, 5))::integer > deleted_seq_part;
+  -- Re-order merchant_signals
+  FOR m IN 
+    SELECT id, short_id 
+    FROM public.merchant_signals 
+    WHERE (right(short_id, 5))::integer > deleted_seq_part
+    ORDER BY (right(short_id, 5))::integer ASC
+  LOOP
+    UPDATE public.merchant_signals
+    SET short_id = left(m.short_id, 3) || lpad(((right(m.short_id, 5))::integer - 1)::text, 5, '0')
+    WHERE id = m.id;
+  END LOOP;
 
-  -- Update ngetem_spots
-  UPDATE public.ngetem_spots
-  SET short_id = left(short_id, 3) || lpad(((right(short_id, 5))::integer - 1)::text, 5, '0')
-  WHERE (right(short_id, 5))::integer > deleted_seq_part;
+  -- Re-order ngetem_spots
+  FOR m IN 
+    SELECT id, short_id 
+    FROM public.ngetem_spots 
+    WHERE (right(short_id, 5))::integer > deleted_seq_part
+    ORDER BY (right(short_id, 5))::integer ASC
+  LOOP
+    UPDATE public.ngetem_spots
+    SET short_id = left(m.short_id, 3) || lpad(((right(m.short_id, 5))::integer - 1)::text, 5, '0')
+    WHERE id = m.id;
+  END LOOP;
 
-  -- Decrement the global sequence so next insert is correct
+  -- Decrement the global sequence
   SELECT last_value INTO current_val FROM public.merchant_id_seq;
   IF current_val > 1 THEN
     PERFORM setval('public.merchant_id_seq', current_val - 1, true);
@@ -43,49 +54,37 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION public.reorder_user_ids_after_delete()
 RETURNS trigger AS $$
 DECLARE
-  deleted_seq_part integer;
   deleted_role_prefix text;
-  deleted_year_suffix text;
-  current_val bigint;
+  deleted_seq_part integer;
   deleted_abs_seq integer;
+  current_val bigint;
+  u RECORD;
+  new_abs_seq integer;
 BEGIN
-  -- ztips_id format: RYYSSSSS
   deleted_role_prefix := left(OLD.ztips_id, 1);
-  deleted_year_suffix := substr(OLD.ztips_id, 2, 2);
   deleted_seq_part := (right(OLD.ztips_id, 5))::integer;
   
-  -- Calculate absolute sequence used in ztips_id_seq
   IF deleted_role_prefix = '1' THEN
     deleted_abs_seq := deleted_seq_part;
   ELSE
     deleted_abs_seq := deleted_seq_part + 99999;
   END IF;
 
-  -- Update all users with higher absolute sequence
-  -- We iterate through all users and shift them if their absolute sequence is higher
-  UPDATE public.users
-  SET ztips_id = (
-    CASE 
-      WHEN (
-        (CASE WHEN left(ztips_id, 1) = '1' THEN (right(ztips_id, 5))::integer ELSE (right(ztips_id, 5))::integer + 99999 END) - 1
-      ) <= 99999 THEN '1'
-      ELSE '2'
-    END
-  ) || substr(ztips_id, 2, 2) || lpad(
-    (
-      CASE 
-        WHEN (
-          (CASE WHEN left(ztips_id, 1) = '1' THEN (right(ztips_id, 5))::integer ELSE (right(ztips_id, 5))::integer + 99999 END) - 1
-        ) <= 99999 THEN (
-          (CASE WHEN left(ztips_id, 1) = '1' THEN (right(ztips_id, 5))::integer ELSE (right(ztips_id, 5))::integer + 99999 END) - 1
-        )
-        ELSE (
-          (CASE WHEN left(ztips_id, 1) = '1' THEN (right(ztips_id, 5))::integer ELSE (right(ztips_id, 5))::integer + 99999 END) - 1
-        ) - 99999
-      END
-    )::text, 5, '0'
-  )
-  WHERE (CASE WHEN left(ztips_id, 1) = '1' THEN (right(ztips_id, 5))::integer ELSE (right(ztips_id, 5))::integer + 99999 END) > deleted_abs_seq;
+  -- Re-order users one by one in ASCENDING order of absolute sequence
+  FOR u IN 
+    SELECT id, ztips_id,
+           (CASE WHEN left(ztips_id, 1) = '1' THEN (right(ztips_id, 5))::integer ELSE (right(ztips_id, 5))::integer + 99999 END) as abs_seq
+    FROM public.users
+    WHERE (CASE WHEN left(ztips_id, 1) = '1' THEN (right(ztips_id, 5))::integer ELSE (right(ztips_id, 5))::integer + 99999 END) > deleted_abs_seq
+    ORDER BY abs_seq ASC
+  LOOP
+    new_abs_seq := u.abs_seq - 1;
+    UPDATE public.users
+    SET ztips_id = (CASE WHEN new_abs_seq <= 99999 THEN '1' ELSE '2' END) || 
+                   substr(u.ztips_id, 2, 2) || 
+                   lpad((CASE WHEN new_abs_seq <= 99999 THEN new_abs_seq ELSE new_abs_seq - 99999 END)::text, 5, '0')
+    WHERE id = u.id;
+  END LOOP;
 
   -- Decrement user sequence
   SELECT last_value INTO current_val FROM public.ztips_id_seq;
@@ -129,11 +128,14 @@ DECLARE
   role_prefix text;
   padded_seq text;
 BEGIN
+  -- Clear all IDs first to avoid unique constraint violations during re-assignment
+  UPDATE public.merchant_signals SET short_id = NULL;
+  UPDATE public.ngetem_spots SET short_id = NULL;
+  UPDATE public.users SET ztips_id = NULL;
+
   -- Reset Merchant Sequence
   ALTER SEQUENCE public.merchant_id_seq RESTART WITH 1;
   
-  -- Re-sequence merchants and spots by creation time
-  -- We union them to maintain the global sequence order
   FOR m IN (
     SELECT 'm' as tbl, id, category, created_at FROM public.merchant_signals
     UNION ALL
@@ -155,7 +157,6 @@ BEGIN
   -- Reset User Sequence
   ALTER SEQUENCE public.ztips_id_seq RESTART WITH 1;
   
-  -- Re-sequence users by creation time
   FOR u IN SELECT id, created_at FROM public.users ORDER BY created_at ASC LOOP
     year_suffix := to_char(u.created_at, 'YY');
     seq_num := nextval('public.ztips_id_seq');
