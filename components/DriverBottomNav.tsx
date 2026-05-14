@@ -4,7 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 
-export function DriverBottomNav() {
+import { useState } from "react";
+
+export function DriverBottomNav({ isDemo = false }: { isDemo?: boolean }) {
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const pathname = usePathname();
   const { t } = useLanguage();
 
@@ -59,7 +62,8 @@ export function DriverBottomNav() {
           return (
             <Link
               key={href}
-              href={href}
+              href={isDemo && href !== "/demo" ? "#" : href}
+              onClick={isDemo && href !== "/demo" ? (e) => { e.preventDefault(); setShowPremiumModal(true); } : undefined}
               className={`py-2 flex flex-col items-center justify-center transition-colors ${
                 active ? "text-neutral-900 dark:text-white" : "text-neutral-400 dark:text-neutral-500 active:text-neutral-600 dark:active:text-neutral-400"
               }`}
@@ -76,6 +80,29 @@ export function DriverBottomNav() {
           );
         })}
       </div>
+
+      {/* PREMIUM MODAL */}
+      {showPremiumModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="w-16 h-16 rounded-3xl bg-blue-50 flex items-center justify-center mb-6">
+              <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+            </div>
+            <h3 className="text-[1.5rem] font-black text-neutral-900 leading-tight mb-3">Akses Terbatas</h3>
+            <p className="text-[0.95rem] text-neutral-500 font-medium leading-relaxed mb-8">
+              Masuk untuk aktifkan fitur lengkap ZPILOT dan pantau radar secara real-time.
+            </p>
+            <div className="space-y-3">
+              <Link href="/login" className="block w-full bg-blue-600 text-white text-[1rem] font-bold py-4 rounded-2xl text-center shadow-lg shadow-blue-500/30 active:scale-95 transition-all">
+                Masuk Sekarang
+              </Link>
+              <button onClick={() => setShowPremiumModal(false)} className="block w-full text-neutral-400 text-[0.85rem] font-bold py-2">
+                Nanti Saja
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

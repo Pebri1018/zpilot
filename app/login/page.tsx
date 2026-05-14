@@ -23,11 +23,8 @@ export default async function LoginPage({ searchParams }: Props) {
           <h1 className="text-[1.75rem] font-bold tracking-[-0.02em] text-neutral-900">
             ZPILOT
           </h1>
-          <p className="mt-2 text-[0.95rem] font-semibold text-neutral-600">
-            Find better zones. Drive smarter.
-          </p>
-          <p className="mt-1 text-[0.8rem] text-neutral-500">
-            AI Navigation Intelligence for Drivers.
+          <p className="mt-4 text-[1rem] font-bold text-blue-600 leading-tight">
+            Masuk untuk aktifkan radar real-time dan fitur penuh.
           </p>
         </div>
 

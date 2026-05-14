@@ -12,9 +12,9 @@ function isPublicPath(pathname: string): boolean {
 }
 
 function isProtectedAppPath(pathname: string): boolean {
-  const protectedExact = ["/", "/beranda", "/radar", "/riwayat", "/akun", "/tren", "/admin", "/founder", ONBOARDING_PATH];
+  const protectedExact = ["/beranda", "/radar", "/riwayat", "/akun", "/tren", "/admin", "/founder", ONBOARDING_PATH];
   return protectedExact.some((p) =>
-    p === "/" ? pathname === "/" : pathname === p || pathname.startsWith(`${p}/`),
+    pathname === p || pathname.startsWith(`${p}/`),
   );
 }
 

@@ -47,7 +47,8 @@ let globalZoneStats: ZoneStatsResult | null = null;
 let globalTopZones: HotspotZone[] | null = null;
 let globalNearestHotspot: (HotspotZone & { dist: number }) | null = null;
 
-export function LiveDashboard() {
+export function LiveDashboard({ isDemo = false }: { isDemo?: boolean }) {
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const { lang, t } = useLanguage();
   const { status, areaName, loading, error, timestamp, refreshLocation, latitude, longitude } = useLocation();
   const [time, setTime] = useState(new Date());
@@ -203,9 +204,9 @@ export function LiveDashboard() {
         <div className="flex-1 min-w-0">
           <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-[0.2em] mb-1">Lokasi Driver</p>
           <div className="flex items-start gap-2">
-            <span className="inline-block w-2 h-2 bg-[#2d5af1] rounded-full animate-pulse mt-1.5 shrink-0" />
+            <span className={`inline-block w-2 h-2 ${isDemo ? 'bg-blue-400' : 'bg-[#2d5af1]'} rounded-full animate-pulse mt-1.5 shrink-0`} />
             <p className="text-[1.15rem] font-black text-neutral-900 dark:text-white leading-tight">
-              {areaName || (loading ? "Mencari lokasi..." : "—")}
+              {isDemo ? "Yogyakarta (Demo)" : (areaName || (loading ? "Mencari lokasi..." : "—"))}
             </p>
           </div>
         </div>
@@ -216,8 +217,10 @@ export function LiveDashboard() {
       </div>
 
       {/* STATUS SELECTOR: OWN ROW */}
-      <div className="-mt-1">
-        <DriverStatusSelector />
+      <div className="-mt-1" onClick={isDemo ? () => setShowPremiumModal(true) : undefined}>
+        <div className={isDemo ? "pointer-events-none opacity-80" : ""}>
+          <DriverStatusSelector />
+        </div>
       </div>
 
       {/* IDLE ALERT */}
@@ -264,16 +267,31 @@ export function LiveDashboard() {
         {recommendation.action !== "OFFLINE" && (
           <div className="flex gap-2 mt-4">
             {nearestHotspot && (
-              <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${nearestHotspot.lat},${nearestHotspot.lng}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 bg-white text-neutral-900 text-[0.8rem] font-black py-3 rounded-2xl text-center active:scale-95 transition-all shadow"
+              <button
+                onClick={isDemo ? () => setShowPremiumModal(true) : undefined}
+                className="flex-1 bg-white"
               >
-                Mulai Navigasi
-              </a>
+                {isDemo ? (
+                  <span className="block w-full text-neutral-900 text-[0.8rem] font-black py-3 rounded-2xl text-center active:scale-95 transition-all shadow">
+                    Mulai Navigasi
+                  </span>
+                ) : (
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${nearestHotspot.lat},${nearestHotspot.lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full text-neutral-900 text-[0.8rem] font-black py-3 rounded-2xl text-center active:scale-95 transition-all shadow"
+                  >
+                    Mulai Navigasi
+                  </a>
+                )}
+              </button>
             )}
-            <Link href="/radar" className="flex-1 bg-white/20 text-white text-[0.8rem] font-black py-3 rounded-2xl text-center active:scale-95 transition-all">
+            <Link 
+              href={isDemo ? "#" : "/radar"} 
+              onClick={isDemo ? (e) => { e.preventDefault(); setShowPremiumModal(true); } : undefined}
+              className="flex-1 bg-white/20 text-white text-[0.8rem] font-black py-3 rounded-2xl text-center active:scale-95 transition-all"
+            >
               Buka Radar
             </Link>
           </div>
@@ -347,6 +365,28 @@ export function LiveDashboard() {
                 </div>
               </Link>
             ))}
+          </div>
+        </div>
+      )}
+      {/* PREMIUM MODAL */}
+      {showPremiumModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="w-16 h-16 rounded-3xl bg-blue-50 flex items-center justify-center mb-6">
+              <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+            </div>
+            <h3 className="text-[1.5rem] font-black text-neutral-900 leading-tight mb-3">Akses Terbatas</h3>
+            <p className="text-[0.95rem] text-neutral-500 font-medium leading-relaxed mb-8">
+              Masuk untuk aktifkan radar real-time, navigasi pintar, dan fitur penuh ZPILOT.
+            </p>
+            <div className="space-y-3">
+              <Link href="/login" className="block w-full bg-blue-600 text-white text-[1rem] font-bold py-4 rounded-2xl text-center shadow-lg shadow-blue-500/30 active:scale-95 transition-all">
+                Masuk Sekarang
+              </Link>
+              <button onClick={() => setShowPremiumModal(false)} className="block w-full text-neutral-400 text-[0.85rem] font-bold py-2">
+                Nanti Saja
+              </button>
+            </div>
           </div>
         </div>
       )}
