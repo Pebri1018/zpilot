@@ -19,12 +19,22 @@ export async function getRecommendationV2(
   driverCount: number,
   merchantCount: number,
   lang: string = "ID",
-  hotspots: HotspotZone[] = []
+  hotspots: HotspotZone[] = [],
+  latitude?: number | null,
+  longitude?: number | null
 ): Promise<RecommendationResult> {
   const jakartaTime = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
   const hour = jakartaTime.getHours();
   const currentArea = areaName?.toLowerCase() || "";
   const isID = lang === "ID";
+
+  const getDist = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  };
 
   // 1. Status Rules
   if (status === "Offline") {
@@ -50,21 +60,64 @@ export async function getRecommendationV2(
   const topHotspot = hotspots.length > 0 ? hotspots[0] : null;
   const secondHotspot = hotspots.length > 1 ? hotspots[1] : null;
   const currentHotspot = hotspots.find(h => currentArea.includes(h.name.toLowerCase()));
+  
+  const nearestHs = hotspots.length > 0 && latitude && longitude
+    ? hotspots.map(h => ({ ...h, dist: getDist(latitude, longitude, h.lat, h.lng) }))
+              .sort((a, b) => a.dist - b.dist)[0]
+    : null;
 
-  // 2. Too Long Idle (Ngetem >= 15 mins)
+  // 2. Proximity-based logic (CRITICAL UPGRADE)
+  if (nearestHs && nearestHs.dist <= 0.5) {
+     // User is inside a zone (500m radius)
+     let microArea = isID ? "titik lain di sekitarmu" : "other spots nearby";
+     const name = nearestHs.name.toLowerCase();
+     if (name.includes("seturan")) {
+        microArea = "Plaza Ambarukmo side atau Babarsari Timur";
+     } else if (name.includes("babarsari")) {
+        microArea = "Ringroad Utara side atau Seturan Selatan";
+     } else if (name.includes("gejayan")) {
+        microArea = "Jalan Colombo atau area Condongcatur";
+     }
+
+     return {
+       action: "STAY",
+       title: isID ? "Zona Bagus" : "Good Zone",
+       reason: isID 
+         ? `Anda sudah di ${nearestHs.name}. Pantau 10-15 menit atau geser ke area mikro sekitar seperti ${microArea}.`
+         : `You're in ${nearestHs.name}. Monitor for 10-15 mins or shift to micro areas like ${microArea}.`,
+       color: "#2d5af1",
+       badge: "High"
+     };
+  }
+
+  // Suggest move to nearest best hotspot if far (> 1km)
+  if (nearestHs && nearestHs.dist > 1.0 && nearestHs.score >= 35) {
+    return {
+      action: "MOVE",
+      title: isID ? "Hotspot Terdekat" : "Nearest Hotspot",
+      reason: isID
+        ? `${nearestHs.name} adalah hotspot terdekat (${nearestHs.dist.toFixed(1)} km) yang potensial. Bergerak ke sana.`
+        : `${nearestHs.name} is the nearest potential hotspot (${nearestHs.dist.toFixed(1)} km). Move there.`,
+      targetZone: nearestHs.name,
+      color: "#3B82F6",
+      badge: "Medium"
+    };
+  }
+
+  // 3. Too Long Idle (Ngetem >= 15 mins)
   if (idleMinutes >= 15) {
-    const target = topHotspot?.name || "area lain";
+    const target = (nearestHs && nearestHs.dist > 0.5) ? nearestHs.name : (topHotspot?.name || "area lain");
     return {
       action: "MOVE",
       title: isID ? "Pindah Sekarang" : "Move Now",
-      reason: isID ? `Kamu ngetem ${idleMinutes} menit. Geser ke ${target} sekarang.` : `Idle for ${idleMinutes} mins. Move to ${target}.`,
+      reason: isID ? `Sudah 15 menit tanpa pergerakan. Coba pindah ke ${target} untuk segarkan sinyal.` : `Idle for 15 mins. Try moving to ${target} to refresh signals.`,
       targetZone: target,
       color: "#EF4444",
       badge: "High"
     };
   }
 
-  // 3. High Competition (Driver >= 5)
+  // 4. High Competition (Driver >= 5)
   if (driverCount >= 5) {
     const target = (currentHotspot && topHotspot && currentHotspot.id === topHotspot.id && secondHotspot)
       ? secondHotspot.name
@@ -79,15 +132,12 @@ export async function getRecommendationV2(
     };
   }
 
-  // 4. Time-context awareness (informational, not forced move)
+  // 5. Time-context awareness
   const isLunchPeak = hour >= 11 && hour <= 13;
   const isDinnerPeak = hour >= 17 && hour <= 19;
-  const isNight = hour >= 20 && hour <= 23;
-  const isLatNight = hour >= 0 && hour <= 4;
   const isPeak = isLunchPeak || isDinnerPeak;
 
-  // 5. Current zone intelligence
-  // 5. Current zone intelligence
+  // 6. Current zone intelligence (Labels)
   if (currentHotspot) {
     const target = (topHotspot && topHotspot.id !== currentHotspot.id) ? topHotspot.name : (secondHotspot?.name || "area lain");
     
@@ -151,7 +201,7 @@ export async function getRecommendationV2(
     }
   }
 
-  // 6. Fallback if not in a hotspot but there is a top hotspot
+  // 7. Fallback if not in a hotspot but there is a top hotspot
   if (topHotspot && topHotspot.score >= 40) {
     return {
       action: "MOVE",
@@ -165,24 +215,11 @@ export async function getRecommendationV2(
     };
   }
 
-  // 7. Data Confidence Low (Fallback Mode)
-  if (hotspots.length === 0 || (topHotspot && topHotspot.score < 20)) {
-    return {
-      action: "STAY",
-      title: isID ? "Data Komunitas Minim" : "Low Community Data",
-      reason: isID 
-        ? "Data komunitas masih minim di sini. Coba geser ke kluster jalan utama, jelajahi 15-20 menit, atau cari kecamatan terdekat yang lebih aktif." 
-        : "Community data still low here. Try main road clusters, explore for 15-20 mins, or look for nearby districts with stronger activity.",
-      color: "#9CA3AF",
-      badge: "Low"
-    };
-  }
-
-  // Default
+  // Default Fallback
   return {
     action: "STAY",
     title: isID ? "ZPilot AI Siaga" : "ZPilot AI Standby",
-    reason: isID ? "Memantau pergerakan pasar. Tetap waspada." : "Monitoring market. Stay alert.",
+    reason: isID ? "Memantau pergerakan pasar. Tetap waspada di titik strategis." : "Monitoring market. Stay alert in strategic spots.",
     color: "#2d5af1",
     badge: "Low"
   };

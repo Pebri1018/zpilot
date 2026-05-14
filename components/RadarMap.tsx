@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, memo } from "react";
 import "leaflet/dist/leaflet.css";
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Circle } from "react-leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import { RadarMarker } from "@/app/radar/page";
 import { useLanguage } from "@/context/LanguageContext";
@@ -16,6 +17,78 @@ type RadarMapProps = {
   hotspots?: HotspotZone[];
   isAdmin?: boolean;
 };
+
+const MemoizedMarker = memo(({ m, zoom, isAdmin }: { m: RadarMarker, zoom: number, isAdmin: boolean }) => {
+  const getMarkerColor = (type: RadarMarker["type"]) => {
+    switch (type) {
+      case "driver_ngetem": return { color: "#4F46E5", fill: "#4F46E5" };
+      case "driver_antar": return { color: "#EC4899", fill: "#EC4899" };
+      case "merchant_sangatsibuk": return { color: "#991B1B", fill: "#991B1B" }; 
+      case "merchant_ramai": return { color: "#EF4444", fill: "#EF4444" }; 
+      case "merchant_mulaipanas": return { color: "#F97316", fill: "#F97316" }; 
+      case "merchant_bergerak": return { color: "#3B82F6", fill: "#3B82F6" };  
+      case "merchant_sepi": return { color: "#9CA3AF", fill: "#9CA3AF" };  
+      case "merchant_tutup": return { color: "#1F2937", fill: "#111827" };
+      case "seller": return { color: "#F59E0B", fill: "#F59E0B" };
+      case "spot": return { color: "#8B5CF6", fill: "#8B5CF6" };          
+      default: return { color: "#000", fill: "#000" };
+    }
+  };
+
+  const colors = getMarkerColor(m.type);
+  const getPinSize = (type: string) => {
+    switch(type) {
+      case "merchant_sangatsibuk": return 15;
+      case "merchant_ramai": return 13;
+      case "merchant_mulaipanas": return 11;
+      case "merchant_bergerak": return 9;
+      case "merchant_sepi": return 7;
+      case "driver_ngetem": return 12;
+      case "driver_antar": return 10;
+      default: return 10;
+    }
+  };
+  const size = getPinSize(m.type);
+  const showLabel = !m.type.startsWith("driver_") && zoom >= 15;
+
+  const pinIcon = useMemo(() => L.divIcon({
+    className: "bg-transparent",
+    html: `<div style="display: flex; align-items: center; gap: 4px; transform: translate(-${size/2}px, -${size/2}px);">
+            <div style="width: ${size}px; height: ${size}px; background-color: ${colors.fill}; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,0.3); flex-shrink:0;"></div>
+            ${showLabel ? `<span style="font-size: 9px; font-weight: 800; color: #111; white-space: nowrap; text-shadow: 0 0 3px #fff, 0 0 3px #fff;">${m.label.length > 15 ? m.label.slice(0, 14) + '...' : m.label}</span>` : ''}
+          </div>`,
+    iconSize: [0, 0],
+    iconAnchor: [0, 0],
+    popupAnchor: [0, -10]
+  }), [size, colors.fill, showLabel, m.label]);
+
+  return (
+    <Marker position={[m.lat, m.lng]} icon={pinIcon}>
+      <Popup className="radar-popup">
+        <div className="min-w-[150px] p-1">
+          <p className="text-[0.9rem] font-black text-neutral-900 leading-tight mb-1">
+            {m.type.startsWith("driver_") ? (isAdmin ? m.label : `Driver #${m.id.slice(0, 6)}`) : m.label}
+          </p>
+          <div className="flex flex-col gap-0.5 mb-2">
+            <div className="px-1.5 py-0.5 rounded-md text-[0.5rem] font-black uppercase tracking-wider text-white w-fit" style={{ backgroundColor: colors.color }}>
+              {m.live_status || m.type.replace("driver_", "").replace("_", " ")}
+            </div>
+            {m.antar_nearby !== undefined && <p className="text-[0.6rem] font-medium text-neutral-600">Antar dekat: <b>{m.antar_nearby}</b></p>}
+            {m.ngetem_nearby !== undefined && <p className="text-[0.6rem] font-medium text-neutral-600">Ngetem dekat: <b>{m.ngetem_nearby}</b></p>}
+          </div>
+          <a
+            href={`https://www.google.com/maps/dir/?api=1&destination=${m.lat},${m.lng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-1.5 w-full py-2 bg-neutral-900 text-white rounded-xl text-[0.65rem] font-black active:scale-95 transition-all shadow-sm"
+          >
+            Navigasi Gmaps
+          </a>
+        </div>
+      </Popup>
+    </Marker>
+  );
+});
 
 function RecenterAutomatically({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
@@ -45,13 +118,11 @@ function MyLocationButton({ lat, lng }: { lat: number | null; lng: number | null
 }
 
 export default function RadarMap({ latitude, longitude, markers = [], hotspots = [], isAdmin = false }: RadarMapProps) {
-  const { t } = useLanguage();
   const [mounted, setMounted] = useState(false);
   const [zoom, setZoom] = useState(16);
 
   function ZoomTracker() {
     useMapEvents({
-      zoom: (e) => setZoom(e.target.getZoom()),
       zoomend: (e) => setZoom(e.target.getZoom()),
     });
     return null;
@@ -63,28 +134,11 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
 
   if (!mounted) return <div className="h-full w-full bg-[#f0f0f0] rounded-[2.5rem]"></div>;
 
-  const defaultCenter: [number, number] = [-7.7680, 110.3950];
-  const center: [number, number] = latitude && longitude ? [latitude, longitude] : defaultCenter;
-
-  const getMarkerColor = (type: RadarMarker["type"]) => {
-    switch (type) {
-      case "driver_ngetem": return { color: "#4F46E5", fill: "#4F46E5" }; // Indigo 600
-      case "driver_antar": return { color: "#EC4899", fill: "#EC4899" };  // Pink 500
-      case "merchant_sangatsibuk": return { color: "#991B1B", fill: "#991B1B" }; 
-      case "merchant_ramai": return { color: "#EF4444", fill: "#EF4444" }; 
-      case "merchant_mulaipanas": return { color: "#F97316", fill: "#F97316" }; 
-      case "merchant_bergerak": return { color: "#3B82F6", fill: "#3B82F6" };  
-      case "merchant_sepi": return { color: "#9CA3AF", fill: "#9CA3AF" };  
-      case "merchant_tutup": return { color: "#1F2937", fill: "#111827" }; // Dark grey/black for closed
-      case "seller": return { color: "#F59E0B", fill: "#F59E0B" };          // Amber for sellers/SPX
-      case "spot": return { color: "#8B5CF6", fill: "#8B5CF6" };          
-      default: return { color: "#000", fill: "#000" };
-    }
-  };
+  const center: [number, number] = latitude && longitude ? [latitude, longitude] : [-7.7680, 110.3950];
 
   const selfIcon = L.divIcon({
     className: "self-marker",
-    html: `<div style="width: 14px; height: 14px; background: #000; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.3);"></div>`,
+    html: `<div style="width: 14px; height: 14px; background: #2d5af1; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.3);"></div>`,
     iconSize: [14, 14],
     iconAnchor: [7, 7]
   });
@@ -99,141 +153,44 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
         style={{ height: "100%", width: "100%", zIndex: 0 }}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           maxZoom={19}
         />
 
         <ZoomTracker />
 
-        {/* Render Hotspot Zones behind markers */}
         {hotspots.map((h) => {
           let color = "#6B7280"; 
           if (h.label === "PELUANG EMAS") color = "#2563EB"; 
           else if (h.label === "BAGUS SEKARANG") color = "#1D4ED8"; 
           else if (h.label === "KOMPETITIF") color = "#F97316"; 
-          else if (h.label === "HINDARI SEMENTARA") color = "#9CA3AF"; 
           else if (h.label === "JEBAKAN KERUMUNAN") color = "#EF4444";
 
           return (
             <Circle
               key={`hs-${h.id}`}
               center={[h.lat, h.lng]}
-              radius={800} // 800 meters
-              pathOptions={{
-                color: color,
-                fillColor: color,
-                fillOpacity: 0.15,
-                weight: 1
-              }}
+              radius={800}
+              pathOptions={{ color, fillColor: color, fillOpacity: 0.1, weight: 1 }}
             />
           );
         })}
         
-        {markers.map((m) => {
-          const colors = getMarkerColor(m.type);
-          
-            // Pin size by priority (px)
-            const getPinSize = (type: string) => {
-              switch(type) {
-                case "merchant_sangatsibuk": return 15;
-                case "merchant_ramai": return 13;
-                case "merchant_mulaipanas": return 11;
-                case "merchant_bergerak": return 9;
-                case "merchant_sepi": return 7;
-                case "driver_ngetem": return 13;
-                case "driver_antar": return 10;
-                case "spot": return 10;
-                default: return 10;
-              }
-            };
-            const size = getPinSize(m.type);
-            const showLabel = !m.type.startsWith("driver_") && zoom >= 15;
-
-            const pinIcon = L.divIcon({
-            className: "bg-transparent",
-            html: `<div style="display: flex; align-items: center; gap: 4px; transform: translate(-${size/2}px, -${size/2}px); cursor: pointer;">
-                    <div style="width: ${size}px; height: ${size}px; background-color: ${colors.fill}; border: 2.5px solid rgba(255,255,255,0.95); border-radius: 50%; box-shadow: 0 1px 5px rgba(0,0,0,0.4), 0 0 0 1px ${colors.fill}; flex-shrink:0;"></div>
-                    ${showLabel ? `<span style="font-size: 9px; font-weight: 900; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; text-shadow: 0 0 4px #fff, 0 0 4px #fff, 0 0 4px #fff;">${m.label.length > 16 ? m.label.slice(0, 15) + '\u2026' : m.label}</span>` : ''}
-                  </div>`,
-            iconSize: [0, 0],
-            iconAnchor: [0, 0],
-            popupAnchor: [0, -10]
-          });
-          
-          return (
-            <Marker
-              key={m.id}
-              position={[m.lat, m.lng]}
-              icon={pinIcon}
-            >
-              <Popup className="radar-popup">
-                <div className="min-w-[150px] p-1">
-                  <p className="text-[0.95rem] font-black text-neutral-900 leading-tight mb-1.5">
-                    {m.type.startsWith("driver_") 
-                      ? (isAdmin ? `${m.label} (#${m.driver_id || m.id.slice(0, 6)})` : `Driver #${m.id.slice(0, 6)}`)
-                      : m.label}
-                  </p>
-                  
-                  {m.type.startsWith("merchant_") ? (
-                    <div className="flex flex-col gap-0.5 mb-2">
-                      <div className="px-1.5 py-0.5 rounded-md text-[0.55rem] font-black uppercase tracking-wider text-white w-fit mb-0.5" style={{ backgroundColor: colors.color }}>
-                        {m.live_status || "Merchant"}
-                      </div>
-                      <p className="text-[0.6rem] font-medium text-neutral-600">Antar dekat: <b>{m.antar_nearby || 0}</b></p>
-                      <p className="text-[0.6rem] font-medium text-neutral-600">Ngetem dekat: <b>{m.ngetem_nearby || 0}</b></p>
-                      <p className="text-[0.6rem] font-medium text-neutral-600">Promo: <b>{m.promo_active ? "Ya" : "Tidak"}</b></p>
-                    </div>
-                  ) : m.type === "spot" ? (
-                    <div className="flex flex-col gap-0.5 mb-2">
-                      <div className="px-1.5 py-0.5 rounded-md text-[0.55rem] font-black uppercase tracking-wider text-white w-fit mb-0.5" style={{ backgroundColor: colors.color }}>
-                        SPOT MANGKAL
-                      </div>
-                      {m.quality && <p className="text-[0.6rem] font-medium text-neutral-600">Kualitas: <b>{m.quality}</b></p>}
-                      {m.best_hours && <p className="text-[0.6rem] font-medium text-neutral-600">Jam Terbaik: <b>{m.best_hours}</b></p>}
-                      {m.notes && <p className="text-[0.6rem] font-medium text-neutral-600 italic line-clamp-2">"{m.notes}"</p>}
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <div className="px-1.5 py-0.5 rounded-md text-[0.55rem] font-black uppercase tracking-wider text-white" style={{ backgroundColor: colors.color }}>
-                        {m.type.replace("driver_", "").replace("_", " ")}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {!(m.type.startsWith("driver_") && !isAdmin) && (
-                    <div className="flex flex-col gap-1 mt-1">
-                      <a
-                        href={`https://www.google.com/maps/dir/?api=1&destination=${m.lat},${m.lng}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-1.5 w-full py-1.5 bg-neutral-900 text-white rounded-lg text-[0.65rem] font-bold active:scale-95 transition-all shadow-sm"
-                      >
-                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                        Google Maps
-                      </a>
-                      <a
-                        href={`https://waze.com/ul?ll=${m.lat},${m.lng}&navigate=yes`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-1.5 w-full py-1.5 bg-[#05C8F7] text-white rounded-lg text-[0.65rem] font-bold active:scale-95 transition-all shadow-sm"
-                      >
-                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm1 14.93V15a1 1 0 00-2 0v1.93A8.001 8.001 0 014.07 9H6a1 1 0 000-2H4.07A8.001 8.001 0 0111 3.07V5a1 1 0 002 0V3.07A8.001 8.001 0 0119.93 9H18a1 1 0 000 2h1.93A8.001 8.001 0 0113 16.93z"/></svg>
-                        Waze
-                      </a>
-                    </div>
-                  )}
-                </div>
-              </Popup>
-            </Marker>
-          );
-        })}
+        <MarkerClusterGroup
+          chunkedLoading
+          maxClusterRadius={40}
+          disableClusteringAtZoom={16}
+          showCoverageOnHover={false}
+        >
+          {markers.map((m) => (
+            <MemoizedMarker key={m.id} m={m} zoom={zoom} isAdmin={isAdmin} />
+          ))}
+        </MarkerClusterGroup>
 
         {latitude && longitude && (
           <>
-            <Marker position={[latitude, longitude]} icon={selfIcon}>
-              <Popup>Lokasi Anda</Popup>
-            </Marker>
+            <Marker position={[latitude, longitude]} icon={selfIcon} />
             <RecenterAutomatically lat={latitude} lng={longitude} />
           </>
         )}
@@ -241,14 +198,17 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
       </MapContainer>
 
       <style jsx global>{`
-        .radar-popup .leaflet-popup-content-wrapper {
-          border-radius: 1.25rem;
-          padding: 4px;
-          box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
-        }
-        .radar-popup .leaflet-popup-tip-container {
-          display: none;
-        }
+        .radar-popup .leaflet-popup-content-wrapper { border-radius: 1.25rem; padding: 4px; }
+        .radar-popup .leaflet-popup-tip-container { display: none; }
+        .marker-cluster-small { background-color: rgba(181, 226, 140, 0.6); }
+        .marker-cluster-small div { background-color: rgba(110, 204, 57, 0.6); }
+        .marker-cluster-medium { background-color: rgba(241, 211, 87, 0.6); }
+        .marker-cluster-medium div { background-color: rgba(240, 194, 12, 0.6); }
+        .marker-cluster-large { background-color: rgba(253, 156, 115, 0.6); }
+        .marker-cluster-large div { background-color: rgba(241, 128, 23, 0.6); }
+        .marker-cluster { background-clip: padding-box; border-radius: 20px; }
+        .marker-cluster div { width: 30px; height: 30px; margin-left: 5px; margin-top: 5px; text-align: center; border-radius: 15px; font: 12px "Helvetica Neue", Arial, Helvetica, sans-serif; }
+        .marker-cluster span { line-height: 30px; }
       `}</style>
     </div>
   );

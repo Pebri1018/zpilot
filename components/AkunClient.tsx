@@ -260,6 +260,22 @@ export function AkunClient({ email, nama, kota, platform, driverId, zpilotId, ro
                         <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></div>
                         <span className="text-[0.95rem] font-semibold dark:text-white">Tips Gacor</span><svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                       </button>
+                      <button 
+                        onClick={async () => {
+                          localStorage.clear();
+                          sessionStorage.clear();
+                          if ('caches' in window) {
+                            const keys = await caches.keys();
+                            await Promise.all(keys.map(key => caches.delete(key)));
+                          }
+                          setMsg({ type: "success", text: "Cache dibersihkan" });
+                          setTimeout(() => window.location.reload(), 1000);
+                        }} 
+                        className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 dark:hover:bg-neutral-700 active:bg-neutral-100 dark:active:bg-neutral-600 transition"
+                      >
+                        <div className="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></div>
+                        <span className="text-[0.95rem] font-semibold dark:text-white">Hapus Cache</span>
+                      </button>
                     </div>
                   </div>
 

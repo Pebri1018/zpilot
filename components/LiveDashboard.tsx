@@ -79,13 +79,48 @@ export function LiveDashboard({ isDemo = false }: { isDemo?: boolean }) {
     if (cached.length > 0) setMerchants(cached);
   }, []);
 
+  const [lastResetPos, setLastResetPos] = useState<{lat: number, lng: number} | null>(null);
+
   useEffect(() => {
     if (status === "Ngetem") {
-      if (!ngetemStartTime) setNgetemStartTime(Date.now());
+      if (!ngetemStartTime) {
+        const saved = localStorage.getItem("ztips_ngetem_start");
+        if (saved) {
+          setNgetemStartTime(parseInt(saved));
+        } else {
+          const now = Date.now();
+          setNgetemStartTime(now);
+          localStorage.setItem("ztips_ngetem_start", now.toString());
+        }
+      }
+      
+      // Auto reset if moved > 100m
+      if (latitude && longitude) {
+        if (!lastResetPos) {
+          setLastResetPos({ lat: latitude, lng: longitude });
+        } else {
+          const getDist = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2)**2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2)**2;
+            return R * 1000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); // meters
+          };
+          const dist = getDist(latitude, longitude, lastResetPos.lat, lastResetPos.lng);
+          if (dist > 100) {
+            const now = Date.now();
+            setNgetemStartTime(now);
+            localStorage.setItem("ztips_ngetem_start", now.toString());
+            setLastResetPos({ lat: latitude, lng: longitude });
+          }
+        }
+      }
     } else {
       setNgetemStartTime(null);
+      setLastResetPos(null);
+      localStorage.removeItem("ztips_ngetem_start");
     }
-  }, [status]);
+  }, [status, latitude, longitude]);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -113,7 +148,8 @@ export function LiveDashboard({ isDemo = false }: { isDemo?: boolean }) {
       const recResult = await getRecommendationV2(
         areaName, status, idleMinutes,
         statsResult.driverCount, merchantsResult.length,
-        lang, hotspotResult
+        lang, hotspotResult,
+        latitude, longitude
       );
 
       const getDist = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -225,14 +261,31 @@ export function LiveDashboard({ isDemo = false }: { isDemo?: boolean }) {
 
       {/* IDLE ALERT */}
       {isIdle && (
-        <div className="bg-red-600 rounded-2xl px-4 py-3 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
-          <div>
-            <p className="text-[0.7rem] font-black text-red-200 uppercase tracking-widest">⏱ IDLE {idleMinutes} MENIT</p>
-            <p className="text-[1rem] font-black text-white">Pindah Spot Sekarang!</p>
+        <div className="bg-red-600 rounded-[2rem] px-5 py-4 flex flex-col gap-3 animate-in fade-in slide-in-from-top-4 duration-500 shadow-xl shadow-red-500/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-white rounded-full animate-ping" />
+              <p className="text-[0.7rem] font-black text-red-100 uppercase tracking-[0.2em]">Sinyal Idle {idleMinutes}m</p>
+            </div>
+            <button onClick={() => setNgetemStartTime(Date.now())} className="text-[0.65rem] font-black text-red-200 hover:text-white transition-colors">TUTUP</button>
           </div>
-          <Link href="/radar" className="bg-white text-red-600 text-[0.75rem] font-black px-3 py-2 rounded-xl active:scale-95 transition-all shrink-0">
-            Buka Radar
-          </Link>
+          <div>
+            <p className="text-[1.1rem] font-black text-white leading-tight">Sudah 15 menit tanpa pergerakan.</p>
+            <p className="text-[0.85rem] font-medium text-red-100 mt-1">Coba pindah ke: <span className="font-black text-white">{recommendation.targetZone || "area terdekat"}</span></p>
+          </div>
+          <div className="flex gap-2 pt-1">
+            <a 
+              href={`https://www.google.com/maps/dir/?api=1&destination=${recommendation.targetZone || nearestHotspot?.name || "Yogyakarta"}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 bg-white text-red-600 text-[0.8rem] font-black py-3 rounded-2xl text-center active:scale-95 transition-all shadow-sm"
+            >
+              Navigasi Sekarang
+            </a>
+            <Link href="/radar" className="bg-red-700/50 text-white text-[0.8rem] font-black py-3 px-6 rounded-2xl active:scale-95 transition-all">
+              Radar
+            </Link>
+          </div>
         </div>
       )}
 
