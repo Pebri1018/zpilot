@@ -75,11 +75,19 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
   const merchantFormRef = useRef<HTMLFormElement>(null);
 
   const getCompleteness = (m: MerchantSignal) => {
+    const isSeller = ["Paket", "Toko/Seller", "Seller SPX"].includes(m.category);
     const hasLocation = !!m.lat && !!m.lng;
     const hasCategory = !!m.category && m.category !== "";
     const hasPromo = m.promo_active === true || ((m.promo_percent ?? 0) > 0);
     const hasHours = m.is_open_24h || (!!m.open_time && !!m.close_time);
 
+    if (isSeller) {
+      // Sellers: Cukup Lokasi + Kategori saja sudah dianggap Complete
+      if (hasLocation && hasCategory) return "Complete";
+      return "Basic";
+    }
+
+    // Restos: Tetap butuh Promo & Jam Buka agar Complete
     if (hasLocation && hasCategory && hasPromo && hasHours) return "Complete";
     if (hasLocation && hasCategory) return "Partial";
     return "Basic";
