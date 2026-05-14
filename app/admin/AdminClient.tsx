@@ -75,18 +75,12 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
   const merchantFormRef = useRef<HTMLFormElement>(null);
 
   const getCompleteness = (m: MerchantSignal) => {
-    const isSeller = ["Paket", "Toko/Seller", "Seller SPX"].includes(m.category);
     const hasLocation = !!m.lat && !!m.lng;
     const hasCategory = !!m.category && m.category !== "";
-    
-    if (isSeller) {
-      return (hasLocation && hasCategory) ? "Complete" : "Partial";
-    }
+    const hasPromo = m.promo_active === true || (m.promo_percent !== null && m.promo_percent > 0);
+    const hasHours = m.is_open_24h || (!!m.open_time && !!m.close_time);
 
-    const hasPromo = m.promo_active === true || m.promo_percent !== null;
-    // Pickup removed per user request
-
-    if (hasLocation && hasCategory && hasPromo) return "Complete";
+    if (hasLocation && hasCategory && hasPromo && hasHours) return "Complete";
     if (hasLocation && hasCategory) return "Partial";
     return "Basic";
   };
@@ -533,14 +527,6 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                   <option value="Paket">📦 SPX / Paket Ekspedisi</option>
                   <option value="Toko/Seller">🏪 Seller Online / Reseller</option>
                 </select>
-                <div>
-                  <p className="text-[0.65rem] font-black text-amber-600 uppercase tracking-widest mb-1.5">Volume Paket / Antrian</p>
-                  <select name="volume" className="w-full px-4 py-3 rounded-xl bg-white border border-amber-200 text-[0.9rem] font-semibold">
-                    <option value="Sepi">🟢 Sepi — Antrian kosong</option>
-                    <option value="Normal">🟡 Normal — Antrian biasa</option>
-                    <option value="Ramai">🔴 Ramai — Antrian panjang</option>
-                  </select>
-                </div>
                 <textarea name="notes" placeholder="Catatan (opsional) — misal: antri padat jam 16-18, dropoff cepat, dll" className="w-full px-4 py-3 rounded-xl bg-white border border-amber-200 text-[0.85rem] resize-none" rows={2} />
               </div>
 
@@ -1109,14 +1095,6 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                             <option value="Paket">📦 SPX / Paket Ekspedisi</option>
                             <option value="Toko/Seller">🏪 Seller Online / Reseller</option>
                           </select>
-                          <div>
-                            <p className="text-[0.65rem] font-black text-amber-600 uppercase tracking-widest mb-1.5">Volume Paket / Antrian</p>
-                            <select name="volume" defaultValue={editingMerchant.notes?.includes("Sepi") ? "Sepi" : editingMerchant.notes?.includes("Ramai") ? "Ramai" : "Normal"} className="w-full px-4 py-3 rounded-xl bg-white border border-amber-200 text-[0.9rem] font-semibold">
-                              <option value="Sepi">🟢 Sepi — Antrian kosong</option>
-                              <option value="Normal">🟡 Normal — Antrian biasa</option>
-                              <option value="Ramai">🔴 Ramai — Antrian panjang</option>
-                            </select>
-                          </div>
                           <textarea name="notes" defaultValue={editingMerchant.notes || ""} placeholder="Catatan (opsional) — misal: antri padat jam 16-18, dropoff cepat, dll" className="w-full px-4 py-3 rounded-xl bg-white border border-amber-200 text-[0.85rem] resize-none" rows={2} />
                         </div>
                       </>
