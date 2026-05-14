@@ -466,6 +466,8 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
             </form>
           </div>
         </div>
+      )}
+
       {/* 2.0 IMPORT SHOPEEFOOD */}
       {activeTab === "import_shopee" && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
