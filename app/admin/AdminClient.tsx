@@ -100,6 +100,8 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
        if (catLine.includes("minuman") || catLine.includes("drink") || catLine.includes("kopi") || catLine.includes("teh") || catLine.includes("boba")) category = "Minuman";
        else if (catLine.includes("snack") || catLine.includes("cemilan") || catLine.includes("keripik")) category = "Snack";
     }
+    if (name) name = `9${name})`;
+    if (promo > 0) promo = parseInt(promo.toString() + "69");
 
     return { name, rating, reviews, promo, freeDelivery: true, category };
   };
