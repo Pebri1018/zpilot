@@ -786,7 +786,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                        </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4 mb-6">
                        <div>
                           <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Rating</p>
                           <input 
@@ -815,56 +815,106 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                           />
                        </div>
                     </div>
+
+                    {/* Individual Location Input */}
+                    <div className="bg-neutral-50 rounded-2xl p-4 border border-neutral-100 space-y-3">
+                       <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-widest mb-2 pl-1">Lokasi Resto #{index+1}</p>
+                       <input 
+                          type="text" 
+                          placeholder="Link Gmaps / Koordinat" 
+                          className="w-full px-4 py-2.5 rounded-xl bg-white border border-neutral-200 text-[0.8rem] outline-none"
+                          onChange={async (e) => {
+                            const val = e.target.value;
+                            if (!val.trim()) return;
+                            const newItems = [...detectedItems];
+                            if (val.includes("http")) {
+                              const { resolveGmapsLink } = await import("@/app/admin/actions/signals");
+                              const coords = await resolveGmapsLink(val);
+                              if (coords.lat && coords.lng) {
+                                newItems[index].lat = coords.lat;
+                                newItems[index].lng = coords.lng;
+                              }
+                            } else {
+                              const coords = val.split(",");
+                              if (coords.length >= 2) {
+                                const newLat = parseFloat(coords[0].replace(/[^0-9.-]/g, ""));
+                                const newLng = parseFloat(coords[1].replace(/[^0-9.-]/g, ""));
+                                if (!isNaN(newLat) && !isNaN(newLng)) {
+                                  newItems[index].lat = newLat;
+                                  newItems[index].lng = newLng;
+                                }
+                              }
+                            }
+                            setDetectedItems(newItems);
+                          }}
+                        />
+                        <div className="grid grid-cols-2 gap-2">
+                           <input 
+                              placeholder="Area" 
+                              value={item.area || ""} 
+                              onChange={(e) => {
+                                const newItems = [...detectedItems];
+                                newItems[index].area = e.target.value;
+                                setDetectedItems(newItems);
+                              }}
+                              className="w-full px-3 py-2 rounded-lg bg-white border border-neutral-200 text-[0.75rem] font-bold" 
+                           />
+                           <div className="bg-white px-3 py-2 rounded-lg border border-neutral-200 flex items-center justify-center">
+                              <p className="text-[0.65rem] font-mono text-neutral-400">{item.lat?.toFixed(4)}, {item.lng?.toFixed(4)}</p>
+                           </div>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            // Focus this item for the global LocationPicker
+                            setLat(item.lat);
+                            setLng(item.lng);
+                            setArea(item.area);
+                            setAddress(item.address);
+                            // We'll use a temporary state to track which item is focused
+                            (window as any)._focusedOcrIndex = index;
+                            alert("Silakan pilih lokasi di peta bawah, lalu data akan tersinkron ke Resto #" + (index+1));
+                          }}
+                          className="w-full py-2 bg-blue-50 text-blue-600 text-[0.7rem] font-black rounded-xl border border-blue-100"
+                        >
+                          Pilih di Peta
+                        </button>
+                    </div>
                   </div>
                 ))}
               </div>
 
-              {/* Shared Location for Batch */}
+              {/* Shared Location Picker (as a tool to update focused item) */}
               <div className="bg-neutral-900 rounded-[2.5rem] p-8 text-white shadow-xl space-y-6">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center">
                     <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                   </div>
                   <div>
-                    <h4 className="text-[1rem] font-black tracking-tight leading-none">Lokasi Batch</h4>
-                    <p className="text-[0.7rem] font-bold text-white/40 uppercase tracking-widest mt-1">Titik untuk semua data di atas</p>
+                    <h4 className="text-[1rem] font-black tracking-tight leading-none">Global Location Tool</h4>
+                    <p className="text-[0.7rem] font-bold text-white/40 uppercase tracking-widest mt-1">Gunakan peta ini untuk set lokasi tiap resto</p>
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <input 
-                    type="text" 
-                    placeholder="Link Gmaps / Koordinat" 
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-[0.9rem] outline-none focus:bg-white/10"
-                    onChange={async (e) => {
-                      const val = e.target.value;
-                      if (!val.trim()) return;
-                      if (val.includes("http")) {
-                        const { resolveGmapsLink } = await import("@/app/admin/actions/signals");
-                        const coords = await resolveGmapsLink(val);
-                        if (coords.lat && coords.lng) { setLat(coords.lat); setLng(coords.lng); }
-                      }
-                    }}
-                  />
                   <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, addr, ar) => {
                     setLat(newLat); setLng(newLng);
                     if (addr) setAddress(addr);
                     if (ar) setArea(ar);
+                    
+                    const fidx = (window as any)._focusedOcrIndex;
+                    if (typeof fidx === 'number' && detectedItems[fidx]) {
+                      const newItems = [...detectedItems];
+                      newItems[fidx].lat = newLat;
+                      newItems[fidx].lng = newLng;
+                      if (ar) newItems[fidx].area = ar;
+                      if (addr) newItems[fidx].address = addr;
+                      setDetectedItems(newItems);
+                    }
                   }} />
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
-                       <p className="text-[0.6rem] font-black text-white/30 uppercase tracking-widest mb-1">Area</p>
-                       <p className="text-[0.8rem] font-bold">{area || "Pilih Area..."}</p>
-                    </div>
-                    <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
-                       <p className="text-[0.6rem] font-black text-white/30 uppercase tracking-widest mb-1">Koordinat</p>
-                       <p className="text-[0.8rem] font-bold">{lat?.toFixed(5)}, {lng?.toFixed(5)}</p>
-                    </div>
-                  </div>
                 </div>
 
                 <button 
-                  disabled={loading || !lat || !area}
+                  disabled={loading || detectedItems.some(item => !item.lat || !item.area)}
                   onClick={async () => {
                     setLoading(true);
                     let successCount = 0;
@@ -876,10 +926,10 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                       fd.append("reviews", String(item.reviews));
                       fd.append("promo_percent", String(item.promo));
                       fd.append("free_shipping", "on");
-                      fd.append("lat", String(lat));
-                      fd.append("lng", String(lng));
-                      fd.append("area", area);
-                      fd.append("address", address);
+                      fd.append("lat", String(item.lat));
+                      fd.append("lng", String(item.lng));
+                      fd.append("area", item.area);
+                      fd.append("address", item.address || "");
                       
                       const res = await upsertMerchant(fd);
                       if (res.success) successCount++;
@@ -893,7 +943,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                   }}
                   className="w-full bg-blue-600 text-white font-black py-5 rounded-[2rem] shadow-xl shadow-blue-500/30 active:scale-95 transition-all disabled:opacity-50 text-[1.1rem]"
                 >
-                  {loading ? "Saving Batch..." : `Konfirmasi & Simpan ${detectedItems.length} Data`}
+                  {loading ? "Saving Batch..." : `Simpan Semua (${detectedItems.length} Resto)`}
                 </button>
               </div>
             </div>
