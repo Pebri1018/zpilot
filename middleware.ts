@@ -58,21 +58,24 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  let needsOnboarding = false;
-  let userRole = "user";
-  if (user) {
+  let needsOnboarding = request.cookies.get("zpilot_onboarding")?.value === "true";
+  let userRole = request.cookies.get("zpilot_role")?.value || "user";
+  const hasCachedData = request.cookies.has("zpilot_role");
+
+  if (user && !hasCachedData) {
     const { data, error } = await supabase
       .from("users")
       .select("onboarding_completed, role")
       .eq("id", user.id)
       .maybeSingle();
 
-    if (error) {
-      console.error("middleware users lookup:", error.message);
-      needsOnboarding = true;
-    } else {
-      needsOnboarding = !data?.onboarding_completed;
-      userRole = data?.role || "user";
+    if (!error && data) {
+      needsOnboarding = !data.onboarding_completed;
+      userRole = data.role || "user";
+      
+      // Update cookies for next time
+      supabaseResponse.cookies.set("zpilot_role", userRole, { maxAge: 60 * 60 * 24 });
+      supabaseResponse.cookies.set("zpilot_onboarding", String(needsOnboarding), { maxAge: 60 * 60 * 24 });
     }
   }
 

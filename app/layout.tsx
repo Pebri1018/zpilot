@@ -60,17 +60,6 @@ export default function RootLayout({
                   }
                 } catch (e) {}
               })();
-              
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                    for(let registration of registrations) {
-                      registration.unregister();
-                      console.log('ServiceWorker unregistered successfully');
-                    }
-                  });
-                });
-              }
             `,
           }}
         />
