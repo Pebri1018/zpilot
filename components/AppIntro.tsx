@@ -31,9 +31,12 @@ export function AppIntro({ children, authenticated }: { children: React.ReactNod
 
   if (step === "splash1") {
     return (
-      <div className="fixed inset-0 z-[9999] bg-[#2d5af1] flex flex-col items-center justify-center p-6 text-white animate-in fade-in duration-500">
-        <div className="w-24 h-24 rounded-[2.5rem] bg-white shadow-2xl flex items-center justify-center mb-6 overflow-hidden">
-          <img src="/logo.png" alt="ZPILOT" className="w-full h-full object-cover" />
+      <div 
+        onClick={() => setStep("splash2")}
+        className="fixed inset-0 z-[9999] bg-[#2d5af1] flex flex-col items-center justify-center p-6 text-white animate-in fade-in duration-500 cursor-pointer"
+      >
+        <div className="w-24 h-24 rounded-[2.5rem] border-2 border-white/50 flex items-center justify-center mb-6 overflow-hidden bg-white/10 backdrop-blur-sm">
+          <img src="/logo.png" alt="ZPILOT" className="w-full h-full object-cover scale-110" />
         </div>
         <h1 className="text-[2.5rem] font-black tracking-tight leading-none">ZPILOT</h1>
         <p className="absolute bottom-12 text-[0.7rem] font-bold tracking-[0.2em] opacity-60 uppercase">Smart Navigation for Drivers</p>
@@ -45,18 +48,18 @@ export function AppIntro({ children, authenticated }: { children: React.ReactNod
     return (
       <div className="fixed inset-0 z-[9999] bg-[#f0f7ff] flex flex-col items-center justify-between p-8 text-neutral-900 animate-in slide-in-from-right duration-700">
         <div className="flex items-center gap-2 pt-12">
-          <div className="w-8 h-8 rounded-xl bg-[#2d5af1] flex items-center justify-center shadow-lg">
-            <img src="/logo.png" alt="ZPILOT" className="w-5 h-5 invert grayscale brightness-200" />
+          <div className="w-8 h-8 rounded-xl bg-[#2d5af1] flex items-center justify-center shadow-lg overflow-hidden">
+            <img src="/logo.png" alt="ZPILOT" className="w-full h-full object-cover" />
           </div>
           <span className="text-[1.5rem] font-black tracking-tight text-[#2d5af1]">ZPILOT</span>
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center w-full max-w-sm">
-          <div className="w-full aspect-square relative mb-12">
+          <div className="w-full aspect-square relative mb-12 flex items-center justify-center">
             <img 
-              src="/driver_illustration_1778816948614.png" 
+              src="/driver_illustration.png" 
               alt="Illustration" 
-              className="w-full h-full object-contain drop-shadow-2xl animate-in zoom-in-95 duration-1000 delay-300"
+              className="w-full h-full object-contain drop-shadow-[0_20px_50px_rgba(45,90,241,0.2)] animate-in zoom-in-95 duration-1000 delay-300"
             />
           </div>
           <h2 className="text-[1.8rem] font-black text-center leading-tight tracking-tight text-neutral-800">
