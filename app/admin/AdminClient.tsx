@@ -84,8 +84,25 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
         reviews = Math.round(val);
       }
 
-      if (ratingLineIdx >= 2) name = lines[ratingLineIdx - 2];
-      else if (ratingLineIdx >= 1) name = lines[ratingLineIdx - 1];
+      // Improved Name Detection (Combine multi-line names)
+      // Usually: Name Part 1, Name Part 2, Category/City, Rating
+      const nameCandidates = [];
+      for (let i = 2; i <= 4; i++) {
+        const idx = ratingLineIdx - i;
+        if (idx >= 0) {
+          const l = lines[idx];
+          if (l.length > 3 && !l.includes("Penilaian") && !l.includes("Tiba dalam")) {
+            nameCandidates.unshift(l);
+          }
+        }
+      }
+      
+      // If we have candidates, use them. Otherwise fallback to ratingLineIdx - 1
+      if (nameCandidates.length > 0) {
+        name = nameCandidates.join(" ");
+      } else if (ratingLineIdx >= 1) {
+        name = lines[ratingLineIdx - 1];
+      }
     }
 
     // More aggressive promo detection for ShopeeFood
@@ -117,15 +134,40 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
     setOcrLoading(true);
     setPreviewImage(URL.createObjectURL(file));
     try {
+      // 1. Pre-process image (Resize for Mobile Stability)
+      const bitmap = await createImageBitmap(file);
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      
+      // Scale down if too large (max 1200px height)
+      let width = bitmap.width;
+      let height = bitmap.height;
+      if (height > 1200) {
+        width = (width / height) * 1200;
+        height = 1200;
+      }
+      canvas.width = width;
+      canvas.height = height;
+      
+      if (ctx) {
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(bitmap, 0, 0, width, height);
+      }
+      
+      const resizedBlob = await new Promise<Blob>((resolve) => canvas.toBlob((b) => resolve(b!), "image/jpeg", 0.9));
+
+      // 2. OCR with Tesseract
       const { createWorker } = await import("tesseract.js");
       const worker = await createWorker('ind');
-      const { data: { text } } = await worker.recognize(file);
+      const { data: { text } } = await worker.recognize(resizedBlob as any);
       await worker.terminate();
+      
       const parsed = parseShopeeScreenshotText(text);
       setDetectedData(parsed);
     } catch (e) {
       console.error("OCR Error", e);
-      alert("Gagal membaca gambar.");
+      alert("Gagal membaca gambar. Pastikan gambar jelas dan coba lagi.");
     } finally {
       setOcrLoading(false);
     }
