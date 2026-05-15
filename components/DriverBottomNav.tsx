@@ -51,39 +51,40 @@ export function DriverBottomNav({ isDemo = false }: { isDemo?: boolean }) {
     },
   ];
 
-  return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-neutral-200/90 dark:border-white/10 bg-white/95 dark:bg-neutral-950/95 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md"
-      aria-label="Menu utama"
-    >
-      <div className="mx-auto grid max-w-md grid-cols-4 px-1">
-        {items.map(({ href, label, icon }) => {
-          const active = pathname === href || (href !== "/" && pathname.startsWith(href));
-          return (
-            <Link
-              key={href}
-              href={isDemo && href !== "/demo" ? "#" : href}
-              onClick={isDemo && href !== "/demo" ? (e) => { e.preventDefault(); setShowPremiumModal(true); } : undefined}
-              className={`py-2 flex flex-col items-center justify-center transition-colors ${
-                active ? "text-neutral-900 dark:text-white" : "text-neutral-400 dark:text-neutral-500 active:text-neutral-600 dark:active:text-neutral-400"
-              }`}
-            >
-              {icon}
-              <span className="text-[0.65rem] font-medium leading-tight sm:text-[0.7rem]">{label}</span>
-              <span
-                className={`mx-auto mt-1 block h-0.5 w-4 rounded-full transition-colors ${
-                  active ? "bg-neutral-900 dark:bg-white" : "bg-transparent"
+    <>
+      <nav
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-neutral-200/90 dark:border-white/10 bg-white/95 dark:bg-neutral-950/95 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md"
+        aria-label="Menu utama"
+      >
+        <div className="mx-auto grid max-w-md grid-cols-4 px-1">
+          {items.map(({ href, label, icon }) => {
+            const active = pathname === href || (href !== "/" && pathname.startsWith(href));
+            return (
+              <Link
+                key={href}
+                href={isDemo && href !== "/demo" ? "#" : href}
+                onClick={isDemo && href !== "/demo" ? (e) => { e.preventDefault(); setShowPremiumModal(true); } : undefined}
+                className={`py-2 flex flex-col items-center justify-center transition-colors ${
+                  active ? "text-neutral-900 dark:text-white" : "text-neutral-400 dark:text-neutral-500 active:text-neutral-600 dark:active:text-neutral-400"
                 }`}
-                aria-hidden
-              />
-            </Link>
-          );
-        })}
-      </div>
+              >
+                {icon}
+                <span className="text-[0.65rem] font-medium leading-tight sm:text-[0.7rem]">{label}</span>
+                <span
+                  className={`mx-auto mt-1 block h-0.5 w-4 rounded-full transition-colors ${
+                    active ? "bg-neutral-900 dark:bg-white" : "bg-transparent"
+                  }`}
+                  aria-hidden
+                />
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
 
-      {/* PREMIUM MODAL */}
+      {/* PREMIUM MODAL (Outside nav to fix backdrop-blur clipping) */}
       {showPremiumModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-300">
             <div className="w-16 h-16 rounded-3xl bg-blue-50 flex items-center justify-center mb-6">
               <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
@@ -103,6 +104,6 @@ export function DriverBottomNav({ isDemo = false }: { isDemo?: boolean }) {
           </div>
         </div>
       )}
-    </nav>
+    </>
   );
 }
