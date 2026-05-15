@@ -11,6 +11,9 @@ export default function ConsistencyPage() {
   const [day, setDay] = useState(3); // Mocking day 3 for now
   const supabase = createClient();
 
+  const [isJoined, setIsJoined] = useState<boolean | null>(null);
+  const [introStep, setIntroStep] = useState(0);
+
   const [showLogModal, setShowLogModal] = useState(false);
   const [logForm, setLogForm] = useState({
     startTime: "",
@@ -20,6 +23,9 @@ export default function ConsistencyPage() {
   const [logs, setLogs] = useState<any[]>([]);
 
   useEffect(() => {
+    const joined = localStorage.getItem("zpilot_consistency_joined") === "true";
+    setIsJoined(joined);
+
     async function fetchData() {
       // Simulate fetching
       setTimeout(() => {
@@ -43,6 +49,96 @@ export default function ConsistencyPage() {
     }
     fetchData();
   }, []);
+
+  const startProgram = () => {
+    localStorage.setItem("zpilot_consistency_joined", "true");
+    setIsJoined(true);
+  };
+
+  if (isJoined === false) {
+    return (
+      <div className="fixed inset-0 z-[1000] bg-[#2d5af1] flex flex-col items-center justify-center p-8 text-white overflow-y-auto">
+        <div className="w-full max-w-sm space-y-8 animate-in fade-in zoom-in-95 duration-500">
+          {introStep === 0 && (
+            <div className="text-center space-y-6">
+              <div className="w-24 h-24 rounded-[2.5rem] bg-white/10 border-2 border-white/20 flex items-center justify-center mx-auto shadow-2xl">
+                <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+              </div>
+              <h1 className="text-[2rem] font-black leading-tight">Siap Memulai Program Konsisten 30 Hari?</h1>
+              <p className="text-[1rem] font-medium opacity-80 leading-relaxed">
+                Ini bukan soal trik cepat, tapi soal membangun pola kerja yang bikin akunmu lebih dihargai sistem.
+              </p>
+              <button 
+                onClick={() => setIntroStep(1)}
+                className="w-full bg-white text-blue-600 py-5 rounded-3xl text-[1.1rem] font-black shadow-xl active:scale-95 transition-all"
+              >
+                Saya Siap Banget!
+              </button>
+              <Link href="/akun" className="block text-[0.9rem] font-bold opacity-60">Nanti Dulu Deh</Link>
+            </div>
+          )}
+
+          {introStep === 1 && (
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <p className="text-[0.7rem] font-black uppercase tracking-[0.3em] opacity-60">Insight #1</p>
+                <h2 className="text-[1.8rem] font-black leading-tight">Konsistensi Jam Online</h2>
+              </div>
+              <div className="bg-white/10 rounded-3xl p-6 border border-white/10">
+                <p className="text-[1rem] font-medium leading-relaxed">
+                  Sistem lebih suka driver yang punya "jadwal tetap" daripada yang online-nya berantakan. Bangun ritme yang sama setiap hari.
+                </p>
+              </div>
+              <button 
+                onClick={() => setIntroStep(2)}
+                className="w-full bg-white text-blue-600 py-5 rounded-3xl text-[1.1rem] font-black shadow-xl active:scale-95 transition-all"
+              >
+                Lanjutkan
+              </button>
+            </div>
+          )}
+
+          {introStep === 2 && (
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <p className="text-[0.7rem] font-black uppercase tracking-[0.3em] opacity-60">Insight #2</p>
+                <h2 className="text-[1.8rem] font-black leading-tight">Jangan Kelamaan "Mati"</h2>
+              </div>
+              <div className="bg-white/10 rounded-3xl p-6 border border-white/10">
+                <p className="text-[1rem] font-medium leading-relaxed">
+                  Kalau 30-40 menit gak ada pergerakan, coba geser zona. ZPILOT bantu pantau area mana yang lagi ada pergerakan order.
+                </p>
+              </div>
+              <button 
+                onClick={() => setIntroStep(3)}
+                className="w-full bg-white text-blue-600 py-5 rounded-3xl text-[1.1rem] font-black shadow-xl active:scale-95 transition-all"
+              >
+                Paham, Lanjut!
+              </button>
+            </div>
+          )}
+
+          {introStep === 3 && (
+            <div className="text-center space-y-8">
+              <div className="w-20 h-20 rounded-full bg-green-400 flex items-center justify-center mx-auto shadow-lg shadow-green-400/40">
+                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+              </div>
+              <h2 className="text-[1.8rem] font-black leading-tight">Mulai Perjalanan 30 Hari-mu Sekarang!</h2>
+              <p className="text-[1rem] font-medium opacity-80">
+                Catat setiap aktivitasmu, pelajari polanya, dan lihat hasilnya.
+              </p>
+              <button 
+                onClick={startProgram}
+                className="w-full bg-white text-blue-600 py-5 rounded-3xl text-[1.1rem] font-black shadow-xl active:scale-95 transition-all"
+              >
+                Masuk ke Dashboard
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const handleAddLog = (e: React.FormEvent) => {
     e.preventDefault();
