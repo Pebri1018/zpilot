@@ -54,8 +54,6 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [ocrLoading, setOcrLoading] = useState(false);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [detectedData, setDetectedData] = useState<any>(null);
   const [specialHours, setSpecialHours] = useState<Record<string, { open: string; close: string }>>({});
   const [shDay, setShDay] = useState("Senin");
   const [shOpen, setShOpen] = useState("");
@@ -145,47 +143,74 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
     return { name, rating, reviews, promo, freeDelivery: true, category };
   };
 
-  const handleImageUpload = async (file: File) => {
-    setOcrLoading(true);
-    setPreviewImage(URL.createObjectURL(file));
-    try {
-      // 1. Pre-process image (Resize for Mobile Stability)
-      const bitmap = await createImageBitmap(file);
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      
-      // Scale down if too large (max 1200px height)
-      let width = bitmap.width;
-      let height = bitmap.height;
-      if (height > 1200) {
-        width = (width / height) * 1200;
-        height = 1200;
-      }
-      canvas.width = width;
-      canvas.height = height;
-      
-      if (ctx) {
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, width, height);
-        ctx.drawImage(bitmap, 0, 0, width, height);
-      }
-      
-      const resizedBlob = await new Promise<Blob>((resolve) => canvas.toBlob((b) => resolve(b!), "image/jpeg", 0.9));
+  const [previewImages, setPreviewImages] = useState<{ id: string; url: string; file: File }[]>([]);
+  const [detectedItems, setDetectedItems] = useState<any[]>([]);
+  const [ocrProgress, setOcrProgress] = useState(0);
 
-      // 2. OCR with Tesseract
-      const { createWorker } = await import("tesseract.js");
-      const worker = await createWorker('ind');
-      const { data: { text } } = await worker.recognize(resizedBlob as any);
-      await worker.terminate();
-      
-      const parsed = parseShopeeScreenshotText(text);
-      setDetectedData(parsed);
-    } catch (e) {
-      console.error("OCR Error", e);
-      alert("Gagal membaca gambar. Pastikan gambar jelas dan coba lagi.");
-    } finally {
-      setOcrLoading(false);
+  const handleMultipleImagesUpload = async (files: FileList) => {
+    const selectedFiles = Array.from(files).slice(0, 5);
+    if (selectedFiles.length === 0) return;
+
+    setOcrLoading(true);
+    setOcrProgress(0);
+    
+    const newPreviews = selectedFiles.map(f => ({
+      id: Math.random().toString(36).substr(2, 9),
+      url: URL.createObjectURL(f),
+      file: f
+    }));
+    setPreviewImages(newPreviews);
+
+    const results = [];
+    const { createWorker } = await import("tesseract.js");
+    const worker = await createWorker('ind');
+
+    for (let i = 0; i < selectedFiles.length; i++) {
+      setOcrProgress(Math.round(((i) / selectedFiles.length) * 100));
+      const file = selectedFiles[i];
+      try {
+        // Pre-process
+        const bitmap = await createImageBitmap(file);
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        let width = bitmap.width;
+        let height = bitmap.height;
+        if (height > 1200) {
+          width = (width / height) * 1200;
+          height = 1200;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        if (ctx) {
+          ctx.fillStyle = "white";
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(bitmap, 0, 0, width, height);
+        }
+        const resizedBlob = await new Promise<Blob>((resolve) => canvas.toBlob((b) => resolve(b!), "image/jpeg", 0.9));
+        
+        // OCR
+        const { data: { text } } = await worker.recognize(resizedBlob as any);
+        const parsed = parseShopeeScreenshotText(text);
+        
+        results.push({
+          ...parsed,
+          id: newPreviews[i].id,
+          previewUrl: newPreviews[i].url,
+          lat: lat,
+          lng: lng,
+          area: area,
+          address: address,
+          specialHours: {}
+        });
+      } catch (e) {
+        console.error(`Error processing image ${i}`, e);
+      }
     }
+
+    await worker.terminate();
+    setDetectedItems(results);
+    setOcrProgress(100);
+    setOcrLoading(false);
   };
 
   useEffect(() => {
@@ -632,43 +657,51 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
         </div>
       )}
 
-      {/* 2.0 IMPORT VIA SCREENSHOT */}
+      {/* 2.0 IMPORT VIA SCREENSHOT (BATCH) */}
       {activeTab === "screenshot_import" && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
-          {!detectedData ? (
-            <div className="bg-white p-6 rounded-[2.5rem] border border-neutral-100 shadow-sm text-center">
-              <div className="w-16 h-16 rounded-3xl bg-blue-50 flex items-center justify-center mx-auto mb-4 text-[1.8rem]">📸</div>
-              <h3 className="text-[1.1rem] font-black mb-1">Add by Screenshot</h3>
-              <p className="text-[0.7rem] font-bold text-neutral-400 uppercase tracking-widest mb-6 px-4">Upload Screenshot ShopeeFood untuk Auto-Fill data</p>
+          {detectedItems.length === 0 ? (
+            <div className="bg-white p-8 rounded-[2.5rem] border border-neutral-100 shadow-sm text-center">
+              <div className="w-20 h-20 rounded-[2rem] bg-blue-50 flex items-center justify-center mx-auto mb-6 text-[2.5rem]">📸</div>
+              <h3 className="text-[1.2rem] font-black mb-1">Batch Scan Screenshot</h3>
+              <p className="text-[0.8rem] font-bold text-neutral-400 uppercase tracking-widest mb-8 px-4">Upload sampai 5 Screenshot ShopeeFood untuk scan sekaligus</p>
               
               <div 
-                className={`relative border-2 border-dashed rounded-[2rem] p-10 transition-all ${ocrLoading ? 'border-blue-400 bg-blue-50/30' : 'border-neutral-200 hover:border-blue-400 hover:bg-neutral-50'}`}
+                className={`relative border-2 border-dashed rounded-[2.5rem] p-12 transition-all ${ocrLoading ? 'border-blue-400 bg-blue-50/30' : 'border-neutral-200 hover:border-blue-400 hover:bg-neutral-50'}`}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={async (e) => {
                   e.preventDefault();
-                  const file = e.dataTransfer.files[0];
-                  if (file) handleImageUpload(file);
+                  if (e.dataTransfer.files) handleMultipleImagesUpload(e.dataTransfer.files);
                 }}
               >
                 <input 
                   type="file" 
+                  multiple
                   accept="image/*" 
                   className="absolute inset-0 opacity-0 cursor-pointer" 
                   onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleImageUpload(file);
+                    if (e.target.files) handleMultipleImagesUpload(e.target.files);
                   }}
                 />
                 <div className="flex flex-col items-center">
                   {ocrLoading ? (
                     <>
-                      <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-                      <p className="text-[0.85rem] font-black text-blue-600">Membaca Gambar...</p>
+                      <div className="relative w-16 h-16 mb-4">
+                        <svg className="w-full h-full -rotate-90">
+                           <circle cx="32" cy="32" r="28" fill="none" stroke="currentColor" strokeWidth="6" className="text-neutral-100" />
+                           <circle cx="32" cy="32" r="28" fill="none" stroke="currentColor" strokeWidth="6" className="text-blue-500 transition-all duration-300" strokeDasharray={175.9} strokeDashoffset={175.9 * (1 - ocrProgress / 100)} />
+                        </svg>
+                        <span className="absolute inset-0 flex items-center justify-center text-[0.8rem] font-black text-blue-600">{ocrProgress}%</span>
+                      </div>
+                      <p className="text-[0.9rem] font-black text-blue-600">Processing Batch...</p>
                     </>
                   ) : (
                     <>
-                      <svg className="w-10 h-10 text-neutral-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                      <p className="text-[0.85rem] font-bold text-neutral-500">Ketuk atau seret gambar ke sini</p>
+                      <div className="w-12 h-12 rounded-2xl bg-neutral-100 text-neutral-300 flex items-center justify-center mb-4">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+                      </div>
+                      <p className="text-[0.95rem] font-black text-neutral-500">Ketuk untuk pilih sampai 5 gambar</p>
+                      <p className="text-[0.7rem] font-bold text-neutral-300 mt-1">Atau drag & drop ke sini</p>
                     </>
                   )}
                 </div>
@@ -676,155 +709,192 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
             </div>
           ) : (
             <div className="space-y-6">
-              <div className="bg-white p-5 rounded-[2.5rem] border border-neutral-100 shadow-sm overflow-hidden">
-                <div className="flex items-center justify-between mb-4 px-1">
-                  <h3 className="text-[1rem] font-black">Data Terdeteksi</h3>
-                  <button onClick={() => { setDetectedData(null); setPreviewImage(null); }} className="text-[0.7rem] font-bold text-red-500 bg-red-50 px-3 py-1.5 rounded-xl">Ganti Gambar</button>
-                </div>
-                {previewImage && (
-                  <div className="aspect-[4/3] rounded-2xl overflow-hidden mb-4 border border-neutral-100">
-                    <img src={previewImage} className="w-full h-full object-contain bg-neutral-900" alt="Preview" />
+              <div className="flex items-center justify-between px-2">
+                <h3 className="text-[1.1rem] font-black">Scan Results ({detectedItems.length})</h3>
+                <button 
+                  onClick={() => { setDetectedItems([]); setPreviewImages([]); }}
+                  className="text-[0.75rem] font-black text-red-500 bg-red-50 px-4 py-2 rounded-xl active:scale-95 transition-all"
+                >
+                  Reset Batch
+                </button>
+              </div>
+
+              <div className="space-y-5">
+                {detectedItems.map((item, index) => (
+                  <div key={item.id} className="bg-white rounded-[2.5rem] border border-neutral-100 shadow-sm overflow-hidden p-6 relative">
+                    <div className="absolute top-6 right-6 flex gap-2">
+                      <button 
+                        onClick={() => {
+                          setDetectedItems(detectedItems.filter(x => x.id !== item.id));
+                        }}
+                        className="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                      <div className="w-8 h-8 rounded-full bg-neutral-900 text-white flex items-center justify-center text-[0.8rem] font-black">
+                        {index + 1}
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-5 mb-6">
+                       <div className="w-24 h-24 rounded-2xl overflow-hidden border border-neutral-100 bg-neutral-900 flex-shrink-0">
+                         <img src={item.previewUrl} className="w-full h-full object-contain" alt="Preview" />
+                       </div>
+                       <div className="flex-1">
+                          <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-widest mb-1.5">Nama Terdeteksi</p>
+                          <input 
+                            value={item.name} 
+                            onChange={(e) => {
+                              const newItems = [...detectedItems];
+                              newItems[index].name = e.target.value;
+                              setDetectedItems(newItems);
+                            }}
+                            className="w-full px-4 py-3 rounded-xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-bold outline-none focus:bg-white" 
+                          />
+                       </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                       <div>
+                          <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Kategori</p>
+                          <select 
+                            value={item.category} 
+                            onChange={(e) => {
+                              const newItems = [...detectedItems];
+                              newItems[index].category = e.target.value;
+                              setDetectedItems(newItems);
+                            }}
+                            className="w-full px-4 py-3 rounded-xl bg-neutral-50 border border-neutral-200 text-[0.85rem] font-bold outline-none"
+                          >
+                            <option value="Makanan">🍱 Makanan</option>
+                            <option value="Minuman">🥤 Minuman</option>
+                            <option value="Snack">🍿 Snack</option>
+                          </select>
+                       </div>
+                       <div>
+                          <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Promo (%)</p>
+                          <input 
+                            type="number"
+                            value={item.promo} 
+                            onChange={(e) => {
+                              const newItems = [...detectedItems];
+                              newItems[index].promo = Number(e.target.value);
+                              setDetectedItems(newItems);
+                            }}
+                            className="w-full px-4 py-3 rounded-xl bg-neutral-50 border border-neutral-200 text-[0.85rem] font-bold outline-none" 
+                          />
+                       </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                       <div>
+                          <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Rating</p>
+                          <input 
+                            type="number"
+                            step="0.1"
+                            value={item.rating} 
+                            onChange={(e) => {
+                              const newItems = [...detectedItems];
+                              newItems[index].rating = Number(e.target.value);
+                              setDetectedItems(newItems);
+                            }}
+                            className="w-full px-4 py-3 rounded-xl bg-neutral-50 border border-neutral-200 text-[0.85rem] font-bold outline-none" 
+                          />
+                       </div>
+                       <div>
+                          <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Reviews</p>
+                          <input 
+                            type="number"
+                            value={item.reviews} 
+                            onChange={(e) => {
+                              const newItems = [...detectedItems];
+                              newItems[index].reviews = Number(e.target.value);
+                              setDetectedItems(newItems);
+                            }}
+                            className="w-full px-4 py-3 rounded-xl bg-neutral-50 border border-neutral-200 text-[0.85rem] font-bold outline-none" 
+                          />
+                       </div>
+                    </div>
                   </div>
-                )}
-                
-                <form action={async (fd) => {
-                  setLoading(true);
-                  fd.append("lat", String(lat)); fd.append("lng", String(lng)); fd.append("area", area); fd.append("address", address);
-                  fd.append("special_hours", JSON.stringify(specialHours));
-                  const res = await upsertMerchant(fd);
-                  setLoading(false);
-                  if (res.success) {
+                ))}
+              </div>
+
+              {/* Shared Location for Batch */}
+              <div className="bg-neutral-900 rounded-[2.5rem] p-8 text-white shadow-xl space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  </div>
+                  <div>
+                    <h4 className="text-[1rem] font-black tracking-tight leading-none">Lokasi Batch</h4>
+                    <p className="text-[0.7rem] font-bold text-white/40 uppercase tracking-widest mt-1">Titik untuk semua data di atas</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <input 
+                    type="text" 
+                    placeholder="Link Gmaps / Koordinat" 
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-[0.9rem] outline-none focus:bg-white/10"
+                    onChange={async (e) => {
+                      const val = e.target.value;
+                      if (!val.trim()) return;
+                      if (val.includes("http")) {
+                        const { resolveGmapsLink } = await import("@/app/admin/actions/signals");
+                        const coords = await resolveGmapsLink(val);
+                        if (coords.lat && coords.lng) { setLat(coords.lat); setLng(coords.lng); }
+                      }
+                    }}
+                  />
+                  <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, addr, ar) => {
+                    setLat(newLat); setLng(newLng);
+                    if (addr) setAddress(addr);
+                    if (ar) setArea(ar);
+                  }} />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
+                       <p className="text-[0.6rem] font-black text-white/30 uppercase tracking-widest mb-1">Area</p>
+                       <p className="text-[0.8rem] font-bold">{area || "Pilih Area..."}</p>
+                    </div>
+                    <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
+                       <p className="text-[0.6rem] font-black text-white/30 uppercase tracking-widest mb-1">Koordinat</p>
+                       <p className="text-[0.8rem] font-bold">{lat?.toFixed(5)}, {lng?.toFixed(5)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <button 
+                  disabled={loading || !lat || !area}
+                  onClick={async () => {
+                    setLoading(true);
+                    let successCount = 0;
+                    for (const item of detectedItems) {
+                      const fd = new FormData();
+                      fd.append("name", item.name);
+                      fd.append("category", item.category);
+                      fd.append("rating", String(item.rating));
+                      fd.append("reviews", String(item.reviews));
+                      fd.append("promo_percent", String(item.promo));
+                      fd.append("free_shipping", "on");
+                      fd.append("lat", String(lat));
+                      fd.append("lng", String(lng));
+                      fd.append("area", area);
+                      fd.append("address", address);
+                      
+                      const res = await upsertMerchant(fd);
+                      if (res.success) successCount++;
+                    }
+                    setLoading(false);
                     const updated = await getAllMerchants();
                     setMerchants(updated);
-                    setDetectedData(null); setPreviewImage(null);
-                    alert("Merchant Berhasil Ditambahkan!");
-                  } else alert(res.error);
-                }} className="space-y-4">
-                  <div>
-                    <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-[0.1em] mb-1.5 ml-1">Nama Merchant</p>
-                    <input name="name" defaultValue={detectedData.name} required className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-bold focus:bg-white transition-all outline-none" />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-[0.1em] mb-1.5 ml-1">Kategori</p>
-                      <select name="category" defaultValue={detectedData.category} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem] font-bold outline-none">
-                        <option value="Makanan">🍱 Makanan</option>
-                        <option value="Minuman">🥤 Minuman</option>
-                        <option value="Snack">🍿 Snack</option>
-                      </select>
-                    </div>
-                    <div>
-                      <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-[0.1em] mb-1.5 ml-1">Rating</p>
-                      <input name="rating" type="number" step="0.1" defaultValue={detectedData.rating} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-bold outline-none" />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-[0.1em] mb-1.5 ml-1">Total Reviews</p>
-                      <input name="reviews" type="number" defaultValue={detectedData.reviews} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-bold outline-none" />
-                    </div>
-                    <div>
-                      <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-[0.1em] mb-1.5 ml-1">Promo (%)</p>
-                      <input name="promo_percent" type="number" defaultValue={detectedData.promo} className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-bold outline-none" />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-[0.1em] mb-1.5 ml-1">Jam Buka</p>
-                      <input name="open_time" type="time" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-bold outline-none" />
-                    </div>
-                    <div>
-                      <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-[0.1em] mb-1.5 ml-1">Jam Tutup</p>
-                      <input name="close_time" type="time" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-bold outline-none" />
-                    </div>
-                  </div>
-                  <div className="flex gap-4 py-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" name="is_open_24h" className="w-5 h-5 rounded-lg accent-blue-600" />
-                      <span className="text-[0.8rem] font-bold text-neutral-600">Buka 24 Jam</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" name="free_shipping" defaultChecked={true} className="w-5 h-5 rounded-lg accent-blue-600" />
-                      <span className="text-[0.8rem] font-bold text-neutral-600">Gratis Ongkir</span>
-                    </label>
-                  </div>
-
-                  <div className="bg-neutral-50 rounded-2xl p-4 border border-neutral-100 mb-2">
-                    <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-3">Jam Buka Khusus</p>
-                    <div className="flex flex-col gap-3">
-                      <div className="grid grid-cols-3 gap-2">
-                        <select value={shDay} onChange={e => setShDay(e.target.value)} className="px-3 py-2 rounded-xl border border-neutral-200 text-[0.8rem] font-bold">
-                          {["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"].map(d => <option key={d} value={d}>{d}</option>)}
-                        </select>
-                        <input type="time" value={shOpen} onChange={e => setShOpen(e.target.value)} className="px-3 py-2 rounded-xl border border-neutral-200 text-[0.8rem]" />
-                        <input type="time" value={shClose} onChange={e => setShClose(e.target.value)} className="px-3 py-2 rounded-xl border border-neutral-200 text-[0.8rem]" />
-                      </div>
-                      <button type="button" onClick={() => {
-                        if (shOpen && shClose) {
-                          setSpecialHours(prev => ({ ...prev, [shDay]: { open: shOpen, close: shClose } }));
-                          setShOpen(""); setShClose("");
-                        }
-                      }} className="w-full py-2 bg-neutral-200 text-neutral-700 text-[0.7rem] font-black rounded-xl">Tambah</button>
-                      
-                      <div className="space-y-2">
-                        {Object.entries(specialHours).map(([day, times]) => (
-                          <div key={day} className="flex items-center justify-between bg-white px-3 py-1.5 rounded-xl border border-neutral-100">
-                            <span className="text-[0.75rem] font-bold">{day}: {times.open}-{times.close}</span>
-                            <button type="button" onClick={() => {
-                              const newSh = { ...specialHours };
-                              delete newSh[day];
-                              setSpecialHours(newSh);
-                            }} className="text-red-500 font-bold text-[0.7rem]">X</button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <hr className="border-neutral-100 my-2" />
-
-                  <div className="flex flex-col gap-1.5">
-                    <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-1 pl-1">Set Lokasi (Manual)</p>
-                    <input 
-                      type="text" 
-                      placeholder="Link Gmaps / Koordinat (-6.xxx, 106.xxx)" 
-                      onChange={async (e) => {
-                        const val = e.target.value;
-                        if (!val.trim()) return;
-                        if (val.includes("http")) {
-                          const { resolveGmapsLink } = await import("@/app/admin/actions/signals");
-                          const coords = await resolveGmapsLink(val);
-                          if (coords.lat && coords.lng) { setLat(coords.lat); setLng(coords.lng); }
-                        } else {
-                          const coords = val.split(",");
-                          if (coords.length >= 2) {
-                            const newLat = parseFloat(coords[0].replace(/[^0-9.-]/g, ""));
-                            const newLng = parseFloat(coords[1].replace(/[^0-9.-]/g, ""));
-                            if (!isNaN(newLat) && !isNaN(newLng)) { setLat(newLat); setLng(newLng); }
-                          }
-                        }
-                      }}
-                      className="w-full px-5 py-3 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] focus:outline-none mb-2"
-                    />
-                    <LocationPicker initialLat={lat} initialLng={lng} onLocationSelect={(newLat, newLng, addr, ar) => {
-                      setLat(newLat); setLng(newLng);
-                      if (addr) setAddress(addr);
-                      if (ar) setArea(ar);
-                    }} />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <input name="area" required value={area} onChange={e => setArea(e.target.value)} placeholder="Area (Wajib)" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.95rem] font-bold" />
-                    <input value={`${lat || ''}, ${lng || ''}`} readOnly placeholder="Koordinat" className="w-full px-5 py-3.5 rounded-2xl bg-neutral-100 border border-neutral-200 text-[0.8rem] text-neutral-500 font-mono" />
-                  </div>
-
-                  <button disabled={loading} className="w-full mt-6 bg-neutral-900 text-white font-black py-4 rounded-2xl shadow-xl active:scale-95 transition-all disabled:opacity-50 text-[1.1rem]">
-                    {loading ? "Menyimpan..." : "Konfirmasi & Simpan Resto"}
-                  </button>
-                </form>
+                    setDetectedItems([]);
+                    setPreviewImages([]);
+                    alert(`Berhasil menyimpan ${successCount} dari ${detectedItems.length} merchant!`);
+                  }}
+                  className="w-full bg-blue-600 text-white font-black py-5 rounded-[2rem] shadow-xl shadow-blue-500/30 active:scale-95 transition-all disabled:opacity-50 text-[1.1rem]"
+                >
+                  {loading ? "Saving Batch..." : `Konfirmasi & Simpan ${detectedItems.length} Data`}
+                </button>
               </div>
             </div>
           )}
