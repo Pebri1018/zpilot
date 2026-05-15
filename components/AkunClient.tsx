@@ -183,6 +183,22 @@ export function AkunClient({ email, nama, kota, platform, driverId, zpilotId, ro
       </button>
 
       <button 
+        onClick={() => router.push("/consistency")} 
+        className="w-full bg-white rounded-3xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-neutral-100 p-5 flex items-center justify-between active:scale-[0.98] transition-all"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+          </div>
+          <div className="text-left">
+            <p className="font-black text-[1.1rem] text-neutral-900 tracking-tight">Mode Konsisten</p>
+            <p className="text-[0.75rem] font-medium text-neutral-500 mt-0.5">Pantau histori & pola akun 30 hari</p>
+          </div>
+        </div>
+        <svg className="w-5 h-5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+      </button>
+
+      <button 
         onClick={() => setModal("settings")} 
         className="w-full bg-white rounded-3xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-neutral-100 p-5 flex items-center justify-between active:scale-[0.98] transition-all"
       >
