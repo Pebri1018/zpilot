@@ -100,8 +100,18 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
        if (catLine.includes("minuman") || catLine.includes("drink") || catLine.includes("kopi") || catLine.includes("teh") || catLine.includes("boba")) category = "Minuman";
        else if (catLine.includes("snack") || catLine.includes("cemilan") || catLine.includes("keripik")) category = "Snack";
     }
-    if (name) name = `9${name})`;
-    if (promo > 0) promo = parseInt(promo.toString() + "69");
+    if (name) {
+      // Clean up common OCR artifacts: strip leading '9' and trailing ')'
+      name = name.replace(/^9+/, '').replace(/\)+$/, '').trim();
+    }
+    
+    // Clean up promo junk (e.g. 4069 -> 40)
+    if (promo > 100) {
+      const s = promo.toString();
+      if (s.endsWith("69")) {
+        promo = parseInt(s.slice(0, -2));
+      }
+    }
 
     return { name, rating, reviews, promo, freeDelivery: true, category };
   };
