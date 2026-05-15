@@ -66,7 +66,17 @@ export function NgetemTimer() {
     }
 
     const timerId = setInterval(() => {
-      setTimeLeft(t => (t !== null ? t - 1 : null));
+      const saved = localStorage.getItem("ztips_ngetem");
+      if (saved) {
+        try {
+          const { startTime } = JSON.parse(saved);
+          const elapsed = Math.floor((Date.now() - startTime) / 1000);
+          const remaining = 15 * 60 - elapsed;
+          setTimeLeft(remaining > 0 ? remaining : 0);
+        } catch (e) {
+          stopTimer();
+        }
+      }
     }, 1000);
 
     return () => clearInterval(timerId);

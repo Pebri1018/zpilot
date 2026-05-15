@@ -172,18 +172,27 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     fetchLocation();
+    
+    
     const intervalId = setInterval(() => {
       const cur = stateRef.current;
       // --- TRACK ONLY IF ACTIVE ---
       if (cur.status !== "Offline") {
         fetchLocation(false);
-        // --- COUNT ACTIVE MINUTES ONLY IF NGETEM ---
-        if (cur.status === "Ngetem" && cur.latitude) {
-          recordActiveMinute().catch(console.error);
-        }
       }
-    }, 60 * 1000);
-    return () => clearInterval(intervalId);
+    }, 10 * 1000); // Fetch location every 10 seconds for smoothness
+
+    const analyticsId = setInterval(() => {
+      const cur = stateRef.current;
+      if (cur.status === "Ngetem" && cur.latitude) {
+        recordActiveMinute().catch(console.error);
+      }
+    }, 60 * 1000); // Analytics still 1 minute
+
+    return () => {
+      clearInterval(intervalId);
+      clearInterval(analyticsId);
+    };
   }, [fetchLocation]);
 
   const value: LocationState = {
