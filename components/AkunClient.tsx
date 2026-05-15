@@ -281,7 +281,7 @@ export function AkunClient({ email, nama, kota, platform, driverId, zpilotId, ro
                         {feedback.some(f => f.admin_reply && f.status !== "closed") && <span className="bg-red-500 w-2 h-2 rounded-full ml-1" />}
                         <svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                       </button>
-                      <button onClick={() => alert("Halaman Tips Gacor akan segera hadir!")} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 dark:hover:bg-neutral-700 active:bg-neutral-100 dark:active:bg-neutral-600 transition">
+                      <button onClick={() => router.push("/tips-gacor")} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 dark:hover:bg-neutral-700 active:bg-neutral-100 dark:active:bg-neutral-600 transition">
                         <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></div>
                         <span className="text-[0.95rem] font-semibold dark:text-white">Tips Gacor</span><svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                       </button>
