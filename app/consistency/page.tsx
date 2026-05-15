@@ -38,7 +38,7 @@ export default function ConsistencyPage() {
             "Isi aktivitasmu secara rutin untuk melihat pola.",
           ],
           targets: [
-            { label: "Online minimal 4 jam", done: false },
+            { label: "Online minimal 8 jam", done: false },
             { label: "Tidak idle terlalu lama", done: false },
             { label: "Pindah zona minimal 2x", done: false },
             { label: "Online di peak hour", done: false }
@@ -168,7 +168,7 @@ export default function ConsistencyPage() {
       ...stats,
       todayOnline: `${h}j ${m}m`,
       targets: stats.targets.map((t: any) => 
-        t.label.includes("4 jam") ? { ...t, done: h >= 4 } : t
+        t.label.includes("8 jam") ? { ...t, done: h >= 8 } : t
       )
     });
 
