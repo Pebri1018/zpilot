@@ -37,8 +37,17 @@ function getServiceClient() {
 export async function verifyAdmin(): Promise<boolean> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const adminEmail = process.env.ADMIN_EMAIL;
-  return !!user && !!adminEmail && user.email === adminEmail;
+  if (!user || !user.email) return false;
+
+  const adminEmailStr = process.env.ADMIN_EMAIL;
+  if (!adminEmailStr) {
+    console.warn("ADMIN_EMAIL environment variable is not defined!");
+    return false;
+  }
+
+  // Support comma separated emails, case-insensitive
+  const adminEmails = adminEmailStr.split(",").map(e => e.trim().toLowerCase());
+  return adminEmails.includes(user.email.toLowerCase());
 }
 
 export async function getBroadcasts(): Promise<Broadcast[]> {

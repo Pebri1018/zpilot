@@ -80,7 +80,12 @@ export async function middleware(request: NextRequest) {
   }
 
   // 1. Role-based access control
-  if (user && userRole !== "admin" && pathname.startsWith("/admin")) {
+  const adminEmailStr = process.env.ADMIN_EMAIL || "";
+  const adminEmails = adminEmailStr.split(",").map(e => e.trim().toLowerCase());
+  const isEmailAdmin = user?.email && adminEmails.includes(user.email.toLowerCase());
+  const finalIsAdmin = userRole === "admin" || isEmailAdmin;
+
+  if (user && !finalIsAdmin && pathname.startsWith("/admin")) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/beranda";
     return NextResponse.redirect(redirectUrl);
@@ -92,7 +97,7 @@ export async function middleware(request: NextRequest) {
     if (needsOnboarding) {
       redirectUrl.pathname = ONBOARDING_PATH;
     } else {
-      redirectUrl.pathname = userRole === "admin" ? "/admin" : "/beranda";
+      redirectUrl.pathname = finalIsAdmin ? "/admin" : "/beranda";
     }
     return NextResponse.redirect(redirectUrl);
   }
@@ -111,7 +116,7 @@ export async function middleware(request: NextRequest) {
 
   if (user && !needsOnboarding && pathname === ONBOARDING_PATH) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = userRole === "admin" ? "/admin" : "/beranda";
+    redirectUrl.pathname = finalIsAdmin ? "/admin" : "/beranda";
     return NextResponse.redirect(redirectUrl);
   }
 
