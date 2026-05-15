@@ -14,12 +14,13 @@ export default function ConsistencyPage() {
   const [isJoined, setIsJoined] = useState<boolean | null>(null);
   const [introStep, setIntroStep] = useState(0);
 
-  const [showLogModal, setShowLogModal] = useState(false);
-  const [logForm, setLogForm] = useState({
-    startTime: "",
-    endTime: "",
-    area: ""
-  });
+  const [isShiftActive, setIsShiftActive] = useState(false);
+  const [activeShift, setActiveShift] = useState<any>(null);
+  const [showStartModal, setShowStartModal] = useState(false);
+  const [showEndModal, setShowEndModal] = useState(false);
+  
+  const [startForm, setStartForm] = useState({ area: "" });
+  const [endForm, setEndForm] = useState({ totalTime: "", gacorArea: "" });
   const [logs, setLogs] = useState<any[]>([]);
 
   useEffect(() => {
@@ -140,27 +141,42 @@ export default function ConsistencyPage() {
     );
   }
 
-  const handleAddLog = (e: React.FormEvent) => {
+  const handleStartShift = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!logForm.startTime || !logForm.endTime || !logForm.area) return;
+    if (!startForm.area) return;
     
-    const start = new Date(`2000-01-01T${logForm.startTime}`);
-    const end = new Date(`2000-01-01T${logForm.endTime}`);
-    const diff = (end.getTime() - start.getTime()) / (1000 * 60); // minutes
+    const shift = {
+      startTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      area: startForm.area,
+      date: new Date().toLocaleDateString()
+    };
     
-    if (diff < 0) return alert("Jam selesai harus setelah jam mulai");
+    setActiveShift(shift);
+    setIsShiftActive(true);
+    setShowStartModal(false);
+    setStartForm({ area: "" });
+  };
+
+  const handleEndShift = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!endForm.totalTime || !endForm.gacorArea) return;
+    
+    const timeParts = endForm.totalTime.split(":").map(Number);
+    const minutes = (timeParts[0] || 0) * 60 + (timeParts[1] || 0);
 
     const newLog = {
-      ...logForm,
-      minutes: diff,
+      ...activeShift,
+      endTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      totalMinutes: minutes,
+      gacorArea: endForm.gacorArea,
       id: Date.now().toString()
     };
     
     const updatedLogs = [newLog, ...logs];
     setLogs(updatedLogs);
     
-    // Update stats based on logs
-    const totalMin = updatedLogs.reduce((acc, l) => acc + l.minutes, 0);
+    // Update stats
+    const totalMin = updatedLogs.reduce((acc, l) => acc + l.totalMinutes, 0);
     const h = Math.floor(totalMin / 60);
     const m = totalMin % 60;
     
@@ -172,8 +188,10 @@ export default function ConsistencyPage() {
       )
     });
 
-    setShowLogModal(false);
-    setLogForm({ startTime: "", endTime: "", area: "" });
+    setIsShiftActive(false);
+    setActiveShift(null);
+    setShowEndModal(false);
+    setEndForm({ totalTime: "", gacorArea: "" });
   };
 
   return (
@@ -189,12 +207,21 @@ export default function ConsistencyPage() {
             </Link>
             <h1 className="text-[1.2rem] font-black tracking-tight">Mode Konsisten</h1>
           </div>
-          <button 
-            onClick={() => setShowLogModal(true)}
-            className="bg-blue-600 text-white text-[0.8rem] font-bold px-4 py-2.5 rounded-xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
-          >
-            + Log Jam
-          </button>
+          {!isShiftActive ? (
+            <button 
+              onClick={() => setShowStartModal(true)}
+              className="bg-blue-600 text-white text-[0.8rem] font-black px-5 py-3 rounded-xl shadow-lg shadow-blue-500/30 active:scale-95 transition-all"
+            >
+              Mulai Online
+            </button>
+          ) : (
+            <button 
+              onClick={() => setShowEndModal(true)}
+              className="bg-red-500 text-white text-[0.8rem] font-black px-5 py-3 rounded-xl shadow-lg shadow-red-500/30 active:scale-95 transition-all"
+            >
+              Selesai Online
+            </button>
+          )}
         </div>
 
         <div className="relative z-10">
@@ -218,6 +245,22 @@ export default function ConsistencyPage() {
       {/* Main Content */}
       <div className="px-5 py-6 space-y-6 max-w-md mx-auto">
         
+        {/* Active Status Card */}
+        {isShiftActive && (
+          <div className="bg-emerald-50 border border-emerald-100 rounded-[2rem] p-6 flex items-center justify-between shadow-sm animate-in slide-in-from-top-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-200">
+                <div className="w-2 h-2 bg-white rounded-full animate-ping" />
+              </div>
+              <div>
+                <p className="text-[0.65rem] font-black text-emerald-600 uppercase tracking-widest mb-0.5">Status: Online</p>
+                <h3 className="text-[1rem] font-black text-emerald-900 leading-none">Sedang On-Bid</h3>
+                <p className="text-[0.75rem] font-bold text-emerald-600/70 mt-1.5">Mulai jam {activeShift.startTime} di {activeShift.area}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Section 2 — Summary Card */}
         <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-neutral-100 relative overflow-hidden group">
           <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-3">Total Online Hari Ini</p>
@@ -232,81 +275,97 @@ export default function ConsistencyPage() {
         {/* History List */}
         {logs.length > 0 && (
           <div className="space-y-4">
-            <h4 className="text-[1rem] font-black text-neutral-800 tracking-tight px-2">Riwayat Hari Ini</h4>
+            <h4 className="text-[1rem] font-black text-neutral-800 tracking-tight px-2">Ringkasan Narik</h4>
             <div className="space-y-3">
               {logs.map(log => (
-                <div key={log.id} className="bg-white rounded-3xl p-4 border border-neutral-100 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <div key={log.id} className="bg-white rounded-[2rem] p-5 border border-neutral-100 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                       <div className="w-2 h-2 rounded-full bg-blue-500" />
+                       <p className="text-[0.85rem] font-black text-neutral-800">{log.area}</p>
+                    </div>
+                    <p className="text-[0.85rem] font-black text-blue-600">{Math.floor(log.totalMinutes/60)}j {log.totalMinutes%60}m</p>
+                  </div>
+                  <div className="bg-neutral-50 rounded-2xl p-3 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center text-[0.8rem]">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                     </div>
                     <div>
-                      <p className="text-[0.85rem] font-black text-neutral-800">{log.area}</p>
-                      <p className="text-[0.7rem] font-bold text-neutral-400">{log.startTime} - {log.endTime}</p>
+                      <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-widest">Gacor Area</p>
+                      <p className="text-[0.8rem] font-bold text-neutral-700">{log.gacorArea}</p>
                     </div>
                   </div>
-                  <p className="text-[0.8rem] font-black text-blue-600">{Math.floor(log.minutes/60)}j {log.minutes%60}m</p>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* Add Log Modal */}
-        {showLogModal && (
+        {/* Start Modal */}
+        {showStartModal && (
           <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-neutral-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-            <div 
-              className="bg-white w-full max-w-md rounded-t-[2.5rem] sm:rounded-[2.5rem] p-8 shadow-2xl animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-300"
-              onClick={e => e.stopPropagation()}
-            >
+            <div className="bg-white w-full max-w-md rounded-t-[2.5rem] sm:rounded-[2.5rem] p-8 shadow-2xl animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-300">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-[1.2rem] font-black text-neutral-900">Log Aktivitas Online</h3>
-                <button onClick={() => setShowLogModal(false)} className="text-neutral-400">
+                <h3 className="text-[1.2rem] font-black text-neutral-900">Check-in Online</h3>
+                <button onClick={() => setShowStartModal(false)} className="text-neutral-400">
                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
-
-              <form onSubmit={handleAddLog} className="space-y-5">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[0.7rem] font-black text-neutral-400 uppercase tracking-widest pl-1">Jam Mulai</label>
-                    <input 
-                      type="time" 
-                      required
-                      value={logForm.startTime}
-                      onChange={e => setLogForm({...logForm, startTime: e.target.value})}
-                      className="w-full bg-neutral-50 border-none rounded-2xl p-4 text-[0.95rem] font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[0.7rem] font-black text-neutral-400 uppercase tracking-widest pl-1">Jam Selesai</label>
-                    <input 
-                      type="time" 
-                      required
-                      value={logForm.endTime}
-                      onChange={e => setLogForm({...logForm, endTime: e.target.value})}
-                      className="w-full bg-neutral-50 border-none rounded-2xl p-4 text-[0.95rem] font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
-                    />
-                  </div>
-                </div>
-
+              <form onSubmit={handleStartShift} className="space-y-6">
                 <div className="space-y-1.5">
-                  <label className="text-[0.7rem] font-black text-neutral-400 uppercase tracking-widest pl-1">Area Mulai Online</label>
+                  <label className="text-[0.7rem] font-black text-neutral-400 uppercase tracking-widest pl-1">Area Mulai Narik</label>
                   <input 
                     type="text" 
                     required
                     placeholder="Contoh: Seturan, Concat, dsb."
-                    value={logForm.area}
-                    onChange={e => setLogForm({...logForm, area: e.target.value})}
+                    value={startForm.area}
+                    onChange={e => setStartForm({ area: e.target.value })}
                     className="w-full bg-neutral-50 border-none rounded-2xl p-4 text-[0.95rem] font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
                   />
                 </div>
+                <button type="submit" className="w-full bg-blue-600 text-white py-4 rounded-2xl text-[1rem] font-black shadow-xl shadow-blue-500/30 active:scale-95 transition-all">
+                  Mulai Program
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
 
-                <button 
-                  type="submit"
-                  className="w-full bg-blue-600 text-white py-4 rounded-2xl text-[1rem] font-black shadow-xl shadow-blue-500/30 active:scale-95 transition-all mt-4"
-                >
-                  Simpan Aktivitas
+        {/* End Modal */}
+        {showEndModal && (
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-neutral-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white w-full max-w-md rounded-t-[2.5rem] sm:rounded-[2.5rem] p-8 shadow-2xl animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-300">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-[1.2rem] font-black text-neutral-900">Selesai Narik</h3>
+                <button onClick={() => setShowEndModal(false)} className="text-neutral-400">
+                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+              <form onSubmit={handleEndShift} className="space-y-6">
+                <div className="space-y-1.5">
+                  <label className="text-[0.7rem] font-black text-neutral-400 uppercase tracking-widest pl-1">Total Jam Online (Cek App Driver)</label>
+                  <input 
+                    type="text" 
+                    required
+                    placeholder="Format: jam:menit (misal 08:30)"
+                    value={endForm.totalTime}
+                    onChange={e => setEndForm({ ...endForm, totalTime: e.target.value })}
+                    className="w-full bg-neutral-50 border-none rounded-2xl p-4 text-[0.95rem] font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[0.7rem] font-black text-neutral-400 uppercase tracking-widest pl-1">Area Paling Gacor Hari Ini</label>
+                  <input 
+                    type="text" 
+                    required
+                    placeholder="Area mana yang paling banyak order?"
+                    value={endForm.gacorArea}
+                    onChange={e => setEndForm({ ...endForm, gacorArea: e.target.value })}
+                    className="w-full bg-neutral-50 border-none rounded-2xl p-4 text-[0.95rem] font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                  />
+                </div>
+                <button type="submit" className="w-full bg-blue-600 text-white py-4 rounded-2xl text-[1rem] font-black shadow-xl shadow-blue-500/30 active:scale-95 transition-all">
+                  Simpan & Offline
                 </button>
               </form>
             </div>
