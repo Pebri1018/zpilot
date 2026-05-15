@@ -7,9 +7,15 @@ import { AppIntro } from "@/components/AppIntro";
 export default async function LandingPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  
+  let role = "user";
+  if (user) {
+    const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).maybeSingle();
+    if (profile?.role) role = profile.role;
+  }
 
   return (
-    <AppIntro authenticated={!!user}>
+    <AppIntro authenticated={!!user} role={role}>
       <div className="min-h-[100dvh] bg-[#f2f2f4] text-neutral-900 antialiased flex flex-col">
         {/* Hero Section */}
         <div className="flex-1 flex flex-col items-center justify-center px-6 pt-12 pb-8 text-center">

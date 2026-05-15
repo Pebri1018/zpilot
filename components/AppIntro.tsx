@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-export function AppIntro({ children, authenticated }: { children: React.ReactNode, authenticated: boolean }) {
+export function AppIntro({ children, authenticated, role }: { children: React.ReactNode, authenticated: boolean, role: string }) {
   const [step, setStep] = useState<"splash1" | "splash2" | "ready">("splash1");
   const [isReturning, setIsReturning] = useState(false);
   const router = useRouter();
@@ -14,15 +14,20 @@ export function AppIntro({ children, authenticated }: { children: React.ReactNod
 
     // Initial Splash 1 (Logo)
     const timer1 = setTimeout(() => {
-      if (seen || authenticated) {
+      if (authenticated) {
+        // Direct redirect if already logged in
+        router.replace(role === "admin" ? "/admin" : "/beranda");
+      } else if (seen) {
+        // Skip tutorial but stay on landing
         setStep("ready");
       } else {
+        // Show tutorial
         setStep("splash2");
       }
     }, 2000);
 
     return () => clearTimeout(timer1);
-  }, [authenticated]);
+  }, [authenticated, role, router]);
 
   const handleFinish = () => {
     localStorage.setItem("zpilot_seen_intro", "true");
