@@ -200,7 +200,10 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
           lng: lng,
           area: area,
           address: address,
-          specialHours: {}
+          specialHours: {},
+          is_open_24h: false,
+          open_time: "",
+          close_time: ""
         });
       } catch (e) {
         console.error(`Error processing image ${i}`, e);
@@ -865,12 +868,10 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                         </div>
                         <button 
                           onClick={() => {
-                            // Focus this item for the global LocationPicker
                             setLat(item.lat);
                             setLng(item.lng);
                             setArea(item.area);
                             setAddress(item.address);
-                            // We'll use a temporary state to track which item is focused
                             (window as any)._focusedOcrIndex = index;
                             alert("Silakan pilih lokasi di peta bawah, lalu data akan tersinkron ke Resto #" + (index+1));
                           }}
@@ -879,11 +880,125 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                           Pilih di Peta
                         </button>
                     </div>
+
+                    {/* Jam Operasional Section */}
+                    <div className="mt-6 border-t border-neutral-100 pt-5">
+                       <details className="group">
+                          <summary className="flex items-center justify-between cursor-pointer list-none">
+                             <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
+                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                </div>
+                                <span className="text-[0.85rem] font-black text-neutral-800">Lengkapi Jam Operasional</span>
+                             </div>
+                             <svg className="w-5 h-5 text-neutral-300 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg>
+                          </summary>
+                          
+                          <div className="pt-5 space-y-4">
+                             <label className="flex items-center gap-3 bg-neutral-50 rounded-2xl px-4 py-3 border border-neutral-200 cursor-pointer">
+                                <input 
+                                  type="checkbox" 
+                                  checked={item.is_open_24h}
+                                  onChange={(e) => {
+                                    const newItems = [...detectedItems];
+                                    newItems[index].is_open_24h = e.target.checked;
+                                    setDetectedItems(newItems);
+                                  }}
+                                  className="w-5 h-5 rounded-lg accent-neutral-900"
+                                />
+                                <span className="text-[0.85rem] font-bold text-neutral-700">Buka 24 Jam</span>
+                             </label>
+
+                             {!item.is_open_24h && (
+                               <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                     <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Jam Buka</p>
+                                     <input 
+                                       type="time" 
+                                       value={item.open_time}
+                                       onChange={(e) => {
+                                         const newItems = [...detectedItems];
+                                         newItems[index].open_time = e.target.value;
+                                         setDetectedItems(newItems);
+                                       }}
+                                       className="w-full px-4 py-3 rounded-xl bg-neutral-50 border border-neutral-200 text-[0.85rem] font-bold outline-none" 
+                                     />
+                                  </div>
+                                  <div>
+                                     <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Jam Tutup</p>
+                                     <input 
+                                       type="time" 
+                                       value={item.close_time}
+                                       onChange={(e) => {
+                                         const newItems = [...detectedItems];
+                                         newItems[index].close_time = e.target.value;
+                                         setDetectedItems(newItems);
+                                       }}
+                                       className="w-full px-4 py-3 rounded-xl bg-neutral-50 border border-neutral-200 text-[0.85rem] font-bold outline-none" 
+                                     />
+                                  </div>
+                               </div>
+                             )}
+
+                             {/* Special Hours for Batch Item */}
+                             <div className="bg-neutral-50 rounded-2xl p-4 border border-neutral-100">
+                                <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-3">Jam Khusus Hari Tertentu</p>
+                                <div className="space-y-3">
+                                   <div className="grid grid-cols-3 gap-2">
+                                      <select 
+                                        id={`shDay_${index}`}
+                                        className="px-2 py-2 rounded-xl border border-neutral-200 text-[0.75rem] font-bold"
+                                      >
+                                        {["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"].map(d => <option key={d} value={d}>{d}</option>)}
+                                      </select>
+                                      <input type="time" id={`shOpen_${index}`} className="px-2 py-2 rounded-xl border border-neutral-200 text-[0.7rem]" />
+                                      <input type="time" id={`shClose_${index}`} className="px-2 py-2 rounded-xl border border-neutral-200 text-[0.7rem]" />
+                                   </div>
+                                   <button 
+                                      type="button" 
+                                      onClick={() => {
+                                        const d = (document.getElementById(`shDay_${index}`) as HTMLSelectElement).value;
+                                        const o = (document.getElementById(`shOpen_${index}`) as HTMLInputElement).value;
+                                        const c = (document.getElementById(`shClose_${index}`) as HTMLInputElement).value;
+                                        if (o && c) {
+                                          const newItems = [...detectedItems];
+                                          newItems[index].specialHours = { ...newItems[index].specialHours, [d]: { open: o, close: c } };
+                                          setDetectedItems(newItems);
+                                        }
+                                      }}
+                                      className="w-full py-2 bg-neutral-200 text-neutral-700 text-[0.7rem] font-black rounded-xl"
+                                   >
+                                      Tambah Jam Khusus
+                                   </button>
+                                   
+                                   <div className="space-y-2">
+                                      {Object.entries(item.specialHours || {}).map(([day, times]: [string, any]) => (
+                                        <div key={day} className="flex items-center justify-between bg-white px-3 py-1.5 rounded-xl border border-neutral-100">
+                                           <span className="text-[0.75rem] font-bold">{day}: {times.open}-{times.close}</span>
+                                           <button 
+                                             type="button" 
+                                             onClick={() => {
+                                               const newItems = [...detectedItems];
+                                               delete newItems[index].specialHours[day];
+                                               setDetectedItems(newItems);
+                                             }}
+                                             className="text-red-500 font-bold text-[0.7rem]"
+                                           >
+                                             Hapus
+                                           </button>
+                                        </div>
+                                      ))}
+                                   </div>
+                                </div>
+                             </div>
+                          </div>
+                       </details>
+                    </div>
                   </div>
                 ))}
               </div>
 
-              {/* Shared Location Picker (as a tool to update focused item) */}
+              {/* Global Location Picker (as a tool to update focused item) */}
               <div className="bg-neutral-900 rounded-[2.5rem] p-8 text-white shadow-xl space-y-6">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center">
@@ -930,6 +1045,12 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                       fd.append("lng", String(item.lng));
                       fd.append("area", item.area);
                       fd.append("address", item.address || "");
+                      
+                      // Full Hours Data
+                      fd.append("is_open_24h", item.is_open_24h ? "on" : "");
+                      fd.append("open_time", item.open_time || "");
+                      fd.append("close_time", item.close_time || "");
+                      fd.append("special_hours", JSON.stringify(item.specialHours || {}));
                       
                       const res = await upsertMerchant(fd);
                       if (res.success) successCount++;
