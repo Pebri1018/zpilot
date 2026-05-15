@@ -66,7 +66,7 @@ export async function getHotspots(): Promise<HotspotZone[]> {
     // 2. Fetch active merchants
     const { data: merchants, error: mErr } = await supabase
       .from("merchant_signals")
-      .select("lat, lng")
+      .select("lat, lng, area")
       .eq("is_active", true)
       .not("lat", "is", null);
 
