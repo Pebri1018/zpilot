@@ -975,11 +975,27 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                   <span className={`text-[0.6rem] font-black uppercase tracking-widest px-2 py-1 rounded-lg shrink-0 ${compStatus === 'Complete' ? 'bg-emerald-100 text-emerald-700' : compStatus === 'Partial' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>{compStatus}</span>
                 </div>
                 
-                {!["Paket", "Toko/Seller", "Seller SPX"].includes(m.category) && (
-                    <div className={`px-2.5 py-1.5 rounded-xl text-[0.65rem] font-black tracking-wide ${m.promo_active || m.promo_percent ? 'bg-green-50 text-green-700' : 'bg-neutral-100 text-neutral-400'}`}>
-                      💰 {m.promo_active || m.promo_percent ? "PROMO ACTIVE" : "NO PROMO"}
-                    </div>
-                )}
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  <div className="bg-neutral-50 rounded-xl p-2.5">
+                    <p className="text-[0.6rem] font-bold text-neutral-400 uppercase tracking-widest mb-1">Details</p>
+                    <p className="text-[0.8rem] font-black text-neutral-800">
+                      {m.rating ? `⭐ ${m.rating}` : "No Rating"} {m.reviews ? `(${m.reviews})` : ""}
+                    </p>
+                  </div>
+                  <div className="bg-neutral-50 rounded-xl p-2.5">
+                    <p className="text-[0.6rem] font-bold text-neutral-400 uppercase tracking-widest mb-1">Promo</p>
+                    <p className={`text-[0.8rem] font-black ${m.promo_active || (m.promo_percent ?? 0) > 0 ? 'text-green-600' : 'text-neutral-400'}`}>
+                      {m.promo_active || (m.promo_percent ?? 0) > 0 ? `${m.promo_percent}% Off` : "No Promo"}
+                    </p>
+                  </div>
+                  <div className="bg-neutral-50 rounded-xl p-2.5 col-span-2">
+                    <p className="text-[0.6rem] font-bold text-neutral-400 uppercase tracking-widest mb-1">Operational Hours</p>
+                    <p className="text-[0.8rem] font-black text-neutral-800">
+                      {m.is_open_24h ? "Open 24/7" : (m.open_time && m.close_time ? `${m.open_time} - ${m.close_time}` : "Not Set")}
+                      {m.special_hours && Object.keys(m.special_hours).length > 0 && <span className="ml-1.5 text-blue-500 text-[0.65rem]">+Special Hours</span>}
+                    </p>
+                  </div>
+                </div>
 
                 <div className="flex gap-2 pt-2 mt-1">
                   <button 
@@ -1468,6 +1484,40 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 </div>
               </div>
               <input name="closed_days" defaultValue={editingMerchant.closed_days ?? ""} placeholder="Hari Libur (opsional, misal: Senin, Minggu)" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 border border-neutral-200 text-[0.9rem]" />
+              
+              <div className="bg-neutral-50 rounded-2xl p-4 border border-neutral-100 mt-1">
+                <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-3">Jam Buka Khusus Hari Tertentu</p>
+                <div className="flex flex-col gap-3">
+                  <div className="grid grid-cols-3 gap-2">
+                    <select value={shDay} onChange={e => setShDay(e.target.value)} className="px-2 py-1.5 rounded-xl border border-neutral-200 text-[0.75rem] font-bold">
+                      {["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"].map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                    <input type="time" value={shOpen} onChange={e => setShOpen(e.target.value)} className="px-2 py-1.5 rounded-xl border border-neutral-200 text-[0.75rem]" />
+                    <input type="time" value={shClose} onChange={e => setShClose(e.target.value)} className="px-2 py-1.5 rounded-xl border border-neutral-200 text-[0.75rem]" />
+                  </div>
+                  <button type="button" onClick={() => {
+                    if (shOpen && shClose) {
+                      setSpecialHours(prev => ({ ...prev, [shDay]: { open: shOpen, close: shClose } }));
+                      setShOpen(""); setShClose("");
+                    }
+                  }} className="w-full py-2 bg-neutral-200 text-neutral-700 text-[0.7rem] font-black rounded-xl">Tambah / Update Jam</button>
+                  
+                  <div className="space-y-2 mt-1">
+                    {Object.entries(specialHours).map(([day, times]) => (
+                      <div key={day} className="flex items-center justify-between bg-white px-3 py-1.5 rounded-xl border border-neutral-100 shadow-sm">
+                        <span className="text-[0.75rem] font-bold">{day}: <span className="text-blue-600">{times.open} - {times.close}</span></span>
+                        <button type="button" onClick={() => {
+                          const newSh = { ...specialHours };
+                          delete newSh[day];
+                          setSpecialHours(newSh);
+                        }} className="text-red-500 font-bold text-[0.65rem]">Hapus</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <input type="hidden" name="special_hours" value={JSON.stringify(specialHours)} />
+
               <div className="flex gap-2 pt-2">
                 <button type="button" onClick={() => setEditingMerchant(null)} className="flex-1 py-3 rounded-2xl bg-neutral-100 font-bold text-neutral-600">
                   Batal
