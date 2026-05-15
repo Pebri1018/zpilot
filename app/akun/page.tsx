@@ -1,36 +1,39 @@
+"use client";
+
 import { DriverBottomNav } from "@/components/DriverBottomNav";
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { AkunClient } from "@/components/AkunClient";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-export const dynamic = "force-dynamic";
+export default function AkunPage() {
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [feedback, setFeedback] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
-export default async function AkunPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  useEffect(() => {
+    const supabase = createClient();
+    async function init() {
+      const { data: { user: u } } = await supabase.auth.getUser();
+      if (!u) {
+        router.push("/login");
+        return;
+      }
+      setUser(u);
 
-  if (!user) {
-    redirect("/login");
-  }
+      const [pRes, fRes] = await Promise.all([
+        supabase.from("users").select("nama, kota, platform, driver_id, ztips_id, role").eq("id", u.id).maybeSingle(),
+        supabase.from("feedback").select("*").eq("user_id", u.id).order("created_at", { ascending: false })
+      ]);
 
-  // Parallelize profile and feedback fetch
-  const [profileResult, feedbackResult] = await Promise.all([
-    supabase
-      .from("users")
-      .select("nama, kota, platform, driver_id, ztips_id, role")
-      .eq("id", user.id)
-      .maybeSingle(),
-    supabase
-      .from("feedback")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-  ]);
-
-  const profile = profileResult.data;
-  const feedback = feedbackResult.data;
+      setProfile(pRes.data);
+      setFeedback(fRes.data || []);
+      setLoading(false);
+    }
+    init();
+  }, [router]);
 
   return (
     <div className="min-h-[100dvh] bg-[#f7f7f8] pb-24 text-neutral-900 antialiased">
@@ -40,16 +43,23 @@ export default async function AkunPage() {
           <p className="mt-1 text-[0.9rem] text-neutral-500">Profil & Pengaturan</p>
         </header>
 
-        <AkunClient
-          email={user.email ?? ""}
-          nama={profile?.nama ?? null}
-          kota={profile?.kota ?? null}
-          platform={profile?.platform ?? "ShopeeFood"}
-          driverId={profile?.driver_id ?? null}
-          zpilotId={profile?.ztips_id ?? null}
-          role={profile?.role ?? "driver"}
-          feedback={feedback ?? []}
-        />
+        {loading ? (
+          <div className="space-y-4 animate-pulse">
+            <div className="h-20 bg-neutral-200 rounded-3xl" />
+            <div className="h-40 bg-neutral-200 rounded-3xl" />
+          </div>
+        ) : (
+          <AkunClient
+            email={user?.email ?? ""}
+            nama={profile?.nama ?? null}
+            kota={profile?.kota ?? null}
+            platform={profile?.platform ?? "ShopeeFood"}
+            driverId={profile?.driver_id ?? null}
+            zpilotId={profile?.ztips_id ?? null}
+            role={profile?.role ?? "driver"}
+            feedback={feedback}
+          />
+        )}
       </div>
       <DriverBottomNav />
     </div>
