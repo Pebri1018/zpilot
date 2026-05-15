@@ -93,7 +93,12 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                        text.match(/(\d+)\s*%\s*Off/i) ||
                        text.match(/Diskon\s*(\d+)/i) ||
                        text.match(/(\d+)\s*%/);
-    if (promoMatch) promo = parseInt(promoMatch[1]);
+    if (promoMatch) {
+      const pStr = promoMatch[1];
+      promo = parseInt(pStr);
+      // If promo is suspiciously large (e.g., 5096), it's likely OCR junk. Cap at 2 digits.
+      if (promo > 100) promo = parseInt(pStr.slice(0, 2));
+    }
 
     if (ratingLineIdx >= 1) {
        const catLine = lines[ratingLineIdx - 1].toLowerCase();
@@ -103,14 +108,6 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
     if (name) {
       // Clean up common OCR artifacts: strip leading '9' and trailing ')'
       name = name.replace(/^9+/, '').replace(/\)+$/, '').trim();
-    }
-    
-    // Clean up promo junk (e.g. 4069 -> 40)
-    if (promo > 100) {
-      const s = promo.toString();
-      if (s.endsWith("69")) {
-        promo = parseInt(s.slice(0, -2));
-      }
     }
 
     return { name, rating, reviews, promo, freeDelivery: true, category };
@@ -993,6 +990,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                     <p className="text-[0.8rem] font-black text-neutral-800">
                       {m.is_open_24h ? "Open 24/7" : (m.open_time && m.close_time ? `${m.open_time} - ${m.close_time}` : "Not Set")}
                       {m.special_hours && Object.keys(m.special_hours).length > 0 && <span className="ml-1.5 text-blue-500 text-[0.65rem]">+Special Hours</span>}
+                      {m.closed_days && <span className="ml-1.5 text-rose-500 text-[0.65rem]">· Tutup: {m.closed_days}</span>}
                     </p>
                   </div>
                 </div>
