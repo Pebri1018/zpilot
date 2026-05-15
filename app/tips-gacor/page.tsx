@@ -181,6 +181,21 @@ export default function TipsGacorPage() {
         </div>
       </div>
 
+      {/* Disclaimer Banner */}
+      <div className="px-5 pt-6">
+        <div className="bg-blue-50 border border-blue-100 rounded-3xl p-5 flex gap-4">
+          <div className="w-10 h-10 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          </div>
+          <div>
+            <p className="text-[0.85rem] font-bold text-blue-900 leading-tight mb-1">ZPILOT Adalah Alat Bantu</p>
+            <p className="text-[0.75rem] font-medium text-blue-700/70 leading-relaxed">
+              Aplikasi ini membantu membaca kondisi lapangan. Keputusan akhir order tetap ada di sistem platform dan performa akun masing-masing.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Content */}
       <div className="px-5 py-6 space-y-4 max-w-md mx-auto">
         {filteredTips.length > 0 ? (
