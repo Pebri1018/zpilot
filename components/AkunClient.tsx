@@ -71,8 +71,33 @@ export function AkunClient({ email, nama, kota, platform, driverId, zpilotId, ro
     { label: "ID Driver", value: driverId?.trim() || "—" },
   ];
 
+  const [isStandalone, setIsStandalone] = useState(true);
+
+  useEffect(() => {
+    const checkStandalone = () => {
+      const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || document.referrer.includes('android-app://');
+      setIsStandalone(!!isStandaloneMode);
+    };
+    checkStandalone();
+  }, []);
+
   return (
     <div className="space-y-5">
+      {!isStandalone && (
+        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-5 shadow-lg relative overflow-hidden animate-in slide-in-from-top-4 duration-500">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl rounded-full -mr-16 -mt-16 pointer-events-none"></div>
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+            </div>
+            <div>
+              <p className="text-white font-black text-[1.1rem] leading-tight mb-1">Install Aplikasi ZPILOT</p>
+              <p className="text-white/70 text-[0.8rem] font-medium leading-snug">GPS lebih stabil & hemat kuota. Klik <span className="inline-flex items-center justify-center w-5 h-5 bg-white/20 rounded mx-0.5"><svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 5v.01M12 12v.01M12 19v.01" /></svg></span> lalu pilih <span className="font-bold text-white">"Tambahkan ke Layar Utama"</span>.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {msg && (
         <div className={`p-4 rounded-2xl text-[0.85rem] font-bold animate-in fade-in slide-in-from-top-2 ${msg.type === "success" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
           {msg.text}
