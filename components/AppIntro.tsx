@@ -35,8 +35,9 @@ export function AppIntro({ children, authenticated }: { children: React.ReactNod
         onClick={() => setStep("splash2")}
         className="fixed inset-0 z-[9999] bg-[#2d5af1] flex flex-col items-center justify-center p-6 text-white animate-in fade-in duration-500 cursor-pointer"
       >
-        <div className="w-24 h-24 rounded-[2.5rem] border-2 border-white/50 flex items-center justify-center mb-6 overflow-hidden bg-white/10 backdrop-blur-sm">
-          <img src="/logo.png" alt="ZPILOT" className="w-full h-full object-cover scale-110" />
+        <div className="w-24 h-24 rounded-[2rem] border-[1.5rem] border-white/10 flex items-center justify-center mb-6 overflow-hidden shadow-2xl relative">
+          <img src="/logo.png" alt="ZPILOT" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 border-2 border-white/40 rounded-[2rem]" />
         </div>
         <h1 className="text-[2.5rem] font-black tracking-tight leading-none">ZPILOT</h1>
         <p className="absolute bottom-12 text-[0.7rem] font-bold tracking-[0.2em] opacity-60 uppercase">Smart Navigation for Drivers</p>
