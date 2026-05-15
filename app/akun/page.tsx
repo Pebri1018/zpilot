@@ -15,17 +15,22 @@ export default async function AkunPage() {
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
-    .from("users")
-    .select("nama, kota, platform, driver_id, ztips_id, role")
-    .eq("id", user.id)
-    .maybeSingle();
+  // Parallelize profile and feedback fetch
+  const [profileResult, feedbackResult] = await Promise.all([
+    supabase
+      .from("users")
+      .select("nama, kota, platform, driver_id, ztips_id, role")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("feedback")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+  ]);
 
-  const { data: feedback } = await supabase
-    .from("feedback")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+  const profile = profileResult.data;
+  const feedback = feedbackResult.data;
 
   return (
     <div className="min-h-[100dvh] bg-[#f7f7f8] pb-24 text-neutral-900 antialiased">

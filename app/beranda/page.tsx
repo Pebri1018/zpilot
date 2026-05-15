@@ -7,7 +7,13 @@ import { redirect } from "next/navigation";
 
 export default async function BerandaPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // Parallelize fetches for speed
+  const [userResult, broadcast] = await Promise.all([
+    supabase.auth.getUser(),
+    getLatestActiveBroadcast()
+  ]);
+
+  const user = userResult.data.user;
   if (!user) redirect("/login");
 
   const { data: profile } = await supabase
@@ -20,11 +26,6 @@ export default async function BerandaPage() {
     await supabase.auth.signOut();
     redirect("/login?error=blocked");
   }
-
-  // Security check: if admin accidentally comes here, it's fine, but user cannot go to /admin
-  // But we should follow the logic: admin -> /admin, user -> /beranda
-
-  const broadcast = await getLatestActiveBroadcast();
 
   return (
     <div className="min-h-[100dvh] bg-[#f2f2f4] dark:bg-neutral-950 pb-24 text-neutral-900 dark:text-neutral-100 antialiased">
