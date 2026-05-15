@@ -51,6 +51,7 @@ export function DriverBottomNav({ isDemo = false }: { isDemo?: boolean }) {
     },
   ];
 
+  return (
     <>
       <nav
         className="fixed inset-x-0 bottom-0 z-30 border-t border-neutral-200/90 dark:border-white/10 bg-white/95 dark:bg-neutral-950/95 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md"
