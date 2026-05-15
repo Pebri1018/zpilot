@@ -84,25 +84,40 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
         reviews = Math.round(val);
       }
 
-      // Improved Name Detection (Combine multi-line names)
-      // Usually: Name Part 1, Name Part 2, Category/City, Rating
-      const nameCandidates = [];
-      for (let i = 2; i <= 4; i++) {
+      // Improved Name Detection (ShopeeFood structure)
+      // Rank 4: Rating Line
+      // Rank 3: Category Line (Rice Bowl, etc)
+      // Rank 2: Name Part 2 (Gayamsari)
+      // Rank 1: Name Part 1 (Nasi Mangkok...)
+      
+      const blacklist = ["group order", "tiba dalam", "penilaian", "promo", "lihat semua", "favorit", "rice bowl"];
+      const nameParts = [];
+      
+      for (let i = 2; i <= 3; i++) {
         const idx = ratingLineIdx - i;
         if (idx >= 0) {
-          const l = lines[idx];
-          if (l.length > 3 && !l.includes("Penilaian") && !l.includes("Tiba dalam")) {
-            nameCandidates.unshift(l);
+          const l = lines[idx].trim();
+          const low = l.toLowerCase();
+          
+          // Skip if in blacklist or looks like junk
+          const isJunk = blacklist.some(b => low.includes(b)) || l.length < 2 || l.match(/^\d+$/);
+          if (!isJunk) {
+            nameParts.unshift(l);
           }
         }
       }
       
-      // If we have candidates, use them. Otherwise fallback to ratingLineIdx - 1
-      if (nameCandidates.length > 0) {
-        name = nameCandidates.join(" ");
-      } else if (ratingLineIdx >= 1) {
-        name = lines[ratingLineIdx - 1];
-      }
+      name = nameParts.join(" ");
+      if (!name && ratingLineIdx >= 1) name = lines[ratingLineIdx - 1];
+    }
+
+    if (name) {
+      // Deep clean junk
+      name = name
+        .replace(/^(aa Kita|Group Order|9)\s*/i, "")
+        .replace(/^9+/, "")
+        .replace(/\)+$/, "")
+        .trim();
     }
 
     // More aggressive promo detection for ShopeeFood
