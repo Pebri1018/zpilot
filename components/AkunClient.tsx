@@ -166,6 +166,23 @@ export function AkunClient({ email, nama, kota, platform, driverId, zpilotId, ro
       </div>
 
       <button 
+        onClick={() => router.push("/tips-gacor")} 
+        className="w-full bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl overflow-hidden shadow-lg shadow-blue-500/20 p-5 flex items-center justify-between active:scale-[0.98] transition-all relative"
+      >
+        <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12 blur-xl" />
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="w-12 h-12 rounded-2xl bg-white/20 text-white flex items-center justify-center shadow-inner">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+          </div>
+          <div className="text-left">
+            <p className="font-black text-[1.1rem] text-white tracking-tight leading-none">Tips Gacor</p>
+            <p className="text-[0.75rem] font-bold text-blue-100 mt-1.5 uppercase tracking-wider">Official Guide & Insight</p>
+          </div>
+        </div>
+        <svg className="w-5 h-5 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+      </button>
+
+      <button 
         onClick={() => setModal("settings")} 
         className="w-full bg-white rounded-3xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-neutral-100 p-5 flex items-center justify-between active:scale-[0.98] transition-all"
       >
@@ -280,10 +297,6 @@ export function AkunClient({ email, nama, kota, platform, driverId, zpilotId, ro
                         <span className="text-[0.95rem] font-semibold dark:text-white">{lang === "ID" ? "Riwayat Masukan" : "Feedback History"}</span>
                         {feedback.some(f => f.admin_reply && f.status !== "closed") && <span className="bg-red-500 w-2 h-2 rounded-full ml-1" />}
                         <svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                      </button>
-                      <button onClick={() => router.push("/tips-gacor")} className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-neutral-50 dark:hover:bg-neutral-700 active:bg-neutral-100 dark:active:bg-neutral-600 transition">
-                        <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></div>
-                        <span className="text-[0.95rem] font-semibold dark:text-white">Tips Gacor</span><svg className="w-4 h-4 text-neutral-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                       </button>
                       <button 
                         onClick={async () => {
