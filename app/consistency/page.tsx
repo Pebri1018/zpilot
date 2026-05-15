@@ -11,24 +11,31 @@ export default function ConsistencyPage() {
   const [day, setDay] = useState(3); // Mocking day 3 for now
   const supabase = createClient();
 
+  const [showLogModal, setShowLogModal] = useState(false);
+  const [logForm, setLogForm] = useState({
+    startTime: "",
+    endTime: "",
+    area: ""
+  });
+  const [logs, setLogs] = useState<any[]>([]);
+
   useEffect(() => {
     async function fetchData() {
       // Simulate fetching
       setTimeout(() => {
         setStats({
-          todayOnline: "6j 12m",
+          todayOnline: "0j 0m",
           peakHours: "18:00 - 21:00",
           topZones: ["Seturan", "Babarsari", "Concat"],
           insights: [
-            "Akunmu cenderung lebih aktif malam hari.",
-            "Performa area kampus lebih stabil untuk akunmu.",
-            "Terlalu lama idle di satu titik menurunkan movement."
+            "Belum ada data cukup untuk pola harian.",
+            "Isi aktivitasmu secara rutin untuk melihat pola.",
           ],
           targets: [
-            { label: "Online minimal 4 jam", done: true },
-            { label: "Tidak idle terlalu lama", done: true },
+            { label: "Online minimal 4 jam", done: false },
+            { label: "Tidak idle terlalu lama", done: false },
             { label: "Pindah zona minimal 2x", done: false },
-            { label: "Online di peak hour", done: true }
+            { label: "Online di peak hour", done: false }
           ]
         });
         setLoading(false);
@@ -37,32 +44,76 @@ export default function ConsistencyPage() {
     fetchData();
   }, []);
 
+  const handleAddLog = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!logForm.startTime || !logForm.endTime || !logForm.area) return;
+    
+    const start = new Date(`2000-01-01T${logForm.startTime}`);
+    const end = new Date(`2000-01-01T${logForm.endTime}`);
+    const diff = (end.getTime() - start.getTime()) / (1000 * 60); // minutes
+    
+    if (diff < 0) return alert("Jam selesai harus setelah jam mulai");
+
+    const newLog = {
+      ...logForm,
+      minutes: diff,
+      id: Date.now().toString()
+    };
+    
+    const updatedLogs = [newLog, ...logs];
+    setLogs(updatedLogs);
+    
+    // Update stats based on logs
+    const totalMin = updatedLogs.reduce((acc, l) => acc + l.minutes, 0);
+    const h = Math.floor(totalMin / 60);
+    const m = totalMin % 60;
+    
+    setStats({
+      ...stats,
+      todayOnline: `${h}j ${m}m`,
+      targets: stats.targets.map((t: any) => 
+        t.label.includes("4 jam") ? { ...t, done: h >= 4 } : t
+      )
+    });
+
+    setShowLogModal(false);
+    setLogForm({ startTime: "", endTime: "", area: "" });
+  };
+
   return (
     <div className="min-h-[100dvh] bg-[#f7f9fc] pb-24 text-neutral-900 antialiased">
       {/* Header */}
       <div className="bg-white px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-8 shadow-sm relative overflow-hidden">
         <div className="absolute top-0 right-0 w-40 h-40 bg-blue-500/5 rounded-full -mr-20 -mt-20 blur-3xl" />
         
-        <div className="flex items-center gap-3 mb-8 relative z-10">
-          <Link href="/akun" className="w-10 h-10 rounded-2xl bg-neutral-50 flex items-center justify-center text-neutral-400 active:scale-95 transition-all">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
-          </Link>
-          <h1 className="text-[1.2rem] font-black tracking-tight">Mode Konsisten</h1>
+        <div className="flex items-center justify-between mb-8 relative z-10">
+          <div className="flex items-center gap-3">
+            <Link href="/akun" className="w-10 h-10 rounded-2xl bg-neutral-50 flex items-center justify-center text-neutral-400 active:scale-95 transition-all">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+            </Link>
+            <h1 className="text-[1.2rem] font-black tracking-tight">Mode Konsisten</h1>
+          </div>
+          <button 
+            onClick={() => setShowLogModal(true)}
+            className="bg-blue-600 text-white text-[0.8rem] font-bold px-4 py-2.5 rounded-xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
+          >
+            + Log Jam
+          </button>
         </div>
 
         <div className="relative z-10">
           <h2 className="text-[1.6rem] font-black leading-tight tracking-tight mb-2">Program Konsisten 30 Hari</h2>
           <p className="text-[0.85rem] font-medium text-neutral-500 leading-relaxed mb-6">
-            Bangun pola online yang lebih stabil dan pantau histori akunmu secara personal.
+            Input jam online-mu untuk membangun pola yang lebih stabil dan personal.
           </p>
 
           <div className="space-y-3">
             <div className="flex justify-between items-end">
               <p className="text-[0.8rem] font-black text-blue-600 uppercase tracking-widest">Progress Program</p>
-              <p className="text-[0.9rem] font-black text-neutral-900">Hari {day} <span className="text-neutral-300">/ 30</span></p>
+              <p className="text-[0.9rem] font-black text-neutral-900">Hari {logs.length > 0 ? day : 0} <span className="text-neutral-300">/ 30</span></p>
             </div>
             <div className="h-3 w-full bg-neutral-100 rounded-full overflow-hidden flex">
-              <div className="h-full bg-blue-600 rounded-full shadow-[0_0_12px_rgba(37,99,235,0.4)] transition-all duration-1000" style={{ width: `${(day/30)*100}%` }} />
+              <div className="h-full bg-blue-600 rounded-full shadow-[0_0_12px_rgba(37,99,235,0.4)] transition-all duration-1000" style={{ width: `${(logs.length > 0 ? (day/30)*100 : 0)}%` }} />
             </div>
           </div>
         </div>
@@ -71,28 +122,100 @@ export default function ConsistencyPage() {
       {/* Main Content */}
       <div className="px-5 py-6 space-y-6 max-w-md mx-auto">
         
-        {/* Section 2 — Check-in Card */}
+        {/* Section 2 — Summary Card */}
         <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-neutral-100 relative overflow-hidden group">
-          <div className="absolute top-4 right-4 w-12 h-12 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          </div>
-          <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-3">Status Hari Ini</p>
+          <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-3">Total Online Hari Ini</p>
           <h3 className="text-[1.3rem] font-black text-neutral-900 mb-1">
-            Kamu online <span className="text-blue-600">{stats?.todayOnline || "--"}</span>
+            <span className="text-blue-600">{stats?.todayOnline || "0j 0m"}</span>
           </h3>
-          <p className="text-[0.8rem] font-medium text-neutral-500">Pola online-mu hari ini terlihat cukup stabil.</p>
-          
-          <div className="mt-6 grid grid-cols-2 gap-3 pt-6 border-t border-neutral-50">
-            <div className="bg-neutral-50 rounded-2xl p-3 text-center">
-              <p className="text-[0.6rem] font-bold text-neutral-400 uppercase mb-1">Total Idle</p>
-              <p className="text-[0.9rem] font-black text-neutral-700">42 Menit</p>
-            </div>
-            <div className="bg-neutral-50 rounded-2xl p-3 text-center">
-              <p className="text-[0.6rem] font-bold text-neutral-400 uppercase mb-1">Pindah Zona</p>
-              <p className="text-[0.9rem] font-black text-neutral-700">3 Kali</p>
+          <p className="text-[0.8rem] font-medium text-neutral-500">
+            {logs.length > 0 ? "Bagus! Terus jaga ritme online-mu." : "Ayo mulai log jam online-mu hari ini."}
+          </p>
+        </div>
+
+        {/* History List */}
+        {logs.length > 0 && (
+          <div className="space-y-4">
+            <h4 className="text-[1rem] font-black text-neutral-800 tracking-tight px-2">Riwayat Hari Ini</h4>
+            <div className="space-y-3">
+              {logs.map(log => (
+                <div key={log.id} className="bg-white rounded-3xl p-4 border border-neutral-100 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
+                    <div>
+                      <p className="text-[0.85rem] font-black text-neutral-800">{log.area}</p>
+                      <p className="text-[0.7rem] font-bold text-neutral-400">{log.startTime} - {log.endTime}</p>
+                    </div>
+                  </div>
+                  <p className="text-[0.8rem] font-black text-blue-600">{Math.floor(log.minutes/60)}j {log.minutes%60}m</p>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Add Log Modal */}
+        {showLogModal && (
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-neutral-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+            <div 
+              className="bg-white w-full max-w-md rounded-t-[2.5rem] sm:rounded-[2.5rem] p-8 shadow-2xl animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-300"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-[1.2rem] font-black text-neutral-900">Log Aktivitas Online</h3>
+                <button onClick={() => setShowLogModal(false)} className="text-neutral-400">
+                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+
+              <form onSubmit={handleAddLog} className="space-y-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[0.7rem] font-black text-neutral-400 uppercase tracking-widest pl-1">Jam Mulai</label>
+                    <input 
+                      type="time" 
+                      required
+                      value={logForm.startTime}
+                      onChange={e => setLogForm({...logForm, startTime: e.target.value})}
+                      className="w-full bg-neutral-50 border-none rounded-2xl p-4 text-[0.95rem] font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[0.7rem] font-black text-neutral-400 uppercase tracking-widest pl-1">Jam Selesai</label>
+                    <input 
+                      type="time" 
+                      required
+                      value={logForm.endTime}
+                      onChange={e => setLogForm({...logForm, endTime: e.target.value})}
+                      className="w-full bg-neutral-50 border-none rounded-2xl p-4 text-[0.95rem] font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[0.7rem] font-black text-neutral-400 uppercase tracking-widest pl-1">Area Mulai Online</label>
+                  <input 
+                    type="text" 
+                    required
+                    placeholder="Contoh: Seturan, Concat, dsb."
+                    value={logForm.area}
+                    onChange={e => setLogForm({...logForm, area: e.target.value})}
+                    className="w-full bg-neutral-50 border-none rounded-2xl p-4 text-[0.95rem] font-bold focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                  />
+                </div>
+
+                <button 
+                  type="submit"
+                  className="w-full bg-blue-600 text-white py-4 rounded-2xl text-[1rem] font-black shadow-xl shadow-blue-500/30 active:scale-95 transition-all mt-4"
+                >
+                  Simpan Aktivitas
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Section 3 — Analytics */}
         <div className="space-y-4">
