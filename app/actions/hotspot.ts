@@ -80,8 +80,9 @@ export async function getHotspots(): Promise<HotspotZone[]> {
 
     if (msErr) console.error("hotspot manual signals error:", msErr.message);
 
-    const hour = new Date().getHours();
-    const day = new Date().getDay();
+    const jakartaTime = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+    const hour = jakartaTime.getHours();
+    const day = jakartaTime.getDay();
 
     // 4. Process each zone
     const hotspots: HotspotZone[] = PREDEFINED_ZONES.map(zone => {
@@ -129,15 +130,23 @@ export async function getHotspots(): Promise<HotspotZone[]> {
       let reason = "Permintaan normal";
       
       if (zone.id === "seturan") {
-        if ((hour >= 11 && hour < 14) || (hour >= 17 && hour < 21) || (hour >= 22 || hour < 1)) {
+        if (hour >= 6 && hour < 10) {
+          reason = "Sarapan kos & mahasiswa mulai aktif";
+          areaBonus = 3;
+        } else if ((hour >= 11 && hour < 14) || (hour >= 17 && hour < 21) || (hour >= 22 || hour < 1)) {
           areaBonus = 5;
           reason = "Banyak kos, kuat di jam makan & malam";
         } else {
-          reason = "Persaingan tinggi di sini";
+          reason = "Persaingan tinggi, pantau terus";
         }
       } else if (zone.id === "babarsari") {
-        areaBonus = 3;
-        reason = "Permintaan stabil, zona aman";
+        if (hour >= 6 && hour < 10) {
+          reason = "Kuat di sarapan & kopi pagi";
+          areaBonus = 2;
+        } else {
+          areaBonus = 3;
+          reason = "Permintaan stabil, zona aman";
+        }
       } else if (zone.id === "gejayan") {
         if ((hour >= 11 && hour < 14) || (hour >= 17 && hour < 21)) {
           areaBonus = 4;

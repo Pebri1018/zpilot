@@ -233,7 +233,8 @@ export type ZoneStatsResult = {
 
 export async function getZoneStats(areaName: string | null, lat?: number | null, lng?: number | null): Promise<ZoneStatsResult> {
   const supabase = await createClient();
-  const hour = new Date().getHours();
+  const jakartaTime = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+  const hour = jakartaTime.getHours();
   
   let driverCountInArea = 0;
   let pesaing: "Padat" | "Sedang" | "Longgar" = "Data Minim" as any;
