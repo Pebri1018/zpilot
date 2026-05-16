@@ -63,8 +63,8 @@ export async function saveNgetemSpot(formData: FormData) {
   const { data: existing } = await supabase
     .from("ngetem_spots")
     .select("id")
-    .eq("name", name)
-    .eq("area", area)
+    .ilike("name", name)
+    .ilike("area", area)
     .maybeSingle();
 
   if (existing) {

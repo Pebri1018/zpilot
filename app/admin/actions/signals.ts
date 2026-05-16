@@ -117,8 +117,8 @@ export async function upsertMerchant(formData: FormData) {
     const { data: existing } = await supabase
       .from("merchant_signals")
       .select("id")
-      .eq("name", name)
-      .eq("area", area)
+      .ilike("name", name)
+      .ilike("area", area)
       .maybeSingle();
     
     if (existing) {
@@ -202,8 +202,8 @@ export async function upsertSeller(formData: FormData) {
     const { data: existing } = await supabase
       .from("merchant_signals")
       .select("id")
-      .eq("name", name)
-      .eq("area", area)
+      .ilike("name", name)
+      .ilike("area", area)
       .maybeSingle();
     
     if (existing) {
@@ -470,9 +470,7 @@ export async function getAllMerchants(): Promise<MerchantSignal[]> {
   const { data } = await supabase
     .from("merchant_signals")
     .select("*")
-    .order("area", { ascending: true })
-    .order("busy_score", { ascending: false })
-    .limit(100);
+    .order("created_at", { ascending: false });
 
   return data || [];
 }
