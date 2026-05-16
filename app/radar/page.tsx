@@ -104,7 +104,7 @@ function RadarContent() {
         }
 
         // 0. Trigger auto-offline cleanup in DB
-        await supabase.rpc('cleanup_inactive_drivers').catch(e => console.error("Cleanup error:", e));
+        await supabase.rpc('cleanup_inactive_drivers');
 
         // 1. Fetch active (non-Offline) drivers from users table
         const { data: drivers, error: dErr } = await supabase
