@@ -50,6 +50,7 @@ export async function upsertMerchant(formData: FormData) {
   const isAdmin = await verifyAdmin();
   if (!isAdmin) return { error: "Unauthorized" };
 
+  const id = formData.get("id") ? String(formData.get("id")) : null;
   const name = String(formData.get("name") || "").trim();
   const category = String(formData.get("category") || "Makanan");
   const promo_percent = formData.get("promo_percent") ? Number(formData.get("promo_percent")) : 0;
@@ -110,6 +111,21 @@ export async function upsertMerchant(formData: FormData) {
   }
 
   const supabase = getServiceClient();
+
+  // --- DUPLICATE CHECK (Only for new entries) ---
+  if (!id) {
+    const { data: existing } = await supabase
+      .from("merchant_signals")
+      .select("id")
+      .eq("name", name)
+      .eq("area", area)
+      .maybeSingle();
+    
+    if (existing) {
+      return { error: `Lokasi "${name}" di area "${area}" sudah ada di database.` };
+    }
+  }
+
   const { data, error } = await supabase.from("merchant_signals").upsert(
     {
       name,
@@ -158,6 +174,7 @@ export async function upsertSeller(formData: FormData) {
   const isAdmin = await verifyAdmin();
   if (!isAdmin) return { error: "Unauthorized" };
 
+  const id = formData.get("id") ? String(formData.get("id")) : null;
   const name = String(formData.get("name") || "").trim();
   const category = String(formData.get("category") || "Paket");
   const latStr = String(formData.get("lat"));
@@ -179,6 +196,21 @@ export async function upsertSeller(formData: FormData) {
   const busy_level = busy_score >= 5 ? "High" : busy_score >= 3 ? "Medium" : "Low";
 
   const supabase = getServiceClient();
+
+  // --- DUPLICATE CHECK (Only for new entries) ---
+  if (!id) {
+    const { data: existing } = await supabase
+      .from("merchant_signals")
+      .select("id")
+      .eq("name", name)
+      .eq("area", area)
+      .maybeSingle();
+    
+    if (existing) {
+      return { error: `Seller "${name}" di area "${area}" sudah ada di database.` };
+    }
+  }
+
   const { data, error } = await supabase.from("merchant_signals").upsert(
     {
       name,

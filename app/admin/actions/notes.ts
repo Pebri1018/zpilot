@@ -58,6 +58,19 @@ export async function saveNgetemSpot(formData: FormData) {
   if (!name.trim() || !area.trim()) return { error: "Nama dan area wajib diisi" };
 
   const supabase = getServiceClient();
+
+  // --- DUPLICATE CHECK ---
+  const { data: existing } = await supabase
+    .from("ngetem_spots")
+    .select("id")
+    .eq("name", name)
+    .eq("area", area)
+    .maybeSingle();
+
+  if (existing) {
+    return { error: `Spot mangkal "${name}" di area "${area}" sudah ada.` };
+  }
+
   const { error } = await supabase.from("ngetem_spots").insert({
     name,
     area,

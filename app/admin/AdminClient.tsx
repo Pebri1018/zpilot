@@ -1713,6 +1713,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 const isSeller = ["Paket", "Toko/Seller", "Seller SPX"].includes(editingMerchant.category);
                 return (
                   <>
+                    <input type="hidden" name="id" value={editingMerchant.id} />
                     <input type="hidden" name="lat" value={editLat ?? ""} />
                     <input type="hidden" name="lng" value={editLng ?? ""} />
                     <div className="mb-3">

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { createUserProfile } from "@/app/login/actions";
+import { createUserProfile, checkEmailExists } from "@/app/login/actions";
 
 type Props = {
   disabled?: boolean;
@@ -12,13 +12,14 @@ type Props = {
 type Tab = "masuk" | "daftar";
 
 const ERROR_MAP: Record<string, string> = {
-  "Invalid login credentials": "Email atau password salah. Coba lagi.",
+  "Invalid login credentials": "Email atau kata sandi salah.",
   "Email not confirmed": "Email belum dikonfirmasi. Periksa kotak masuk Anda.",
   "User already registered": "Email sudah terdaftar. Silakan masuk.",
   "Password should be at least 6 characters": "Password minimal 6 karakter.",
   "signup is disabled": "Pendaftaran dinonaktifkan sementara oleh admin.",
   "Email signups are disabled": "Pendaftaran via email belum diaktifkan. Hubungi admin.",
   "over_email_send_rate_limit": "Terlalu banyak percobaan. Tunggu beberapa menit.",
+  "Email belum terdaftar": "Email belum terdaftar. Silakan daftar akun baru.",
 };
 
 function translateError(msg: string): string {
@@ -53,6 +54,14 @@ export function AuthForm({ disabled = false }: Props) {
     setMessage(null);
     setLoading(true);
     try {
+      // 1. Check if email exists in public.users first for better feedback
+      const check = await checkEmailExists(email);
+      if (check.exists === false) {
+        setMessage({ type: "error", text: ERROR_MAP["Email belum terdaftar"] });
+        setLoading(false);
+        return;
+      }
+
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
@@ -116,7 +125,7 @@ export function AuthForm({ disabled = false }: Props) {
       }
 
       // Insert profile immediately (service role bypasses RLS)
-      const result = await createUserProfile(newUserId, { nama, kota, driverId, platform: "Shopee" });
+      const result = await createUserProfile(newUserId, { nama, kota, driverId, platform: "Shopee", email });
       if (result.error) {
         setMessage({ type: "error", text: `Profil gagal disimpan: ${result.error}` });
         return;

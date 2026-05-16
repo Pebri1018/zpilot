@@ -3,7 +3,7 @@
 import { createClient as createServerClient } from "@supabase/supabase-js";
 import { getSupabaseUrl } from "@/lib/supabase/env";
 
-export async function createUserProfile(userId: string, data: { nama: string; kota: string; driverId: string; platform: string }) {
+export async function createUserProfile(userId: string, data: { nama: string; kota: string; driverId: string; platform: string; email: string }) {
   const supabaseUrl = getSupabaseUrl();
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -24,6 +24,7 @@ export async function createUserProfile(userId: string, data: { nama: string; ko
       kota: data.kota || "Yogyakarta",
       driver_id: data.driverId || null,
       platform: data.platform || "Shopee",
+      email: data.email,
       onboarding_completed: true,
     },
     { onConflict: "id" }
@@ -35,4 +36,23 @@ export async function createUserProfile(userId: string, data: { nama: string; ko
   }
 
   return { success: true };
+}
+
+export async function checkEmailExists(email: string) {
+  const supabaseUrl = getSupabaseUrl();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) return { error: "Config error" };
+
+  const supabase = createServerClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("id")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (error) return { error: error.message };
+  return { exists: !!data };
 }
