@@ -140,7 +140,14 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
       name = name.replace(/^9+/, '').replace(/\)+$/, '').trim();
     }
 
-    return { name, rating, reviews, promo, freeDelivery: true, category };
+    // Closed Days Detection (Simple)
+    let closedDays = "";
+    const closedMatch = text.match(/Tutup\s*pada\s*([a-zA-Z, ]+)/i) || text.match(/Libur\s*([a-zA-Z, ]+)/i);
+    if (closedMatch) {
+      closedDays = closedMatch[1].trim();
+    }
+
+    return { name, rating, reviews, promo, freeDelivery: true, category, closedDays };
   };
 
   const [previewImages, setPreviewImages] = useState<{ id: string; url: string; file: File }[]>([]);
@@ -203,7 +210,8 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
           specialHours: {},
           is_open_24h: false,
           open_time: "",
-          close_time: ""
+          close_time: "",
+          closed_days: parsed.closedDays || ""
         });
       } catch (e) {
         console.error(`Error processing image ${i}`, e);
@@ -940,6 +948,20 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                                </div>
                              )}
 
+                             <div className="mt-4 mb-2 px-1">
+                                <p className="text-[0.6rem] font-black text-neutral-400 uppercase tracking-widest mb-1.5 pl-1">Hari Libur (opsional)</p>
+                                <input 
+                                  value={item.closed_days || ""}
+                                  onChange={(e) => {
+                                    const newItems = [...detectedItems];
+                                    newItems[index].closed_days = e.target.value;
+                                    setDetectedItems(newItems);
+                                  }}
+                                  placeholder="Misal: Senin, Minggu"
+                                  className="w-full px-4 py-3 rounded-xl bg-neutral-50 border border-neutral-200 text-[0.85rem] font-bold outline-none focus:bg-white transition-all" 
+                                />
+                             </div>
+
                              {/* Special Hours for Batch Item */}
                              <div className="bg-neutral-50 rounded-2xl p-4 border border-neutral-100">
                                 <p className="text-[0.65rem] font-black text-neutral-400 uppercase tracking-widest mb-3">Jam Khusus Hari Tertentu</p>
@@ -1050,6 +1072,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                       fd.append("is_open_24h", item.is_open_24h ? "on" : "");
                       fd.append("open_time", item.open_time || "");
                       fd.append("close_time", item.close_time || "");
+                      fd.append("closed_days", item.closed_days || "");
                       fd.append("special_hours", JSON.stringify(item.specialHours || {}));
                       
                       const res = await upsertMerchant(fd);
