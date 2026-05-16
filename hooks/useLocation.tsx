@@ -187,7 +187,25 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
       if (cur.status === "Ngetem" && cur.latitude) {
         recordActiveMinute().catch(console.error);
       }
-    }, 60 * 1000); // Analytics still 1 minute
+
+      // --- AUTO OFFLINE LOGIC (1 HOUR IDLE) ---
+      if (cur.status !== "Offline" && cur.timestamp) {
+        const now = Date.now();
+        const idleTime = now - cur.timestamp;
+        if (idleTime > 60 * 60 * 1000) { // 60 minutes
+          console.log("Idle auto-offline triggered");
+          // Use the value's setStatus directly to sync DB
+          const supabase = createClient();
+          supabase.auth.getUser().then(({ data: { user } }) => {
+            if (user) {
+               updateDriverStatus("Offline", cur.latitude || undefined, cur.longitude || undefined).then(() => {
+                 setState(s => ({ ...s, status: "Offline" }));
+               });
+            }
+          });
+        }
+      }
+    }, 60 * 1000); // Check every 1 minute
 
     return () => {
       clearInterval(intervalId);
