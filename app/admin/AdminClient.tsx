@@ -243,6 +243,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterLevel, setFilterLevel] = useState("All");
+  const [areaFilter, setAreaFilter] = useState("all");
   const [completenessFilter, setCompletenessFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const merchantFormRef = useRef<HTMLFormElement>(null);
@@ -1228,6 +1229,16 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
               />
               <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                 <select 
+                  value={areaFilter} 
+                  onChange={(e) => setAreaFilter(e.target.value)}
+                  className="px-3 py-2 rounded-xl bg-white border border-neutral-200 text-[0.75rem] font-bold outline-none shrink-0"
+                >
+                  <option value="all">Semua Area</option>
+                  {Array.from(new Set(merchants.map(m => m.area))).filter(Boolean).sort().map(a => (
+                    <option key={a} value={a}>{a}</option>
+                  ))}
+                </select>
+                <select 
                   value={completenessFilter} 
                   onChange={(e) => setCompletenessFilter(e.target.value)}
                   className="px-3 py-2 rounded-xl bg-white border border-neutral-200 text-[0.75rem] font-bold outline-none shrink-0"
@@ -1264,6 +1275,7 @@ export function AdminClient({ broadcasts, initialMerchants = [], initialSpots = 
                 if (completenessFilter === "missing_category") return !m.category;
                 return status === completenessFilter;
               })
+              .filter(m => areaFilter === "all" || m.area === areaFilter)
               .sort((a, b) => {
                 if (sortBy === "priority" && hotspots?.length) {
                   const isAHotspot = hotspots.some(h => a.area?.toLowerCase().includes(h.name.toLowerCase()));
