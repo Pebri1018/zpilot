@@ -268,8 +268,21 @@ export function LiveDashboard({ isDemo = false }: { isDemo?: boolean }) {
     return () => clearInterval(timer);
   }, [fetchData]);
 
-  // Real-time listener removed to optimize Supabase connection pool.
-  // We rely on the 5-minute auto-refresh interval above and manual refresh to save battery/data.
+  // Real-time Supabase Broadcast listener
+  useEffect(() => {
+    const supabase = (require("@/lib/supabase/client")).createClient();
+    const channel = supabase.channel("zpilot-realtime")
+      .on("broadcast", { event: "merchant-status" }, (payload: any) => {
+        const { id, live_status, type } = payload.payload;
+        setMerchants(prev => {
+          const newMerchants = prev.map(m => m.id === id ? { ...m, live_status, type } : m);
+          saveMerchantsCache(newMerchants);
+          return newMerchants;
+        });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
   const formattedTime = time.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false });
   const idleMinutes = ngetemStartTime ? Math.floor((Date.now() - ngetemStartTime) / 60000) : 0;
   const actionColors = getActionColors(recommendation.action, recommendation.color);

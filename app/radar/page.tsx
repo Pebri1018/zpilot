@@ -357,35 +357,47 @@ function RadarContent() {
     return () => clearInterval(checkIdle);
   }, [showMoveSuggest]);
 
-  // Adaptive Polling
+  // Supabase Broadcast Listener (Real-time without full DB re-fetches)
   useEffect(() => {
-    fetchData();
-    let timeoutId: NodeJS.Timeout;
-    let isCancelled = false;
+    fetchData(); // Initial load
+
+    const supabase = createClient();
     
-    const scheduleNextFetch = () => {
-      if (isCancelled) return;
-      const interval = document.visibilityState === 'visible' ? 10000 : 30000;
-      timeoutId = setTimeout(() => {
-        if (!isCancelled) fetchData().finally(scheduleNextFetch);
-      }, interval);
-    };
-    
-    scheduleNextFetch();
-    
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        clearTimeout(timeoutId);
-        fetchData().finally(scheduleNextFetch);
-      }
-    };
-    
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    
+    // Listen to driver locations & merchant status changes via Broadcast
+    const channel = supabase.channel("zpilot-realtime")
+      .on("broadcast", { event: "merchant-status" }, (payload: any) => {
+        const { id, type, live_status } = payload.payload;
+        setMarkers(prev => {
+          const newMarkers = prev.map(m => m.id === id ? { ...m, type, live_status } : m);
+          globalMarkers = newMarkers;
+          return newMarkers;
+        });
+      })
+      .on("broadcast", { event: "driver-location" }, (payload: any) => {
+        const { id, lat, lng, type, label } = payload.payload;
+        setMarkers(prev => {
+          if (type === "driver_offline") {
+            const newMarkers = prev.filter(m => m.id !== id);
+            globalMarkers = newMarkers;
+            return newMarkers;
+          }
+          const exists = prev.some(m => m.id === id);
+          if (exists) {
+            const newMarkers = prev.map(m => m.id === id ? { ...m, lat, lng, type } : m);
+            globalMarkers = newMarkers;
+            return newMarkers;
+          } else {
+            const newMarker: RadarMarker = { id, lat, lng, type, label };
+            const newMarkers = [...prev, newMarker];
+            globalMarkers = newMarkers;
+            return newMarkers;
+          }
+        });
+      })
+      .subscribe();
+
     return () => {
-      isCancelled = true;
-      clearTimeout(timeoutId);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      supabase.removeChannel(channel);
     };
   }, []);
 

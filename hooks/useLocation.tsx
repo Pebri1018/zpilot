@@ -21,6 +21,13 @@ export type LocationState = {
 
 const LocationContext = createContext<LocationState | undefined>(undefined);
 
+function getDistanceInMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371e3;
+  const p = Math.PI / 180;
+  const a = 0.5 - Math.cos((lat2 - lat1) * p) / 2 + Math.cos(lat1 * p) * Math.cos(lat2 * p) * (1 - Math.cos((lon2 - lon1) * p)) / 2;
+  return R * 2 * Math.asin(Math.sqrt(a));
+}
+
 export function LocationProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<Omit<LocationState, "refreshLocation" | "setStatus">>({
     latitude: null,
@@ -35,28 +42,113 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   const stateRef = useRef(state);
   const prevAreaRef = useRef<string | null>(null);
   const sessionOpenedRef = useRef(false);
-  const fetchLocationRef = useRef<(force?: boolean) => Promise<void>>(() => Promise.resolve());
+  const watchIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  const handlePositionUpdate = useCallback(async (position: GeolocationPosition, force: boolean = false) => {
+    const { latitude, longitude } = position.coords;
+    const currentState = stateRef.current;
+
+    if (currentState.status === "Offline") {
+      setState(s => ({ ...s, loading: false }));
+      return;
+    }
+
+    // Distance threshold check (10 meters)
+    if (!force && currentState.latitude && currentState.longitude) {
+      const dist = getDistanceInMeters(currentState.latitude, currentState.longitude, latitude, longitude);
+      if (dist < 10) {
+        return; // Skip update if moved less than 10 meters
+      }
+    }
+
+    setState((s) => ({
+      ...s,
+      latitude,
+      longitude,
+      error: null,
+      loading: false,
+      timestamp: Date.now(),
+    }));
+
+    // Sync to DB
+    updateDriverStatus(stateRef.current.status, latitude, longitude).catch(() => {});
+
+    // Reverse geocode
+    let area = stateRef.current.areaName;
+    const cacheKey = `${Math.round(latitude * 10000) / 10000},${Math.round(longitude * 10000) / 10000}`;
+    
+    if (geocodeCache.has(cacheKey)) {
+      area = geocodeCache.get(cacheKey)!;
+    } else {
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+          { headers: { "Accept-Language": "id" } }
+        );
+        const data = await response.json();
+        const addr = data.address || {};
+        
+        const road = addr.road || addr.pedestrian || addr.path || addr.footway || null;
+        const neighbourhood = addr.neighbourhood || addr.hamlet || null;
+        const suburb = addr.suburb || addr.village || null;
+        const district = addr.district || addr.city_district || addr.subdistrict || null;
+
+        const parts: string[] = [];
+        if (road) parts.push(road);
+        if (neighbourhood) parts.push(neighbourhood);
+        else if (suburb) parts.push(suburb);
+        
+        if (parts.length < 2 && district) parts.push(district);
+
+        if (parts.length > 0) {
+          area = parts.join(", ");
+        } else {
+          area = addr.city || addr.town || addr.county || "Unknown Area";
+        }
+        
+        if (area) geocodeCache.set(cacheKey, area);
+      } catch (err) {}
+    }
+
+    if (area && area !== prevAreaRef.current) {
+      if (prevAreaRef.current !== null) recordZoneChange(area).catch(console.error);
+      prevAreaRef.current = area;
+    }
+
+    setState((s) => ({ ...s, areaName: area }));
+  }, []);
+
+  const refreshLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      setState((s) => ({ ...s, error: "GPS not supported", loading: false }));
+      return;
+    }
+    setState(s => ({ ...s, loading: true }));
+    navigator.geolocation.getCurrentPosition(
+      (pos) => handlePositionUpdate(pos, true),
+      () => setState((s) => ({ ...s, error: "GPS Error", loading: false })),
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+    );
+  }, [handlePositionUpdate]);
 
   useEffect(() => {
     if (!sessionOpenedRef.current) {
       sessionOpenedRef.current = true;
       recordSessionOpen().catch(console.error);
 
-      // Fetch initial status so it doesn't default to Offline on refresh
       async function fetchInitialStatus() {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const { data } = await supabase.from('users').select('status').eq('id', user.id).maybeSingle();
           if (data?.status && data.status !== "Offline") {
-            // Restore status AND immediately trigger GPS via ref (avoids forward-reference)
             setState(s => ({ ...s, status: data.status }));
             stateRef.current = { ...stateRef.current, status: data.status };
-            setTimeout(() => fetchLocationRef.current(true), 100);
+            refreshLocation();
           } else if (data?.status === "Offline") {
             setState(s => ({ ...s, status: "Offline", loading: false }));
           }
@@ -64,137 +156,46 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
       }
       fetchInitialStatus();
     }
-  }, []);
-
-  const fetchLocation = useCallback(async (force: boolean = false) => {
-    const currentState = stateRef.current;
-    
-    // --- OFFLINE RULE: STOP TRACKING ---
-    if (currentState.status === "Offline" && !force) {
-      if (currentState.loading) setState(s => ({ ...s, loading: false }));
-      return;
-    }
-
-    const now = Date.now();
-    if (!force && currentState.timestamp && (now - currentState.timestamp < 3 * 60 * 1000)) {
-      if (currentState.loading) setState(s => ({ ...s, loading: false }));
-      return;
-    }
-
-    if (!currentState.latitude || force) {
-      setState((s) => ({ ...s, loading: true, error: null }));
-    }
-
-    if (!navigator.geolocation) {
-      setState((s) => ({ ...s, error: "GPS not supported", loading: false }));
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        
-        // --- STOP SYNC IF OFFLINE ---
-        if (stateRef.current.status === "Offline") {
-          setState(s => ({ ...s, loading: false }));
-          return;
-        }
-
-        // Update coords immediately — don't wait for reverse geocode
-        setState((s) => ({
-          ...s,
-          latitude,
-          longitude,
-          error: null,
-          loading: false,
-          timestamp: Date.now(),
-        }));
-
-        // Sync location to DB in background (non-blocking)
-        updateDriverStatus(stateRef.current.status, latitude, longitude).catch(() => {});
-
-        // Reverse geocode in background
-        let area = stateRef.current.areaName;
-        const cacheKey = `${Math.round(latitude * 10000) / 10000},${Math.round(longitude * 10000) / 10000}`;
-        
-        if (geocodeCache.has(cacheKey)) {
-          area = geocodeCache.get(cacheKey)!;
-        } else {
-          try {
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
-              { headers: { "Accept-Language": "id" } }
-            );
-            const data = await response.json();
-            const addr = data.address || {};
-            
-            const road = addr.road || addr.pedestrian || addr.path || addr.footway || null;
-            const neighbourhood = addr.neighbourhood || addr.hamlet || null;
-            const suburb = addr.suburb || addr.village || null;
-            const district = addr.district || addr.city_district || addr.subdistrict || null;
-
-            const parts: string[] = [];
-            if (road) parts.push(road);
-            if (neighbourhood) parts.push(neighbourhood);
-            else if (suburb) parts.push(suburb);
-            
-            if (parts.length < 2 && district) parts.push(district);
-
-            if (parts.length > 0) {
-              area = parts.join(", ");
-            } else {
-              area = addr.city || addr.town || addr.county || "Unknown Area";
-            }
-            
-            if (area) geocodeCache.set(cacheKey, area);
-          } catch (err) {}
-        }
-
-        if (area && area !== prevAreaRef.current) {
-          if (prevAreaRef.current !== null) recordZoneChange(area).catch(console.error);
-          prevAreaRef.current = area;
-        }
-
-        // Update area name once we have it
-        setState((s) => ({ ...s, areaName: area }));
-      },
-      (error) => {
-        setState((s) => ({ ...s, error: "GPS Error", loading: false }));
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
-    );
-  }, []);
-
-  // Keep ref in sync with the latest fetchLocation
-  useEffect(() => {
-    fetchLocationRef.current = fetchLocation;
-  }, [fetchLocation]);
+  }, [refreshLocation]);
 
   useEffect(() => {
-    fetchLocation();
-    
-    
-    const intervalId = setInterval(() => {
-      const cur = stateRef.current;
-      // --- TRACK ONLY IF ACTIVE ---
-      if (cur.status !== "Offline") {
-        fetchLocation(false);
+    if (!navigator.geolocation) return;
+
+    if (state.status !== "Offline") {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
       }
-    }, 30 * 1000); // Fetch location every 30 seconds (optimized for battery)
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        (pos) => handlePositionUpdate(pos, false),
+        (err) => setState((s) => ({ ...s, error: "GPS Error", loading: false })),
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      );
+    } else {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+    }
 
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
+  }, [state.status, handlePositionUpdate]);
+
+  useEffect(() => {
     const analyticsId = setInterval(() => {
       const cur = stateRef.current;
       if (cur.status === "Ngetem" && cur.latitude) {
         recordActiveMinute().catch(console.error);
       }
 
-      // --- AUTO OFFLINE LOGIC (1 HOUR IDLE) ---
       if (cur.status !== "Offline" && cur.timestamp) {
         const now = Date.now();
         const idleTime = now - cur.timestamp;
-        if (idleTime > 60 * 60 * 1000) { // 60 minutes
+        if (idleTime > 60 * 60 * 1000) {
           console.log("Idle auto-offline triggered");
-          // Use the value's setStatus directly to sync DB
           const supabase = createClient();
           supabase.auth.getUser().then(({ data: { user } }) => {
             if (user) {
@@ -205,33 +206,26 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
           });
         }
       }
-    }, 60 * 1000); // Check every 1 minute
+    }, 60 * 1000);
 
-    return () => {
-      clearInterval(intervalId);
-      clearInterval(analyticsId);
-    };
-  }, [fetchLocation]);
+    return () => clearInterval(analyticsId);
+  }, []);
 
   const value: LocationState = {
     ...state,
     setStatus: (newStatus: string) => {
-      // Update local state immediately
       setState(s => ({ ...s, status: newStatus }));
-
-      // Sync to DB in background (non-blocking — avoids UI freeze)
       const current = stateRef.current;
       updateDriverStatus(newStatus, current.latitude || undefined, current.longitude || undefined)
         .catch(console.error);
 
       if (newStatus !== "Offline") {
-        // Trigger GPS fetch immediately without waiting for DB
-        fetchLocation(true);
+        refreshLocation();
       } else {
         setState(s => ({ ...s, loading: false }));
       }
     },
-    refreshLocation: () => fetchLocation(true),
+    refreshLocation,
   };
 
   return <LocationContext.Provider value={value}>{children}</LocationContext.Provider>;

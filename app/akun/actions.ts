@@ -85,5 +85,21 @@ export async function updateDriverStatus(status: string, lat?: number, lng?: num
   }
 
   await supabase.from("users").update(updateData).eq("id", user.id);
+  
+  if (lat && lng) {
+    const { data: userData } = await supabase.from("users").select("nama").eq("id", user.id).single();
+    await supabase.channel("zpilot-realtime").send({
+      type: "broadcast",
+      event: "driver-location",
+      payload: {
+        id: user.id,
+        lat,
+        lng,
+        type: status === "Offline" ? "driver_offline" : (status === "Ngetem" ? "driver_ngetem" : "driver_antar"),
+        label: userData?.nama || "Driver"
+      }
+    });
+  }
+  
   revalidatePath("/");
 }

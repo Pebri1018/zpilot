@@ -163,6 +163,22 @@ export async function upsertMerchant(formData: FormData) {
 
   if (error) return { error: error.message };
 
+  if (data) {
+    let type = "merchant_lumayan";
+    if (busy_score >= 80) type = "merchant_gacor";
+    else if (busy_score < 40) type = "merchant_sepi";
+
+    await supabase.channel("zpilot-realtime").send({
+      type: "broadcast",
+      event: "merchant-status",
+      payload: {
+        id: data.id,
+        type,
+        live_status: live_status || busy_level
+      }
+    });
+  }
+
   revalidatePath("/admin");
   revalidatePath("/");
   revalidatePath("/radar");
@@ -242,6 +258,25 @@ export async function upsertSeller(formData: FormData) {
   ).select().single();
 
   if (error) return { error: error.message };
+
+  if (data) {
+    const isSeller = category.toLowerCase().includes("seller") || category.toLowerCase().includes("paket");
+    let type = isSeller ? "seller" : "merchant_lumayan";
+    if (!isSeller) {
+      if (busy_score >= 80) type = "merchant_gacor";
+      else if (busy_score < 40) type = "merchant_sepi";
+    }
+
+    await supabase.channel("zpilot-realtime").send({
+      type: "broadcast",
+      event: "merchant-status",
+      payload: {
+        id: data.id,
+        type,
+        live_status: busy_level
+      }
+    });
+  }
 
   revalidatePath("/admin");
   revalidatePath("/");
