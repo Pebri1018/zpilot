@@ -173,10 +173,31 @@ export function LiveDashboard({ isDemo = false }: { isDemo?: boolean }) {
     const stale = now - globalLastAnalysisTs > 5 * 60 * 1000;
     
     if (!force && !areaChanged && !statusChanged && !stale) return;
-    
+    const prevStatus = globalLastStatus;
     globalLastArea = areaName;
     globalLastStatus = status;
     globalLastAnalysisTs = now;
+
+    // Optimistic UI updates to prevent perceived lag
+    if (status === "Offline") {
+      setRecommendation({
+        action: "OFFLINE",
+        title: lang === "ID" ? "Pilot Siaga" : "Pilot Standby",
+        reason: lang === "ID" ? "Kamu sedang offline. Aktifkan status untuk mulai memindai hotspot." : "You're offline. Go online to start scanning hotspot.",
+        color: "#9CA3AF",
+        badge: "High"
+      });
+    } else if (status === "Antar") {
+      setRecommendation({
+        action: "BUSY",
+        title: lang === "ID" ? "Sedang Mengantar" : "Delivery in Progress",
+        reason: lang === "ID" ? "Selesaikan pengantaran dulu. Hotspot berikutnya akan disarankan setelah selesai." : "Complete delivery first.",
+        color: "#F59E0B",
+        badge: "High"
+      });
+    } else if (status === "Ngetem" && prevStatus === "Offline") {
+      setRecommendation(r => ({ ...r, title: "Memindai Radar...", reason: "Menarik data intelijen zona...", action: "STAY", color: "#3B82F6" }));
+    }
 
     setIsRefreshing(true);
     try {

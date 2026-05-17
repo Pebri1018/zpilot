@@ -25,10 +25,10 @@ const MemoizedMarker = memo(({ m, zoom, isAdmin }: { m: RadarMarker, zoom: numbe
       case "merchant_lumayan": return { color: "#F59E0B", fill: "#F59E0B" }; 
       case "merchant_sepi": return { color: "#3B82F6", fill: "#3B82F6" };  
       case "merchant_tutup": return { color: "#1F2937", fill: "#111827" };
-      case "driver_ngetem": return { color: "#6B7280", fill: "#6B7280" }; // Subtle Gray for drivers
-      case "driver_antar": return { color: "#9CA3AF", fill: "#9CA3AF" }; // Subtle Gray for drivers
-      case "seller": return { color: "#3B82F6", fill: "#3B82F6" }; // Treat seller as sepi/normal color to avoid noise
-      case "spot": return { color: "#3B82F6", fill: "#3B82F6" };          
+      case "driver_ngetem": return { color: "#6B7280", fill: "#6B7280" }; 
+      case "driver_antar": return { color: "#9CA3AF", fill: "#9CA3AF" }; 
+      case "seller": return { color: "#8B5CF6", fill: "#8B5CF6" }; 
+      case "spot": return { color: "#10B981", fill: "#10B981" };          
       default: return { color: "#000", fill: "#000" };
     }
   };

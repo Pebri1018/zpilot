@@ -467,9 +467,12 @@ function RadarContent() {
             <div className="px-2.5 pb-2 space-y-1 border-t border-white/10 pt-1.5">
               {[
                 { color: "#000", border: "border-2 border-white", label: "Kamu" },
-                { color: "#EF4444", label: "Gacor (Merah)" },
-                { color: "#F59E0B", label: "Lumayan (Kuning)" },
-                { color: "#3B82F6", label: "Sepi (Biru)" },
+                { color: "#EF4444", label: "Resto Gacor" },
+                { color: "#F59E0B", label: "Resto Lumayan" },
+                { color: "#3B82F6", label: "Resto Sepi" },
+                { color: "#8B5CF6", label: "Seller/SPX" },
+                { color: "#10B981", label: "Spot Driver" },
+                { color: "#6B7280", label: "Driver Lain" },
                 ...(isAdmin ? [{ color: "#1F2937", label: "Tutup (Admin)" }] : []),
               ].map(({ color, border, label }) => (
                 <div key={label} className="flex items-center gap-1.5">

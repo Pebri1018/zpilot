@@ -107,29 +107,42 @@ export default function TrenPage() {
 
       <main className="px-4 space-y-4">
 
-        {/* NOW STATUS */}
-        <div className="bg-neutral-900 rounded-3xl px-5 py-5 shadow-xl border border-white/5">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/50">KONDISI SEKARANG</p>
-          </div>
-          <p className="text-[1.8rem] font-black text-white leading-none tracking-tight mb-3">
-            {timeCtx.emoji} {timeCtx.label}
-          </p>
-          <div className="bg-white/5 rounded-2xl p-3.5 border border-white/10 mb-4">
-            <p className="text-[1.05rem] text-white/90 font-bold leading-snug">{historical.description}</p>
-          </div>
-
-          {/* Stats pills */}
-          {stats && (
-            <div className="flex flex-wrap gap-2">
-              <span className={`text-[0.85rem] font-black px-4 py-2 rounded-xl ${stats.orderan.includes("Tinggi") ? "bg-blue-600 text-white" : "bg-white/10 text-white/80"}`}>
-                Order: {stats.orderan.replace("Potensi ", "")}
-              </span>
-              <span className={`text-[0.85rem] font-black px-4 py-2 rounded-xl ${stats.pesaing === "Padat" ? "bg-red-500 text-white" : "bg-white/10 text-white/80"}`}>
-                Saingan: {stats.pesaing}
-              </span>
+        {/* NOW STATUS PREMIUM UI */}
+        <div className="relative rounded-[2rem] overflow-hidden p-6 shadow-2xl border border-white/10">
+          <div className="absolute inset-0 bg-gradient-to-br from-neutral-800 to-neutral-950"></div>
+          <div className="absolute top-0 right-0 w-40 h-40 bg-blue-500/20 rounded-full blur-[40px] -mr-16 -mt-16 pointer-events-none"></div>
+          
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
+                <p className="text-[0.65rem] font-black uppercase tracking-widest text-blue-200/80">Kondisi Sekarang</p>
+              </div>
             </div>
-          )}
+            
+            <p className="text-[2rem] font-black text-white leading-none tracking-tight mb-4 drop-shadow-md">
+              {timeCtx.emoji} {timeCtx.label}
+            </p>
+            
+            <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/10 mb-5 relative overflow-hidden group">
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-blue-400 to-indigo-600 rounded-l-2xl" />
+              <p className="text-[1.05rem] text-white/95 font-bold leading-relaxed tracking-wide pl-1">{historical.description}</p>
+            </div>
+
+            {/* Stats pills */}
+            {stats && (
+              <div className="flex flex-wrap gap-2.5 mt-2">
+                <span className={`flex items-center gap-1.5 text-[0.8rem] font-black px-4 py-2.5 rounded-xl ${stats.orderan.includes("Tinggi") ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/25 border border-blue-400/30" : "bg-white/10 text-white/80 border border-white/5"}`}>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                  Order: {stats.orderan.replace("Potensi ", "")}
+                </span>
+                <span className={`flex items-center gap-1.5 text-[0.8rem] font-black px-4 py-2.5 rounded-xl ${stats.pesaing === "Padat" ? "bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/25 border border-red-400/30" : "bg-white/10 text-white/80 border border-white/5"}`}>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                  Saingan: {stats.pesaing}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* TOP ZONES */}
