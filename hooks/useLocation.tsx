@@ -156,7 +156,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
           navigator.geolocation.getCurrentPosition(
             (pos) => handlePositionUpdate(pos, true), // force=true skips distance threshold
             () => setState((s) => ({ ...s, error: "GPS Error", loading: false })),
-            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 10000 }
           );
         } else {
           setState((s) => ({ ...s, error: "GPS not supported", loading: false }));
@@ -176,7 +176,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
       watchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => handlePositionUpdate(pos, false),
         (err) => setState((s) => ({ ...s, error: "GPS Error", loading: false })),
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 5000 }
       );
     } else {
       if (watchIdRef.current !== null) {
@@ -195,8 +195,11 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const analyticsId = setInterval(() => {
       const cur = stateRef.current;
-      if (cur.status === "Ngetem" && cur.latitude) {
-        recordActiveMinute().catch(console.error);
+      if (cur.status !== "Offline") {
+        if (cur.status === "Ngetem" && cur.latitude) {
+          recordActiveMinute().catch(console.error);
+        }
+        updateDriverStatus(cur.status, cur.latitude || undefined, cur.longitude || undefined).catch(() => {});
       }
 
       if (cur.status !== "Offline" && cur.timestamp) {

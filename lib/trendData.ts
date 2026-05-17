@@ -112,6 +112,7 @@ export function getJogjaTrends(date: Date): Record<TimeSlot, TrendStatus> {
     trends.pagi.recommendedZones = trends.pagi.recommendedZones.filter(z => z.target !== "paket");
     trends.sore.intensity = "ramai";
     trends.sore.description = ["MINGGU SORE: Orang mulai kembali ke kos/rumah.", "Peluang: Orderan makan malam masuk lebih awal."];
+    trends.sore.recommendedZones = trends.sore.recommendedZones.filter(z => z.target !== "paket");
   }
 
   return trends;

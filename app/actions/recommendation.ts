@@ -66,7 +66,35 @@ export async function getRecommendationV2(
               .sort((a, b) => a.dist - b.dist)[0]
     : null;
 
-  // 2. Proximity-based logic (CRITICAL UPGRADE)
+  const bestAlternative = (nearestHs && nearestHs.dist <= 0.5) 
+    ? ((topHotspot && topHotspot.id !== nearestHs.id) ? topHotspot.name : (secondHotspot?.name || "area lain"))
+    : (topHotspot?.name || "area terdekat");
+
+  // 2. Too Long Idle (Ngetem >= 15 mins)
+  if (idleMinutes >= 15) {
+    return {
+      action: "MOVE",
+      title: isID ? "Pindah Sekarang" : "Move Now",
+      reason: isID ? `Sudah 15 menit tanpa pergerakan. Coba pindah ke ${bestAlternative} untuk segarkan sinyal.` : `Idle for 15 mins. Try moving to ${bestAlternative} to refresh signals.`,
+      targetZone: bestAlternative,
+      color: "#EF4444",
+      badge: "High"
+    };
+  }
+
+  // 3. High Competition (Driver >= 5)
+  if (driverCount >= 5) {
+    return {
+      action: "MOVE",
+      title: isID ? "Pesaing Padat" : "Crowded Zone",
+      reason: isID ? `Area ini padat pesaing. Geser ke ${bestAlternative}.` : `Too many drivers here. Shift to ${bestAlternative}.`,
+      targetZone: bestAlternative,
+      color: "#F59E0B",
+      badge: "High"
+    };
+  }
+
+  // 4. Proximity-based logic (CRITICAL UPGRADE)
   if (nearestHs && nearestHs.dist <= 0.5) {
      // User is inside a zone (500m radius)
      let microArea = isID ? "titik lain di sekitarmu" : "other spots nearby";
@@ -101,34 +129,6 @@ export async function getRecommendationV2(
       targetZone: nearestHs.name,
       color: "#3B82F6",
       badge: "Medium"
-    };
-  }
-
-  // 3. Too Long Idle (Ngetem >= 15 mins)
-  if (idleMinutes >= 15) {
-    const target = (nearestHs && nearestHs.dist > 0.5) ? nearestHs.name : (topHotspot?.name || "area lain");
-    return {
-      action: "MOVE",
-      title: isID ? "Pindah Sekarang" : "Move Now",
-      reason: isID ? `Sudah 15 menit tanpa pergerakan. Coba pindah ke ${target} untuk segarkan sinyal.` : `Idle for 15 mins. Try moving to ${target} to refresh signals.`,
-      targetZone: target,
-      color: "#EF4444",
-      badge: "High"
-    };
-  }
-
-  // 4. High Competition (Driver >= 5)
-  if (driverCount >= 5) {
-    const target = (currentHotspot && topHotspot && currentHotspot.id === topHotspot.id && secondHotspot)
-      ? secondHotspot.name
-      : (topHotspot?.name || "area lain");
-    return {
-      action: "MOVE",
-      title: isID ? "Pesaing Padat" : "Crowded Zone",
-      reason: isID ? `Area ini padat pesaing. Geser ke ${target}.` : `Too many drivers here. Shift to ${target}.`,
-      targetZone: target,
-      color: "#F59E0B",
-      badge: "High"
     };
   }
 
@@ -290,7 +290,12 @@ export async function getZoneStats(areaName: string | null, lat?: number | null,
         const signalsInArea = adminSignals.filter(s => {
           return getDist(lat, lng, s.lat, s.lng) <= 5;
         });
-        const totalManualDrivers = signalsInArea.reduce((acc, s) => acc + s.count, 0);
+        const totalManualDrivers = signalsInArea.reduce((acc, s) => {
+          const ageMinutes = (new Date(now).getTime() - new Date(s.created_at).getTime()) / 60000;
+          const decay = Math.floor(ageMinutes / 2); // 1 driver drops every 2 minutes
+          const currentCount = Math.max(0, s.count - decay);
+          return acc + currentCount;
+        }, 0);
         driverCountInArea += totalManualDrivers;
       }
     }

@@ -287,7 +287,9 @@ function RadarContent() {
         // Add manual signals (can be multiple per coordinate based on count)
         manualSignals.forEach((ms, idx) => {
           if (!ms.lat || !ms.lng) return;
-          const total = ms.count || 1;
+          const ageMinutes = (Date.now() - new Date(ms.created_at).getTime()) / 60000;
+          const decay = Math.floor(ageMinutes / 2); // 1 drops every 2 mins
+          const total = Math.max(0, (ms.count || 1) - decay);
           for (let i = 0; i < total; i++) {
             // slight random offset if multiple
             const offsetLat = i === 0 ? 0 : (Math.random() - 0.5) * 0.0005;
