@@ -42,7 +42,7 @@ let globalLastFetchTime = 0;
 
 function RadarContent() {
   const { lang, t } = useLanguage();
-  const { latitude, longitude, areaName, loading, error } = useLocation();
+  const { latitude, longitude, areaName, loading, error, status } = useLocation();
   const searchParams = useSearchParams();
   const urlLat = searchParams.get("lat");
   const urlLng = searchParams.get("lng");
@@ -54,7 +54,7 @@ function RadarContent() {
   const [hotspots, setHotspots] = useState<HotspotZone[]>([]);
   const [fetching, setFetching] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [driverCount, setDriverCount] = useState(0);
+  const driverCount = markers.filter(m => m.type.startsWith("driver_")).length + (status !== "Offline" ? 1 : 0);
   const [isAdmin, setIsAdmin] = useState(false);
   const [legendOpen, setLegendOpen] = useState(false);
 
@@ -304,10 +304,6 @@ function RadarContent() {
 
         const hotspotData = await getHotspots();
         
-        // Count active drivers from db (including current user) + manual drivers
-        const activeDbDrivers = drivers?.filter(d => d.status !== "Offline").length || 0;
-        const manualDriversCount = newMarkers.filter(m => m.type.startsWith("driver_") && m.id.startsWith("drv_man_")).length;
-        setDriverCount(activeDbDrivers + manualDriversCount);
         globalMarkers = newMarkers;
         globalHotspots = hotspotData;
         globalLastFetchTime = Date.now();

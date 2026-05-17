@@ -132,7 +132,6 @@ export function LiveDashboard({ isDemo = false }: { isDemo?: boolean }) {
   useEffect(() => {
     if (status === "Antar" && latitude && longitude && areaName) {
       if (!hasLoggedAntar.current) {
-        saveUserSignal("antar", latitude, longitude, areaName);
         hasLoggedAntar.current = true;
         
         // Increment delivery count for feedback
@@ -195,7 +194,7 @@ export function LiveDashboard({ isDemo = false }: { isDemo?: boolean }) {
         color: "#F59E0B",
         badge: "High"
       });
-    } else if (status === "Ngetem" && prevStatus === "Offline") {
+    } else if (status === "Ngetem" && (prevStatus === "Offline" || prevStatus === "Antar")) {
       setRecommendation(r => ({ ...r, title: "Memindai Radar...", reason: "Menarik data intelijen zona...", action: "STAY", color: "#3B82F6" }));
     }
 

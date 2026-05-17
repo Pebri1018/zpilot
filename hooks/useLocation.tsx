@@ -228,7 +228,9 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
         .catch(console.error);
 
       if (newStatus !== "Offline") {
-        refreshLocation();
+        if (current.status === "Offline") {
+          refreshLocation();
+        }
       } else {
         setState(s => ({ ...s, loading: false }));
       }
