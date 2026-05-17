@@ -268,19 +268,8 @@ export function LiveDashboard({ isDemo = false }: { isDemo?: boolean }) {
     return () => clearInterval(timer);
   }, [fetchData]);
 
-  // Real-time merchant listener
-  useEffect(() => {
-    const supabase = (require("@/lib/supabase/client")).createClient();
-    const channel = supabase.channel("merchant-updates")
-      .on("postgres_changes", { event: "*", schema: "public", table: "merchant_signals" }, async () => {
-        const merchantsResult = await getActiveMerchants(areaName);
-        setMerchants(merchantsResult);
-        saveMerchantsCache(merchantsResult);
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [areaName]);
-
+  // Real-time listener removed to optimize Supabase connection pool.
+  // We rely on the 5-minute auto-refresh interval above and manual refresh to save battery/data.
   const formattedTime = time.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false });
   const idleMinutes = ngetemStartTime ? Math.floor((Date.now() - ngetemStartTime) / 60000) : 0;
   const actionColors = getActionColors(recommendation.action, recommendation.color);

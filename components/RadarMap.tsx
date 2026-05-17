@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, memo } from "react";
+import { useEffect, useState, useMemo, memo, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Circle } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
@@ -84,12 +84,24 @@ const MemoizedMarker = memo(({ m, zoom, isAdmin }: { m: RadarMarker, zoom: numbe
       </Popup>
     </Marker>
   );
+}, (prev, next) => {
+  return prev.m.id === next.m.id &&
+         prev.m.lat === next.m.lat &&
+         prev.m.lng === next.m.lng &&
+         prev.m.type === next.m.type &&
+         prev.m.label === next.m.label &&
+         prev.zoom === next.zoom &&
+         prev.isAdmin === next.isAdmin;
 });
 
 function RecenterAutomatically({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
+  const recentered = useRef(false);
   useEffect(() => {
-    map.setView([lat, lng]);
+    if (!recentered.current) {
+      map.setView([lat, lng]);
+      recentered.current = true;
+    }
   }, [lat, lng, map]);
   return null;
 }

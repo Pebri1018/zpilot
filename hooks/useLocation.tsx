@@ -180,7 +180,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
       if (cur.status !== "Offline") {
         fetchLocation(false);
       }
-    }, 10 * 1000); // Fetch location every 10 seconds for smoothness
+    }, 30 * 1000); // Fetch location every 30 seconds (optimized for battery)
 
     const analyticsId = setInterval(() => {
       const cur = stateRef.current;
