@@ -23,7 +23,7 @@ export type RadarMarker = {
   id: string;
   lat: number;
   lng: number;
-  type: "driver_ngetem" | "driver_antar" | "merchant_sepi" | "merchant_bergerak" | "merchant_mulaipanas" | "merchant_ramai" | "merchant_sangatsibuk" | "merchant_tutup" | "spot" | "seller";
+  type: "driver_ngetem" | "driver_antar" | "merchant_sepi" | "merchant_lumayan" | "merchant_gacor" | "merchant_tutup" | "spot" | "seller";
   label: string;
   driver_id?: string;
   live_status?: string;

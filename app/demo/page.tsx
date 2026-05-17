@@ -4,6 +4,8 @@ import { BroadcastCard } from "@/components/BroadcastCard";
 import { getLatestActiveBroadcast } from "@/app/admin/actions";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function DemoPage() {
   const broadcast = await getLatestActiveBroadcast();
 
