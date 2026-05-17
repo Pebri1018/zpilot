@@ -52,11 +52,6 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     const { latitude, longitude } = position.coords;
     const currentState = stateRef.current;
 
-    if (currentState.status === "Offline") {
-      setState(s => ({ ...s, loading: false }));
-      return;
-    }
-
     // Distance threshold check (10 meters)
     if (!force && currentState.latitude && currentState.longitude) {
       const dist = getDistanceInMeters(currentState.latitude, currentState.longitude, latitude, longitude);
@@ -74,8 +69,10 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
       timestamp: Date.now(),
     }));
 
-    // Sync to DB
-    updateDriverStatus(stateRef.current.status, latitude, longitude).catch(() => {});
+    // Sync to DB ONLY if active
+    if (currentState.status !== "Offline") {
+      updateDriverStatus(currentState.status, latitude, longitude).catch(() => {});
+    }
 
     // Reverse geocode
     let area = stateRef.current.areaName;
@@ -148,20 +145,31 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
           if (data?.status && data.status !== "Offline") {
             setState(s => ({ ...s, status: data.status }));
             stateRef.current = { ...stateRef.current, status: data.status };
-            refreshLocation();
           } else if (data?.status === "Offline") {
-            setState(s => ({ ...s, status: "Offline", loading: false }));
+            setState(s => ({ ...s, status: "Offline" }));
           }
         }
       }
-      fetchInitialStatus();
+      fetchInitialStatus().finally(() => {
+        // Dual-Strategy Step 1: Immediate First Lock
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => handlePositionUpdate(pos, true), // force=true skips distance threshold
+            () => setState((s) => ({ ...s, error: "GPS Error", loading: false })),
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+          );
+        } else {
+          setState((s) => ({ ...s, error: "GPS not supported", loading: false }));
+        }
+      });
     }
-  }, [refreshLocation]);
+  }, [handlePositionUpdate]);
 
   useEffect(() => {
     if (!navigator.geolocation) return;
 
-    if (state.status !== "Offline") {
+    // Dual-Strategy Step 2: Hand over to watchPosition ONLY AFTER initial lock (latitude !== null)
+    if (state.status !== "Offline" && state.latitude !== null) {
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
@@ -182,7 +190,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
     };
-  }, [state.status, handlePositionUpdate]);
+  }, [state.status, state.latitude, handlePositionUpdate]);
 
   useEffect(() => {
     const analyticsId = setInterval(() => {
