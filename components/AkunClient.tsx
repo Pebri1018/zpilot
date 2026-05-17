@@ -67,7 +67,7 @@ export function AkunClient({ email, nama, kota, platform, driverId, zpilotId, ro
     { label: "Email", value: email },
     { label: t("edit_profile").split(" ")[1] || "Name", value: nama || "—" },
     { label: "Area", value: kota || "—" },
-    { label: "Platform", value: platform },
+    { label: "Platform", value: platform || "Gojek & Grab" },
     { label: "ID Driver", value: driverId?.trim() || "—" },
   ];
 
@@ -354,6 +354,14 @@ export function AkunClient({ email, nama, kota, platform, driverId, zpilotId, ro
                 <div className="space-y-3">
                   <input name="nama" defaultValue={nama || ""} placeholder="Nama" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 text-[0.9rem] dark:text-white focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-500" required />
                   <input name="kota" defaultValue={kota || ""} placeholder="Kota" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 text-[0.9rem] dark:text-white focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-500" required />
+                  <select name="platform" defaultValue={platform || "Gojek & Grab"} className="w-full px-4 py-3 rounded-2xl bg-neutral-50 dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 text-[0.9rem] dark:text-white focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-500" required>
+                    <option value="Gojek">Gojek</option>
+                    <option value="Grab">Grab</option>
+                    <option value="ShopeeFood">ShopeeFood</option>
+                    <option value="Maxim">Maxim</option>
+                    <option value="Gojek & Grab">Gojek & Grab</option>
+                    <option value="Campuran">Campuran (Semua)</option>
+                  </select>
                   <input name="driver_id" defaultValue={driverId || ""} placeholder="ID Driver" className="w-full px-4 py-3 rounded-2xl bg-neutral-50 dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 text-[0.9rem] dark:text-white focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-500" required />
                 </div>
                 <div className="flex gap-2">

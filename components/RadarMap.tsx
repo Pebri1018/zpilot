@@ -21,16 +21,14 @@ type RadarMapProps = {
 const MemoizedMarker = memo(({ m, zoom, isAdmin }: { m: RadarMarker, zoom: number, isAdmin: boolean }) => {
   const getMarkerColor = (type: RadarMarker["type"]) => {
     switch (type) {
-      case "driver_ngetem": return { color: "#4F46E5", fill: "#4F46E5" };
-      case "driver_antar": return { color: "#EC4899", fill: "#EC4899" };
-      case "merchant_sangatsibuk": return { color: "#991B1B", fill: "#991B1B" }; 
-      case "merchant_ramai": return { color: "#EF4444", fill: "#EF4444" }; 
-      case "merchant_mulaipanas": return { color: "#F97316", fill: "#F97316" }; 
-      case "merchant_bergerak": return { color: "#3B82F6", fill: "#3B82F6" };  
-      case "merchant_sepi": return { color: "#9CA3AF", fill: "#9CA3AF" };  
+      case "merchant_gacor": return { color: "#EF4444", fill: "#EF4444" }; 
+      case "merchant_lumayan": return { color: "#F59E0B", fill: "#F59E0B" }; 
+      case "merchant_sepi": return { color: "#3B82F6", fill: "#3B82F6" };  
       case "merchant_tutup": return { color: "#1F2937", fill: "#111827" };
-      case "seller": return { color: "#F59E0B", fill: "#F59E0B" };
-      case "spot": return { color: "#8B5CF6", fill: "#8B5CF6" };          
+      case "driver_ngetem": return { color: "#6B7280", fill: "#6B7280" }; // Subtle Gray for drivers
+      case "driver_antar": return { color: "#9CA3AF", fill: "#9CA3AF" }; // Subtle Gray for drivers
+      case "seller": return { color: "#3B82F6", fill: "#3B82F6" }; // Treat seller as sepi/normal color to avoid noise
+      case "spot": return { color: "#3B82F6", fill: "#3B82F6" };          
       default: return { color: "#000", fill: "#000" };
     }
   };
@@ -38,14 +36,12 @@ const MemoizedMarker = memo(({ m, zoom, isAdmin }: { m: RadarMarker, zoom: numbe
   const colors = getMarkerColor(m.type);
   const getPinSize = (type: string) => {
     switch(type) {
-      case "merchant_sangatsibuk": return 15;
-      case "merchant_ramai": return 13;
-      case "merchant_mulaipanas": return 11;
-      case "merchant_bergerak": return 9;
+      case "merchant_gacor": return 15;
+      case "merchant_lumayan": return 11;
       case "merchant_sepi": return 7;
-      case "driver_ngetem": return 12;
-      case "driver_antar": return 10;
-      default: return 10;
+      case "driver_ngetem": return 8;
+      case "driver_antar": return 8;
+      default: return 9;
     }
   };
   const size = getPinSize(m.type);

@@ -249,10 +249,9 @@ function RadarContent() {
                 (isPeak ? 10 : 0) +
                 ((m.manual_admin_boost_until && m.manual_admin_boost_until > new Date().toISOString()) ? 20 : 0);
 
-              if (score >= 90) { type = "merchant_sangatsibuk"; statusStr = "Sangat Sibuk"; }
-              else if (score >= 66) { type = "merchant_ramai"; statusStr = "Ramai"; }
-              else if (score >= 41) { type = "merchant_mulaipanas"; statusStr = "Sedang"; }
-              else if (score >= 20) { type = "merchant_bergerak"; statusStr = "Normal"; }
+              if (score >= 60) { type = "merchant_gacor"; statusStr = "Gacor"; }
+              else if (score >= 35) { type = "merchant_lumayan"; statusStr = "Lumayan"; }
+              else { type = "merchant_sepi"; statusStr = "Sepi"; }
             }
             
             const flashTag = m.is_flash_sale ? " ⚡" : "";
@@ -468,14 +467,9 @@ function RadarContent() {
             <div className="px-2.5 pb-2 space-y-1 border-t border-white/10 pt-1.5">
               {[
                 { color: "#000", border: "border-2 border-white", label: "Kamu" },
-                { color: "#4F46E5", label: "Ngetem" },
-                { color: "#EC4899", label: "Antar" },
-                { color: "#991B1B", label: "Sangat Sibuk" },
-                { color: "#EF4444", label: "Ramai" },
-                { color: "#F97316", label: "Sedang" },
-                { color: "#3B82F6", label: "Normal" },
-                { color: "#8B5CF6", label: "Spot" },
-                { color: "#F59E0B", label: "Seller/SPX" },
+                { color: "#EF4444", label: "Gacor (Merah)" },
+                { color: "#F59E0B", label: "Lumayan (Kuning)" },
+                { color: "#3B82F6", label: "Sepi (Biru)" },
                 ...(isAdmin ? [{ color: "#1F2937", label: "Tutup (Admin)" }] : []),
               ].map(({ color, border, label }) => (
                 <div key={label} className="flex items-center gap-1.5">

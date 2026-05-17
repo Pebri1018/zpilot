@@ -108,20 +108,24 @@ export default function TrenPage() {
       <main className="px-4 space-y-4">
 
         {/* NOW STATUS */}
-        <div className="bg-neutral-900 rounded-3xl px-5 py-4 shadow-lg">
-          <p className="text-[0.62rem] font-black uppercase tracking-widest text-white/40 mb-1">KONDISI SEKARANG</p>
-          <p className="text-[1.5rem] font-black text-white leading-tight">
+        <div className="bg-neutral-900 rounded-3xl px-5 py-5 shadow-xl border border-white/5">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[0.65rem] font-black uppercase tracking-widest text-white/50">KONDISI SEKARANG</p>
+          </div>
+          <p className="text-[1.8rem] font-black text-white leading-none tracking-tight mb-3">
             {timeCtx.emoji} {timeCtx.label}
           </p>
-          <p className="text-[0.82rem] text-white/60 font-medium mt-1">{historical.description}</p>
+          <div className="bg-white/5 rounded-2xl p-3.5 border border-white/10 mb-4">
+            <p className="text-[1.05rem] text-white/90 font-bold leading-snug">{historical.description}</p>
+          </div>
 
           {/* Stats pills */}
           {stats && (
-            <div className="flex gap-2 mt-3">
-              <span className={`text-[0.72rem] font-black px-3 py-1 rounded-full ${stats.orderan.includes("Tinggi") ? "bg-blue-600 text-white" : "bg-white/10 text-white/70"}`}>
+            <div className="flex flex-wrap gap-2">
+              <span className={`text-[0.85rem] font-black px-4 py-2 rounded-xl ${stats.orderan.includes("Tinggi") ? "bg-blue-600 text-white" : "bg-white/10 text-white/80"}`}>
                 Order: {stats.orderan.replace("Potensi ", "")}
               </span>
-              <span className={`text-[0.72rem] font-black px-3 py-1 rounded-full ${stats.pesaing === "Padat" ? "bg-red-500 text-white" : "bg-white/10 text-white/70"}`}>
+              <span className={`text-[0.85rem] font-black px-4 py-2 rounded-xl ${stats.pesaing === "Padat" ? "bg-red-500 text-white" : "bg-white/10 text-white/80"}`}>
                 Saingan: {stats.pesaing}
               </span>
             </div>

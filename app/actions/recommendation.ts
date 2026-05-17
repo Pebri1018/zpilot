@@ -265,12 +265,18 @@ export async function getZoneStats(areaName: string | null, lat?: number | null,
     if (manualReport) {
       driverCountInArea = manualReport.driver_count;
     } else {
-      const { count } = await supabase
-        .from("driver_locations")
-        .select("*", { count: 'exact', head: true })
-        .eq("area_name", areaName)
-        .gte("updated_at", fifteenMinsAgo);
-      driverCountInArea = count || 0;
+      const { data: drivers } = await supabase
+        .from("users")
+        .select("last_lat, last_lng")
+        .not("status", "eq", "Offline")
+        .not("last_lat", "is", null);
+      
+      if (drivers && lat && lng) {
+        // Count active drivers within 3km of the current location
+        driverCountInArea = drivers.filter(d => getDist(lat, lng, d.last_lat, d.last_lng) <= 3).length;
+      } else if (drivers && !lat) {
+        driverCountInArea = drivers.length; // Fallback to all active if no lat/lng provided
+      }
     }
 
     // Include admin manual signals within 5km

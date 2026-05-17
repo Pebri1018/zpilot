@@ -97,16 +97,18 @@ export function getJogjaTrends(date: Date): Record<TimeSlot, TrendStatus> {
   }
 
   if (day === 6) { // Saturday
+    trends.pagi.label = "Pagi (Sarapan & Wisata)";
     trends.pagi.intensity = "sepi";
-    trends.pagi.description = "SABTU PAGI: Toko/Seller SPX banyak yang libur atau setengah hari. Fokus ke orderan makanan pagi/wisata.";
+    trends.pagi.description = "SABTU PAGI: Toko/Seller SPX banyak libur. Fokus ke orderan makanan & sarapan wisata.";
     trends.pagi.recommendedZones = trends.pagi.recommendedZones.filter(z => z.target !== "paket");
     trends.malam.intensity = "super_ramai";
-    trends.malam.description = "MALAM MINGGU: Puncak keramaian kuliner mingguan. Jangan sampai terlewat! Hindari jalan macet (Malioboro).";
-    trends.malam.recommendedZones.push({ area: "Prawirotaman / Tirtodipuran", target: "makanan", reason: "Turis dan expat mencari cafe malam." });
+    trends.malam.description = "MALAM MINGGU: Puncak keramaian kuliner mingguan. Jangan sampai terlewat! Hindari jalan macet.";
+    trends.malam.recommendedZones.push({ area: "Prawirotaman / Tirtodipuran", target: "makanan", reason: "Turis mencari cafe malam." });
   }
 
   if (day === 0) { // Sunday
-    trends.pagi.description = "MINGGU PAGI: Seller paket TUTUP TOTAL. Hindari spot gudang/toko. Fokus ke Gofood/ShopeeFood di area wisata dan kos.";
+    trends.pagi.label = "Pagi (Sarapan & Wisata)";
+    trends.pagi.description = "MINGGU PAGI: Seller/Gudang Paket TUTUP. Fokus 100% Gofood/ShopeeFood di area wisata & kos-kosan.";
     trends.pagi.recommendedZones = trends.pagi.recommendedZones.filter(z => z.target !== "paket");
     trends.sore.intensity = "ramai";
     trends.sore.description = "MINGGU SORE: Orang mulai kembali ke kos/rumah dan memesan makan malam lebih awal.";
