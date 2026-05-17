@@ -164,8 +164,10 @@ export function LiveDashboard({ isDemo = false }: { isDemo?: boolean }) {
   }, [status, latitude, longitude, areaName]);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const fetchIdRef = useRef(0);
 
   const fetchData = useCallback(async (force = false) => {
+    const currentFetchId = ++fetchIdRef.current;
     const now = Date.now();
     const areaChanged = globalLastArea !== areaName;
     const statusChanged = globalLastStatus !== status;
@@ -231,6 +233,8 @@ export function LiveDashboard({ isDemo = false }: { isDemo?: boolean }) {
       setMerchants(finalMerchants);
       saveMerchantsCache(finalMerchants);
 
+      if (currentFetchId !== fetchIdRef.current) return; // Prevent race condition
+
       setZoneStats(statsResult);
       setRecommendation(recResult);
       setTopZones(hotspotResult.slice(0, 3));
@@ -251,7 +255,9 @@ export function LiveDashboard({ isDemo = false }: { isDemo?: boolean }) {
     } catch (e) {
       console.error("Dashboard fetch failed", e);
     } finally {
-      setIsRefreshing(false);
+      if (currentFetchId === fetchIdRef.current) {
+        setIsRefreshing(false);
+      }
     }
   }, [areaName, status, lang, latitude, longitude, ngetemStartTime]);
 
