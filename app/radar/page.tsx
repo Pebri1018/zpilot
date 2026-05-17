@@ -303,8 +303,11 @@ function RadarContent() {
         });
 
         const hotspotData = await getHotspots();
-        const driverMarkers = newMarkers.filter(m => m.type.startsWith("driver_"));
-        setDriverCount(driverMarkers.length);
+        
+        // Count active drivers from db (including current user) + manual drivers
+        const activeDbDrivers = drivers?.filter(d => d.status !== "Offline").length || 0;
+        const manualDriversCount = newMarkers.filter(m => m.type.startsWith("driver_") && m.id.startsWith("drv_man_")).length;
+        setDriverCount(activeDbDrivers + manualDriversCount);
         globalMarkers = newMarkers;
         globalHotspots = hotspotData;
         globalLastFetchTime = Date.now();
