@@ -173,13 +173,17 @@ export default function RadarMap({ latitude, longitude, markers = [], hotspots =
           );
         })}
         
+        {markers.filter(m => !m.type.startsWith("driver_")).map((m) => (
+          <MemoizedMarker key={m.id} m={m} zoom={zoom} isAdmin={isAdmin} />
+        ))}
+
         <MarkerClusterGroup
           chunkedLoading
-          maxClusterRadius={40}
-          disableClusteringAtZoom={16}
+          maxClusterRadius={50}
+          disableClusteringAtZoom={18}
           showCoverageOnHover={false}
         >
-          {markers.map((m) => (
+          {markers.filter(m => m.type.startsWith("driver_")).map((m) => (
             <MemoizedMarker key={m.id} m={m} zoom={zoom} isAdmin={isAdmin} />
           ))}
         </MarkerClusterGroup>

@@ -126,7 +126,22 @@ export default function TrenPage() {
             
             <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/10 mb-5 relative overflow-hidden group">
               <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-blue-400 to-indigo-600 rounded-l-2xl" />
-              <p className="text-[1.05rem] text-white/95 font-bold leading-relaxed tracking-wide pl-1">{historical.description}</p>
+              <div className="space-y-2.5 pl-2">
+                {historical.description.map((desc, i) => {
+                  const isWarning = desc.includes("Warning") || desc.includes("SEPI") || desc.includes("TUTUP");
+                  const parts = desc.split(":");
+                  return (
+                    <div key={i} className="flex gap-2">
+                      <span className="mt-0.5 text-[0.8rem]">{isWarning ? "⚠️" : "✅"}</span>
+                      <p className="text-[1rem] text-white/95 leading-snug tracking-wide">
+                        {parts.length > 1 ? (
+                          <><strong className="text-white font-black">{parts[0]}:</strong>{parts.slice(1).join(":")}</>
+                        ) : desc}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Stats pills */}

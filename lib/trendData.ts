@@ -5,7 +5,7 @@ export type TrendStatus = {
   label: string;
   timeRange: string;
   intensity: "sepi" | "normal" | "ramai" | "super_ramai";
-  description: string;
+  description: string[];
   recommendedZones: {
     area: string;
     target: "makanan" | "paket" | "campur";
@@ -33,7 +33,7 @@ export function getJogjaTrends(date: Date): Record<TimeSlot, TrendStatus> {
       label: "Pagi (Sarapan & Paket)",
       timeRange: "06:00 - 09:59",
       intensity: "ramai",
-      description: "Pesanan sarapan di area kos, ditambah pesanan SPX/Paket dari seller mulai jam 09:00.",
+      description: ["Fokus: Pesanan sarapan di area kos-kosan.", "Tambahan: Seller SPX/Paket mulai pick-up jam 09:00."],
       recommendedZones: [
         { area: "Seturan & Condongcatur", target: "makanan", reason: "Anak kos cari sarapan sebelum kelas." },
         { area: "Godean & Banguntapan", target: "paket", reason: "Gudang & seller mulai pick-up SPX." },
@@ -45,7 +45,7 @@ export function getJogjaTrends(date: Date): Record<TimeSlot, TrendStatus> {
       label: "Siang (Makan Siang)",
       timeRange: "10:00 - 13:59",
       intensity: "super_ramai",
-      description: "Jam paling sibuk untuk makanan. Anak kampus dan pekerja kantoran memesan makan siang.",
+      description: ["Puncak Kesibukan: Area kampus & kantoran sangat aktif.", "Fokus Utama: Makanan (Makan siang)."],
       recommendedZones: [
         { area: "UGM, UNY, UPN", target: "makanan", reason: "Pusat mahasiswa istirahat siang." },
         { area: "Malioboro & Sudirman", target: "makanan", reason: "Pusat pekerja kantoran." },
@@ -57,7 +57,7 @@ export function getJogjaTrends(date: Date): Record<TimeSlot, TrendStatus> {
       label: "Sore (Waktu Nanggung)",
       timeRange: "14:00 - 16:59",
       intensity: "sepi",
-      description: "Sangat sepi. Waktunya orang istirahat, di perjalanan pulang, atau kelas selesai. Mending isi baterai.",
+      description: ["Sangat Sepi: Waktu nanggung, orang istirahat/pulang.", "Saran: Mending istirahat & isi baterai HP."],
       recommendedZones: [
         { area: "Jakal Bawah & Palagan", target: "campur", reason: "Ada sedikit orderan kopi/camilan sore." },
         { area: "Blok O & Janti", target: "paket", reason: "Sisa pick-up paket sore dari seller." }
@@ -68,7 +68,7 @@ export function getJogjaTrends(date: Date): Record<TimeSlot, TrendStatus> {
       label: "Malam (Makan Malam)",
       timeRange: "17:00 - 20:59",
       intensity: "super_ramai",
-      description: "Puncak keramaian terbesar. Semua orang mencari makan malam. Persaingan tinggi tapi volume order luar biasa.",
+      description: ["Puncak Keramaian: Semua mencari makan malam.", "Persaingan: Sangat tinggi, tapi order melimpah."],
       recommendedZones: [
         { area: "Gejayan, Seturan, Babarsari", target: "makanan", reason: "Pusat kuliner kos-kosan terpadat." },
         { area: "Alun-alun & Prawirotaman", target: "makanan", reason: "Pusat kuliner turis dan warga kota." },
@@ -80,7 +80,7 @@ export function getJogjaTrends(date: Date): Record<TimeSlot, TrendStatus> {
       label: "Tengah Malam (Nugas)",
       timeRange: "21:00 - 05:59",
       intensity: "normal",
-      description: "Khusus untuk mahasiswa yang begadang atau nugas mencari fast food & warkop 24 jam.",
+      description: ["Target: Mahasiswa begadang (Tugas kampus).", "Fokus Utama: Fast food & warkop/burjo 24 jam."],
       recommendedZones: [
         { area: "Seturan & Babarsari", target: "makanan", reason: "Pusat cafe 24 jam dan burjo." },
         { area: "Jakal Bawah", target: "makanan", reason: "Fast food dan McD/KFC sangat aktif." },
@@ -92,26 +92,26 @@ export function getJogjaTrends(date: Date): Record<TimeSlot, TrendStatus> {
   // Dynamic overrides based on day
   if (isMonday) {
     trends.siang.intensity = "sepi";
-    trends.siang.description = "HARI SENIN SEPI: Pekerja kantoran dan mahasiswa baru mulai rutinitas, order makanan siang biasanya drop. Lebih baik cari spot pinggiran.";
-    trends.pagi.description += " Hati-hati, hari Senin biasanya traffic paket sangat padat namun makanan lambat.";
+    trends.siang.description = ["HARI SENIN SEPI: Mahasiswa & pekerja sibuk rutinitas awal.", "Saran: Hindari pusat keramaian, cari spot pinggiran."];
+    trends.pagi.description = ["Warning: Traffic paket sangat padat.", "Catatan: Order makanan biasanya melambat."];
   }
 
   if (day === 6) { // Saturday
     trends.pagi.label = "Pagi (Sarapan & Wisata)";
     trends.pagi.intensity = "sepi";
-    trends.pagi.description = "SABTU PAGI: Toko/Seller SPX banyak libur. Fokus ke orderan makanan & sarapan wisata.";
+    trends.pagi.description = ["SABTU PAGI: Toko/Seller SPX banyak libur.", "Fokus: 100% orderan makanan & sarapan wisata."];
     trends.pagi.recommendedZones = trends.pagi.recommendedZones.filter(z => z.target !== "paket");
     trends.malam.intensity = "super_ramai";
-    trends.malam.description = "MALAM MINGGU: Puncak keramaian kuliner mingguan. Jangan sampai terlewat! Hindari jalan macet.";
+    trends.malam.description = ["MALAM MINGGU: Puncak keramaian kuliner mingguan.", "Warning: Hindari rute rawan macet parah!"];
     trends.malam.recommendedZones.push({ area: "Prawirotaman / Tirtodipuran", target: "makanan", reason: "Turis mencari cafe malam." });
   }
 
   if (day === 0) { // Sunday
     trends.pagi.label = "Pagi (Sarapan & Wisata)";
-    trends.pagi.description = "MINGGU PAGI: Seller/Gudang Paket TUTUP. Fokus 100% Gofood/ShopeeFood di area wisata & kos-kosan.";
+    trends.pagi.description = ["MINGGU PAGI: Gudang/Seller Paket TUTUP TOTAL.", "Fokus: 100% Gofood/ShopeeFood (Wisata & Kos)."];
     trends.pagi.recommendedZones = trends.pagi.recommendedZones.filter(z => z.target !== "paket");
     trends.sore.intensity = "ramai";
-    trends.sore.description = "MINGGU SORE: Orang mulai kembali ke kos/rumah dan memesan makan malam lebih awal.";
+    trends.sore.description = ["MINGGU SORE: Orang mulai kembali ke kos/rumah.", "Peluang: Orderan makan malam masuk lebih awal."];
   }
 
   return trends;
