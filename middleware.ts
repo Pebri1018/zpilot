@@ -72,11 +72,14 @@ export async function middleware(request: NextRequest) {
     if (!error && data) {
       needsOnboarding = !data.onboarding_completed;
       userRole = data.role || "user";
-      
-      // Update cookies for next time
-      supabaseResponse.cookies.set("zpilot_role", userRole, { maxAge: 60 * 60 * 24 });
-      supabaseResponse.cookies.set("zpilot_onboarding", String(needsOnboarding), { maxAge: 60 * 60 * 24 });
+    } else if (!data) {
+      // New user (e.g. from Google Auth) who doesn't have a profile yet
+      needsOnboarding = true;
     }
+    
+    // Update cookies for next time
+    supabaseResponse.cookies.set("zpilot_role", userRole, { maxAge: 60 * 60 * 24 });
+    supabaseResponse.cookies.set("zpilot_onboarding", String(needsOnboarding), { maxAge: 60 * 60 * 24 });
   }
 
   // 1. Role-based access control

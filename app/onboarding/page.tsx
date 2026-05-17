@@ -1,6 +1,11 @@
 import { OnboardingForm } from "@/app/onboarding/OnboardingForm";
+import { createClient } from "@/lib/supabase/server";
 
-export default function OnboardingPage() {
+export default async function OnboardingPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const nameFromGoogle = user?.user_metadata?.full_name || user?.user_metadata?.name || "";
+
   return (
     <div className="min-h-[100dvh] bg-[#f7f7f8] px-5 pb-12 pt-[max(1.25rem,env(safe-area-inset-top))] text-neutral-900 antialiased">
       <div className="mx-auto max-w-md">
@@ -11,7 +16,7 @@ export default function OnboardingPage() {
           </p>
         </header>
 
-        <OnboardingForm />
+        <OnboardingForm initialName={nameFromGoogle} />
       </div>
     </div>
   );

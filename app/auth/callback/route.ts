@@ -33,10 +33,23 @@ export async function GET(request: Request) {
     },
   });
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { error, data } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
     console.error("exchangeCodeForSession:", error.message);
     return NextResponse.redirect(`${origin}/login?error=auth`);
+  }
+
+  // Check if profile exists and complete
+  if (data?.user) {
+    const { data: profile } = await supabase
+      .from("users")
+      .select("nama, kota")
+      .eq("id", data.user.id)
+      .maybeSingle();
+
+    if (!profile || !profile.nama || !profile.kota) {
+      return NextResponse.redirect(`${origin}/onboarding`);
+    }
   }
 
   return NextResponse.redirect(`${origin}${next}`);

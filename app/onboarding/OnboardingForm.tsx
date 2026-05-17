@@ -5,7 +5,7 @@ import { completeOnboarding, type OnboardingState } from "@/app/onboarding/actio
 
 const initial: OnboardingState = {};
 
-export function OnboardingForm() {
+export function OnboardingForm({ initialName = "" }: { initialName?: string }) {
   const [state, formAction, pending] = useActionState(completeOnboarding, initial);
 
   return (
@@ -27,6 +27,7 @@ export function OnboardingForm() {
           id="nama"
           name="nama"
           required
+          defaultValue={initialName}
           autoComplete="nickname"
           placeholder="Contoh: Bang Adi"
           className="mt-2 w-full rounded-2xl border border-neutral-200 bg-white px-4 py-4 text-[1.05rem] outline-none transition focus:border-neutral-400"
